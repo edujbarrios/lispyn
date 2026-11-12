@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lispyn"
-version = "0.2.0a1"
+version = "0.3.0a1"
 description = "Lisp-powered PyTorch experiments and Jupyter notebooks, built on Hy."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -16,6 +16,9 @@ dependencies = ["hy>=1.0,<2.0", "nbformat>=5.8,<6"]
 [project.optional-dependencies]
 notebook = ["nbclient>=0.9,<1", "ipykernel>=6"]
 data = ["pandas>=2"]
+vision = ["torch", "torchvision", "pillow"]
+audio = ["torch", "torchaudio", "torchcodec"]
+text = ["torch"]
 dev = ["pytest>=8", "nbclient>=0.9,<1", "ipykernel>=6"]
 
 [project.scripts]
