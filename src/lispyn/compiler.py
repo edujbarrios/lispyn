@@ -23,7 +23,7 @@ def check_source(source: Path) -> Path:
     return source
 
 
-def compile_hy(source: Path) -> str:
+def compile_hy(source: Path, *, cwd: Path | None = None) -> str:
     """Translate a Hy source file to Python; never execute its output here.
 
     IMPORTANT: Hy macros may run arbitrary Python at *compile time*. Only build
@@ -35,7 +35,7 @@ def compile_hy(source: Path) -> str:
         raise LispynError("hy2py not found. Install Lispyn with: pip install -e .")
     result = subprocess.run(
         [hy2py, str(source)],
-        cwd=source.parent,
+        cwd=cwd or source.parent,
         text=True,
         capture_output=True,
         check=False,
