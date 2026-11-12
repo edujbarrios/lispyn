@@ -17,7 +17,7 @@ def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="lispyn", description="Hy experiments, Python notebooks, PyTorch freedom."
     )
-    p.add_argument("--version", action="version", version="lispyn 0.1.0a1")
+    p.add_argument("--version", action="version", version="lispyn 0.2.0a1")
     sub = p.add_subparsers(dest="command", required=True)
     for name, help_text in [
         ("build", "Generate a Python Jupyter notebook without executing it"),
