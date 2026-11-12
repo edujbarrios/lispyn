@@ -6,7 +6,7 @@ Lispyn is an experimental, open-source project originally created by **Eduardo J
 
 Lispyn extends [Hy](https://hylang.org/) (a Lisp running on Python). It does **not** replace Python, hide PyTorch, or require developers to reimplement familiar ML APIs. Import Python modules and call their functions directly.
 
-> Status: **v0.2.0a1 (experimental)**. No stability guarantees; not yet published on PyPI.
+> Status: **v0.3.0a1 (experimental)**. No stability guarantees; not yet published on PyPI.
 
 ## Install from source
 
@@ -102,7 +102,8 @@ Use source comment markers to request Jupyter Markdown and Python code cells. Ma
 - [x] Dataset readers and reproducible train/validation splitting
 - [x] PyTorch TensorDataset / DataLoader adapters
 - [x] Multi-cell notebooks with Markdown and code sections
-- [ ] Training, evaluation and checkpoint macros
+- [x] Training, evaluation, checkpoint helpers and a train-for macro
+- [x] ImageFolder, text datasets with tokenization, and labeled audio folders
 - [ ] More dataset formats and stratified/grouped splitting
 - [ ] Reproducibility reports and richer error diagnostics
 
@@ -113,3 +114,23 @@ Issues and pull requests are welcome. Keep changes small, documented, and tested
 ## License and attribution
 
 Copyright © 2026 **Eduardo J. Barrios**. Licensed under the **Apache License 2.0**; see [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE). Redistributions must preserve applicable copyright and attribution notices under that license. Apache-2.0 does **not** require citation merely for running Lispyn or using a generated notebook. Notebooks include author attribution by default.
+
+## Images, text, audio and fine-tuning (v0.3 alpha)
+
+Lispyn keeps the full native PyTorch, TorchVision and TorchAudio APIs available through Hy.
+
+- `image_folder("images/", transform=...)`: wraps `torchvision.datasets.ImageFolder` for `images/class_name/*.jpg`. For pretrained models, supply the weights' recommended transforms.
+- `text_dataset("train.jsonl", text_key="text", label_key="label")`: reads `.txt`, `.csv`, `.json`, `.jsonl`. Use `token_collate(tokenizer)` with compatible tokenizers (e.g. Hugging Face) inside a `DataLoader`.
+- `audio_folder("audio/", sample_rate=16000, num_frames=16000)`: labeled folder dataset, backed by `torchaudio.load`; supports resampling and fixed-length waveforms, with directory layout `audio/class_name/clip.wav`.
+- `trainable(model, "fc")`: freeze other parameters and train only the named layer. `trainable(model)` unfreezes all parameters for full fine-tuning. Create your optimizer **after** changing which layers are trainable.
+- `fit(model, loader, optimizer, loss_fn=..., epochs=..., validation=...)`, `evaluate(...)`, `save_checkpoint(...)`, `load_checkpoint(...)`: train, validate and save PyTorch state dicts. For nonstandard model/batch formats use a custom `step(model, batch)` callback.
+
+Run a minimal model using TorchVision's synthetic `FakeData`—no data downloads:
+
+```bash
+lispyn execute examples/vision_finetune.hy
+```
+
+Choose the correct matching versions of `torch`, `torchvision`, `torchaudio` and optional `torchcodec` for your environment, especially for GPU installs. In recent TorchAudio versions, media decoding depends on TorchCodec and often FFmpeg; see the [official installation guide](https://docs.pytorch.org/audio/stable/installation).
+
+The v0.3 helpers cover **classifier/head-only and full fine-tuning**, not LoRA, QLoRA, distributed training or automatic hyperparameter search. Text tokenizers and pretrained model weights are supplied by the user and may require external downloads.
