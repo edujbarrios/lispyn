@@ -29,5 +29,23 @@ jobs:
               assert p.returncode == 0, p.stderr
               assert path.with_suffix('.ipynb').exists()
           PY
+      - name: End-to-end Hy -> executed notebook
+        run: |
+          python - <<'PY'
+          import nbformat
+          import subprocess
+          import tempfile
+          from pathlib import Path
+          with tempfile.TemporaryDirectory() as temp:
+              path = Path(temp) / 'experiment.hy'
+              path.write_text('(print (+ 1 2))\n')
+              p = subprocess.run(['lispyn', 'execute', str(path), '--timeout', '30'], capture_output=True, text=True)
+              assert p.returncode == 0, p.stderr
+              notebook = nbformat.read(path.with_suffix('.ipynb'), as_version=4)
+              assert any('3' in str(output.get('text', '')) for output in notebook.cells[1].outputs)
+              p = subprocess.run(['lispyn', 'run', str(path)], capture_output=True, text=True)
+              assert p.returncode == 0, p.stderr
+              assert p.stdout.strip() == '3'
+          PY
       - name: Lispyn macro compilation smoke test
         run: lispyn build examples/first_experiment.hy
