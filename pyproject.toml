@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lispyn"
+version = "0.1.0a1"
+description = "Lisp-powered PyTorch experiments and Jupyter notebooks, built on Hy."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+authors = [{name = "Eduardo J. Barrios"}]
+keywords = ["lisp", "hy", "jupyter", "pytorch", "notebooks", "machine-learning"]
+dependencies = ["hy>=1.0,<2.0", "nbformat>=5.8,<6"]
+
+[project.optional-dependencies]
+notebook = ["nbclient>=0.9,<1", "ipykernel>=6"]
+data = ["pandas>=2"]
+dev = ["pytest>=8", "nbclient>=0.9,<1", "ipykernel>=6"]
+
+[project.scripts]
+lispyn = "lispyn.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/edujbarrios/lispyn"
+Repository = "https://github.com/edujbarrios/lispyn"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+lispyn = ["*.hy"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
