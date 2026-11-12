@@ -1,0 +1,33 @@
+name: Tests
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -e '.[dev,data]'
+      - run: pytest -q
+      - name: Hy translation smoke test
+        run: |
+          python - <<'PY'
+          import subprocess
+          import tempfile
+          from pathlib import Path
+          with tempfile.TemporaryDirectory() as temp:
+              path = Path(temp) / 'sample.hy'
+              path.write_text('(print (+ 1 2))\n')
+              p = subprocess.run(['lispyn', 'build', str(path)], capture_output=True, text=True)
+              assert p.returncode == 0, p.stderr
+              assert path.with_suffix('.ipynb').exists()
+          PY
+      - name: Lispyn macro compilation smoke test
+        run: lispyn build examples/first_experiment.hy
