@@ -188,3 +188,41 @@
   `(do
     (import lispyn.cv_workflows [save-cv-report])
     (save-cv-report ~report ~path)))
+
+; Temporal workflows preserve order, with optional positional embargo gaps.
+
+(defmacro temporal-train-val-test [dataset #* options]
+  "Chronological train/validation/test PyTorch Subsets with optional gaps."
+  `(do
+    (import lispyn.temporal [temporal-three-way-dataset])
+    (temporal-three-way-dataset ~dataset ~@options)))
+
+(defmacro temporal-folds [dataset #* options]
+  "Yield expanding or rolling chronological PyTorch training/validation folds."
+  `(do
+    (import lispyn.temporal [temporal-dataset-folds])
+    (temporal-dataset-folds ~dataset ~@options)))
+
+(defmacro temporal-table-split [frame #* options]
+  "Chronologically split a pandas table; :time-column sorts unique timestamps."
+  `(do
+    (import lispyn.temporal [temporal-three-way-frame])
+    (temporal-three-way-frame ~frame ~@options)))
+
+(defmacro temporal-table-folds [frame #* options]
+  "Yield ordered pandas time-series folds with an optional embargo gap."
+  `(do
+    (import lispyn.temporal [temporal-frame-folds])
+    (temporal-frame-folds ~frame ~@options)))
+
+(defmacro cross-validate-temporal [dataset scorer #* options]
+  "Run a fresh Hy fold-scoring callback on walk-forward PyTorch windows."
+  `(do
+    (import lispyn.temporal [run-temporal-dataset-cv])
+    (run-temporal-dataset-cv ~dataset ~scorer ~@options)))
+
+(defmacro cross-validate-temporal-table [frame scorer #* options]
+  "Run a fresh Hy fold-scoring callback on ordered pandas time windows."
+  `(do
+    (import lispyn.temporal [run-temporal-frame-cv])
+    (run-temporal-frame-cv ~frame ~scorer ~@options)))
