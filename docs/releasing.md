@@ -33,8 +33,8 @@ environment name `pypi` exactly.
    `.github/workflows/package.yml`.
 2. Run both the Tests and Package verification workflows on `main`.
 3. Create a release commit on `main` with the **exact** subject
-   `release: publish v0.18.0a1 [pypi]` (replace the version each time).
-   Alternatively create/push an annotated tag `v0.18.0a1` from a tested
+   `release: publish v0.20.0a1 [pypi]` (replace the version each time).
+   Alternatively create/push an annotated tag `v0.20.0a1` from a tested
    commit. The release workflow verifies the name/version and then publishes
    using the same PyPI Trusted Publisher. For release commits, GitHub
    creates the annotated version tag **after** successful upload.
