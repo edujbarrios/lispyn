@@ -172,6 +172,56 @@ The optional `best_gain` and `final_gain` columns measure absolute metric
 improvement, where a **positive gain is always better**: lower loss or higher
 accuracy. Existing comparison output stays unchanged without `--baseline`.
 
+## Chronological splits and walk-forward CV in Lisp (0.23.0a1)
+
+For time-dependent datasets, random k-fold can leak future observations into
+training. Lispyn now offers **Hy-first time-series macros** that preserve
+chronological order, optionally leave a sample-level **gap** between sets, and
+support both expanding and fixed-size rolling windows.
+
+```hy
+(require lispyn.macros
+  [temporal-train-val-test temporal-folds cross-validate-temporal])
+
+; `dataset` is an indexable PyTorch dataset ordered oldest to newest.
+(setv partitions (temporal-train-val-test dataset
+  :validation-fraction 0.2 :test-fraction 0.1 :gap 2))
+(setv history (get partitions 0))
+(setv final-test (get partitions 2)) ; untouched during model selection
+
+; Each fold trains only on observations earlier than its validation window.
+(for [[fold-train fold-valid]
+      (temporal-folds history
+        :n-splits 3 :test-size 4 :gap 1 :max-train-size 12)]
+  (print "Train / validation:" (len fold-train) (len fold-valid)))
+
+; The callback makes a fresh model per fold and returns one finite score.
+(setv report (cross-validate-temporal history score-window
+  :n-splits 3 :test-size 4 :gap 1 :metric "val_loss"))
+(print (get report "mean"))
+```
+
+The `temporal-train-val-test`, `temporal-folds`, and
+`cross-validate-temporal` macros work with native PyTorch datasets. Pandas
+users have `temporal-table-split`, `temporal-table-folds` and
+`cross-validate-temporal-table`; pass `:time-column "date"` to sort
+ascending by a **unique, nonmissing** timestamp. Without `:time-column`,
+the existing row order is treated as chronological.
+
+An optional `:gap N` excludes N samples immediately before every validation
+window (and before the final test partition in a three-way split).
+The gap counts **rows, not elapsed time**, and cannot protect against features
+already constructed using future information. Three-way fractions apply after
+removing two gaps. For CV, `:max-train-size N` enables rolling rather than
+expanding windows; the earliest training prefix is not validated. Time-series
+CV is **not** standard k-fold: each validation block is evaluated exactly
+once in temporal order, and training can reuse past observations.
+
+The Hy callback must initialize a fresh model and optimizer for each fold.
+See the [complete Hy/PyTorch recipe](examples/temporal_cross_validation.hy),
+also compiled to a Jupyter notebook by `lispyn gallery`. Previous random,
+stratified, grouped and repeated CV macros are unchanged.
+
 ## Repeated cross-validation from Lisp macros (0.22.0a1)
 
 Lispyn's new **`cross-validate`** macro runs a Hy callback on each
