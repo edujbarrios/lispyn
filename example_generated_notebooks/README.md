@@ -18,3 +18,5 @@ lispyn execute examples/resnet_finetune_300.hy -o example_generated_notebooks/re
 ```
 
 The generated notebooks retain Markdown, Python code, and attribution to **Eduardo J. Barrios**. Gallery output is deterministic for reviewable Git diffs.
+
+The ResNet18 recipe now includes runtime `ensure-package` / `use-package` macros for standard-library and third-party Python imports. Merely generating notebooks never calls pip.

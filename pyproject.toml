@@ -4,14 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lispyn"
-version = "0.11.0a1"
+version = "0.12.0a1"
 description = "Lisp-powered PyTorch experiments and Jupyter notebooks, built on Hy."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"
 authors = [{name = "Eduardo J. Barrios"}]
 keywords = ["lisp", "hy", "jupyter", "pytorch", "notebooks", "machine-learning"]
-dependencies = ["hy>=1.0,<2.0", "nbformat>=5.8,<6"]
+dependencies = ["hy>=1.0,<2.0", "nbformat>=5.8,<6", "packaging>=23"]
 
 [project.optional-dependencies]
 notebook = ["nbclient>=0.9,<1", "ipykernel>=6"]

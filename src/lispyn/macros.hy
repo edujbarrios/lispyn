@@ -64,3 +64,14 @@
     (setv ~model-symbol ~model)
     (trainable ~model-symbol)
     (train ~model-symbol ~data ~@options)))
+(defmacro ensure-package [requirement #* options]
+  "Install missing named pip requirements when this cell is executed."
+  `(do
+    (import lispyn.dependencies)
+    (lispyn.dependencies.ensure-package ~requirement ~@options)))
+
+(defmacro use-package [requirement #* options]
+  "Install a missing module if needed, then return it for ordinary Hy use."
+  `(do
+    (import lispyn.dependencies)
+    (lispyn.dependencies.use-package ~requirement ~@options)))

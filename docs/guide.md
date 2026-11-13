@@ -6,7 +6,7 @@ Lispyn is an experimental, open-source project originally created by **Eduardo J
 
 Lispyn extends [Hy](https://hylang.org/) (a Lisp running on Python). It does **not** replace Python, hide PyTorch, or require developers to reimplement familiar ML APIs. Import Python modules and call their functions directly.
 
-> Status: **v0.11.0a1 (experimental)**. No stability guarantees; not yet published on PyPI.
+> Status: **v0.12.0a1 (experimental)**. No stability guarantees; not yet published on PyPI.
 
 ## Install from source
 
@@ -465,3 +465,41 @@ lower learning rate. They support any compatible native PyTorch model
 (not just ResNet). Separate experiment directories retain individual
 checkpoints and training metrics. The full 300-epoch run is **not** performed
 by the test suite, and compiled examples do not contain artificial results.
+
+## Install or use Python libraries from Hy (v0.12 alpha)
+
+Python standard-library modules such as `math` already work with `(import math)`.
+For named third-party dependencies, Lispyn offers runtime-only macros:
+
+```clojure
+(require lispyn.macros [ensure-package use-package])
+(ensure-package "matplotlib>=3.8")
+(ensure-package "scikit-learn" :import-name "sklearn")
+(setv math (use-package "math"))
+(print (math.sqrt 25))
+(setv np (use-package "numpy"))
+(print (np.arange 4))
+```
+
+`ensure-package` checks the *currently running* Python/Jupyter interpreter and
+prints `Requirement already installed in this environment: <package>` when
+available. It installs absent requirements via `sys.executable -m pip` with
+explicit arguments, **never a shell**. Use `:install False` to fail instead
+of installing. `use-package` performs the check and returns the imported
+Python module; distribution and module names may differ, hence `:import-name`.
+
+These macros are compiled into standard Python notebook cells. They do not
+install anything when calling `lispyn build` or `lispyn gallery`; installation
+only happens during **execution** (`lispyn execute` or running notebook cells).
+A Jupyter kernel restart may be necessary after installing compiled packages.
+Only run trusted notebooks with dependencies you intend to install.
+
+Requirements accept distribution names and optional version specifiers, but
+not direct URLs or environment markers. Already-installed distributions are
+checked against version constraints. For GPU-specific Torch packages, install
+a compatible build following official instructions beforehand. These helpers
+do not perform GPU wheel selection or dependency environment isolation.
+
+Use `(import math)` or `(import your_library)` directly if packages are
+already available; these helpers are optional conveniences, not a replacement
+for Hy's normal Python interoperability.

@@ -1,122 +1,36 @@
 # Lispyn
 
-**Lisp for experiments. Jupyter for results.**
+**Write experiments in Lisp. Build real Jupyter notebooks.**
 
-**Write expressive machine-learning experiments in Lisp, turn repetitive steps into reusable macros, and generate executable Jupyter notebooks with Python.** Lispyn keeps your experiments concise and easy to adapt while giving you direct access to PyTorch, TorchVision, TorchAudio and the Python ecosystem.
+Lispyn uses [Hy](https://hylang.org/) macros to make PyTorch experiments shorter, expressive and reusable. A single `.hy` source can describe **Markdown cells, dependencies, datasets, fine-tuning and plots**; Lispyn compiles it into a standard Python Jupyter notebook without needing a separate Hy kernel.
 
-## Why Lisp?
+## Full experiment — ResNet18, two-stage fine-tuning
 
-Jupyter is great for exploring results; Lisp is great for **expressing and reusing the steps that produce them**. Its code-as-data design lets you turn recurring experiment patterns into small macros instead of copying cells between notebooks. Lispyn builds on [Hy](https://hylang.org/) to translate that Lisp source into Python notebooks you can inspect, run and share.
-
-**What it is:** Hy syntax and macros, plus focused helpers for datasets, training and Jupyter. **What it isn't:** a new interpreter, a replacement for PyTorch, or a mature standalone language. The macros are focused (`md`, `head-tune`, `full-tune`, `with-seed`, `with-eval`, `curve`, `defcurve`); most current features are ordinary Python functions callable from Hy. We're building the abstractions incrementally.
-
-## A short experiment
+The following is the complete source of [`examples/resnet_finetune_300.hy`](examples/resnet_finetune_300.hy), including its Markdown cells. Put your images in `examples/data/resnet_images/<class_name>/*.jpg` (or `.png`); each class needs multiple images. The first stage trains the classifier for **10 epochs**, then the second unfreezes all layers for **300 epochs**.
 
 ```clojure
-(import torch)
-(import lispyn.workflow [train])
-(require lispyn.macros [with-seed])
-
-(with-seed 42
-  (setv model (torch.nn.Linear 2 2)))
-
-(setv data (torch.utils.data.TensorDataset
-  (torch.tensor [[0.0 0.0] [1.0 0.0]])
-  (torch.tensor [0 1])))
-
-(setv run
-  (train model data
-    :loss-fn (torch.nn.CrossEntropyLoss)
-    :epochs 3
-    :seed 42
-    :experiment-dir "runs/demo"))
-```
-
-This runs real PyTorch. The optional experiment directory stores `manifest.json` (seed, configuration, dependency versions and best score), `history.json` and `best.pt`. The `.hy` source remains the editable source of truth.
-
-## Install and run
-
-Requires Python 3.10+. Install **PyTorch for your CPU/GPU** from the [official instructions](https://pytorch.org/get-started/locally/) first.
-
-```bash
-git clone https://github.com/edujbarrios/lispyn.git
-cd lispyn
-python -m pip install -e ".[notebook,data]"
-
-# Start a new Lisp experiment
-lispyn new experiment.hy
-
-# Hy → inspectable Python Jupyter notebook (no cell execution)
-lispyn build examples/reproducible_run.hy
-
-# Generate + execute notebook, preserving results
-lispyn execute examples/reproducible_run.hy
-
-# Read the recorded experiment
-lispyn report examples/runs/smoke
-
-# Optional: save a training curve (pip install -e ".[plots]")
-lispyn report examples/runs/smoke --plot examples/runs/smoke/loss.png
-
-# Run Hy directly, without a notebook
-lispyn run examples/first_experiment.hy
-```
-
-`new` creates an editable Hy experiment without running it or overwriting an existing file. `build` compiles Hy into a `.ipynb` with Python code cells; `execute` runs that notebook; `run` uses Hy directly. Markers such as `; %% [markdown]` create separate notebook sections.
-
-## Design curves once, reuse them
-
-Create a personal Matplotlib style as a Lisp macro, then apply it to any recorded training run:
-
-```clojure
-(require lispyn.macros [defcurve])
-(defcurve my-style :theme "dark" :train-color "#22D3EE" :val-color "#FBBF24")
-(my-style result :metric "loss" :title "Training loss" :save "loss.png")
-(my-style result :metric "accuracy" :title "Accuracy" :save "accuracy.png")
-```
-
-Also available: `(curve result :theme "paper" :title "...")`. Choose colors,
-labels, line widths, figure dimensions and export paths. Install optional
-`.[plots]` support; see [the reusable curve example](examples/curve_designs.hy).
-## Markdown cells from Lisp macros
-
-Write notebook documentation *in the same Lisp source* as your code. Top-level
-`md` or `markdown` forms containing literal text become **real Jupyter Markdown cells**:
-
-```clojure
+; ResNet18 experiment: all results are Python/Jupyter notebook cells.
+; Required actual images: examples/data/resnet_images/class_name/*.jpg or *.png
+; This source is NOT executed in CI (300 epochs need a real dataset/GPU).
 (require lispyn.macros [md])
-(md "## Load the dataset" "A short explanation in **Markdown**.")
-(import torch)
-; ... your training code ...
-(md "## Results" "Training curves and the best checkpoint.")
-```
 
-These are actual Hy macros: `lispyn run` treats them as documentation no-ops,
-while `lispyn build` extracts them into notebook cells **without evaluating**
-their content. Keep them at the top level and use literal strings.
+(md "# ResNet18 — transfer learning + full fine-tuning"
+    "An end-to-end **PyTorch** experiment written in Lispyn. It loads labeled images, splits by class, runs head-only tuning, then unfreezes the backbone for **300 epochs**, and produces publication-ready curves."
+    "**Author:** Eduardo J. Barrios · **Source:** Lispyn.")
 
-## Full experiment: ResNet18, 10 + 300 epochs
+(md "## Install required libraries"
+    "The **ensure-package** macro checks packages in the active Python/Jupyter kernel. Already available packages report *Requirement already installed in this environment*; missing ones are installed with that interpreter’s pip."
+    "Python standard-library modules such as `math` need no installation. For CUDA/accelerator setups, install the matching PyTorch and TorchVision builds beforehand. Package installations may require a kernel restart.")
 
-A complete example using real TorchVision weights and your own labeled images:
+(require lispyn.macros [ensure-package use-package])
+(setv math (use-package "math"))
+(print "math.sqrt(16):" (math.sqrt 16))
+(ensure-package "torch")
+(ensure-package "torchvision")
+(ensure-package "matplotlib>=3.8")
 
-```text
-examples/data/resnet_images/
-├── cats/
-│   ├── cat_001.jpg
-│   └── cat_002.jpg
-└── dogs/
-    ├── dog_001.jpg
-    └── dog_002.jpg
-```
-
-The dataset can contain **any number of classes**; the names above are examples.
-Provide enough images per class for a meaningful split. This is actual
-fine-tuning of pretrained weights, **not** training a network from scratch.
-
-```clojure
-(require lispyn.macros [md])
-(md "# ResNet18: image classification" "First tune the head, then the full model.")
-
+(md "## Load and split the image dataset"
+    "Use the original TorchVision preprocessing for the pretrained ResNet18 weights. Classes come from your own image folders; samples are split reproducibly into training and validation.")
 (import torch)
 (import torchvision)
 (import lispyn.media [image-folder])
@@ -125,94 +39,82 @@ fine-tuning of pretrained weights, **not** training a network from scratch.
 
 (seed-all 42)
 (setv weights torchvision.models.ResNet18_Weights.DEFAULT)
-(setv images (image-folder "data/resnet_images" :transform (weights.transforms)))
-(setv parts (split-dataset images :stratify True :seed 42))
-(setv training (get parts 0))
-(setv validation (get parts 1))
+(setv dataset (image-folder "data/resnet_images" :transform (weights.transforms)))
+(setv groups (split-dataset dataset :stratify True :validation-fraction 0.2 :seed 42))
+(setv training (get groups 0))
+(setv validation (get groups 1))
 (setv model (torchvision.models.resnet18 :weights weights))
-(setv model.fc (torch.nn.Linear model.fc.in_features (len images.classes)))
+(setv model.fc (torch.nn.Linear model.fc.in_features (len dataset.classes)))
+(print "Classes:" dataset.classes)
+(print "Train/validation:" (len training) (len validation))
 
-(md "## Stage 1: classifier fine-tuning"
-    "Freeze the backbone and train only the classification head.")
+(md "## Phase 1 — classifier fine-tuning"
+    "Freeze the pretrained ResNet18 backbone and optimize only `model.fc` for **10 epochs**. The class split is reproducible and separate from the training set."
+    "**Note:** This example needs at least two labeled images per class. For correlated images from the same subject, use a *group-aware split* instead.")
+
 (require lispyn.macros [head-tune])
-(setv warmup
+(setv head-run
   (head-tune model training "fc"
     :validation validation
     :loss-fn (torch.nn.CrossEntropyLoss)
-    :epochs 10 :batch-size 16 :lr 0.001
-    :metrics "accuracy" :experiment-dir "runs/resnet/head"))
+    :epochs 10
+    :batch-size 16
+    :lr 0.001
+    :seed 42
+    :metrics "accuracy"
+    :experiment-dir "runs/resnet/head"))
+(print "Head validation accuracy:" (get head-run.history "val_accuracy"))
 
-(md "## Stage 2: deep/full fine-tuning"
-    "Unfreeze the ResNet backbone and continue for **300 epochs**.")
+(md "## Phase 2 — deep/full fine-tuning: 300 epochs"
+    "Unfreeze **every ResNet18 layer**, create a new optimizer with a smaller learning rate, and train for **300 epochs**. This is full fine-tuning of pretrained weights, **not** training from scratch."
+    "A real 300-epoch run may take hours and require a GPU. Run it only with your own dataset and appropriate resources.")
+
 (require lispyn.macros [full-tune])
-(setv deep
-  (full-tune warmup.model training
+(setv deep-run
+  (full-tune head-run.model training
     :validation validation
     :loss-fn (torch.nn.CrossEntropyLoss)
-    :epochs 300 :batch-size 16 :lr 0.00001
-    :metrics "accuracy" :experiment-dir "runs/resnet/deep"))
+    :epochs 300
+    :batch-size 16
+    :lr 0.00001
+    :seed 42
+    :metrics "accuracy"
+    :experiment-dir "runs/resnet/deep"))
+(print "Full tuning best accuracy:" (max (get deep-run.history "val_accuracy")))
 
-(md "## Training curves" "Compare training and validation performance.")
+(md "## Curves and export"
+    "Use one Lisp macro to define a consistent Matplotlib style for **both** training curves. The best checkpoints and JSON histories are saved under `runs/resnet/`.")
+
 (require lispyn.macros [defcurve])
-(defcurve resnet-chart
-  :theme "paper" :train-color "#2563EB" :val-color "#D97706")
-(resnet-chart deep :metric "loss" :title "ResNet18 loss"
+(defcurve resnet-curve
+  :theme "paper"
+  :train-color "#2563EB"
+  :val-color "#D97706"
+  :xlabel "Epoch"
+  :train-label "Train"
+  :val-label "Validation"
+  :figsize [9 4])
+
+(resnet-curve deep-run :metric "loss"
+  :title "ResNet18 — 300-epoch loss"
+  :ylabel "Cross-entropy loss"
   :save "runs/resnet/deep/loss.png")
-(resnet-chart deep :metric "accuracy" :title "ResNet18 accuracy"
+
+(resnet-curve deep-run :metric "accuracy"
+  :title "ResNet18 — 300-epoch accuracy"
+  :ylabel "Top-1 accuracy"
   :save "runs/resnet/deep/accuracy.png")
+(print "Saved ResNet18 plots, histories, and best checkpoints.")
 ```
 
-Full source: [`examples/resnet_finetune_300.hy`](examples/resnet_finetune_300.hy).
-The notebook also contains authored Markdown explanations and saves separate
-histories/checkpoints for both training phases.
+## Generated notebook
 
-**Important:** The 300-epoch notebook is generated, **not executed** in CI.
-You need real class-labeled images and the appropriate PyTorch/TorchVision
-installation. Pretrained weights may download on first execution, and a full
-300-epoch run can be expensive. Avoid data leakage by grouping correlated
-images before splitting; the built-in stratified split is sample-level only.
+**[Open the generated ResNet18 notebook](example_generated_notebooks/resnet_finetune_300.ipynb)** in [`example_generated_notebooks/`](example_generated_notebooks/). It contains real Markdown and translated Python code cells, but **no simulated losses or training outputs**. Use `lispyn gallery` to regenerate the examples without running training.
 
-## Browse the generated notebooks
+To install Lispyn from this repository, use `python -m pip install -e ".[notebook,plots]"`. Run `lispyn build examples/resnet_finetune_300.hy` to regenerate the notebook, or `lispyn execute examples/resnet_finetune_300.hy -o example_generated_notebooks/resnet_finetune_300.ipynb` to **actually train** and save the outputs.
 
-```bash
-# Compile the curated examples; no downloads or model training
-lispyn gallery
+The `ensure-package` macro checks availability when the notebook **runs**, not when it compiles. Available packages print *Requirement already installed in this environment*. Missing named packages can be installed through the notebook kernel’s Python interpreter. Python's standard-library `math` module requires no pip install. GPU-compatible PyTorch builds should normally be installed separately in advance; installing packages into a running kernel may require a restart.
 
-# Inspect the Python Jupyter notebooks
-# example_generated_notebooks/*.ipynb
+**This experiment has not been trained for 300 epochs in CI.** It needs an image dataset and may require substantial compute. Stratified sample-level splitting is not group-aware; use a grouped split when images come from the same subjects, patients or sessions.
 
-# Execute one small example and save its outputs in the gallery
-lispyn execute examples/markdown_cells.hy \
-  -o example_generated_notebooks/markdown_cells.ipynb
-```
-
-The repo includes a gallery under [`example_generated_notebooks/`](example_generated_notebooks/).
-The collection includes an unexecuted ResNet18 notebook with the full
-300-epoch training **code**, but never fabricated metrics or saved models.
-## What works today
-
-| Area | Current support |
-| --- | --- |
-| **Data** | CSV/JSON/Parquet, reproducible and stratified PyTorch dataset splits |
-| **Images** | TorchVision image folders, transforms, pretrained-model recipes |
-| **Text** | Text files, tokenization collators, Transformers and PEFT LoRA |
-| **Audio** | TorchAudio decoding, labeled folders and spectrograms |
-| **Training** | Head-only/full fine-tuning, LoRA, accuracy, checkpoints, metrics |
-| **Reproducibility** | Seeds, recorded environment/configuration, run reports |
-| **Jupyter** | Macro-authored Markdown, generated notebook gallery, reusable Matplotlib designs |
-
-Examples: [`plot_experiment.hy`](examples/plot_experiment.hy), [`stratified_inference.hy`](examples/stratified_inference.hy), [`one_call_training.hy`](examples/one_call_training.hy), [`one_call_lora.hy`](examples/one_call_lora.hy), [`vision_finetune.hy`](examples/vision_finetune.hy), [`audio_features.hy`](examples/audio_features.hy). Optional integrations need their compatible libraries installed.
-
-## Direction
-
-1. **Keep source concise:** useful Lisp macros, no imitation of the PyTorch API.
-2. **Keep experiments inspectable:** generated Python notebooks and explicit outputs.
-3. **Keep the ecosystem open:** native Python functions, community macros, small tested releases.
-
-**Experimental v0.11.0-alpha:** APIs may change. Recording a seed and package versions helps repeat an experiment but does not guarantee deterministic GPU execution. Notebook compilation may execute Hy macros: **run only trusted `.hy` files**. The run manifest does not store dataset contents or secrets; using the same data and base weights remains your responsibility.
-
-For API details, optional installation and advanced examples, see the [extended guide](docs/guide.md). Contributions and issues are welcome.
-
-## Author and license
-
-Created by **Eduardo J. Barrios**. Copyright © 2026 Eduardo J. Barrios. Licensed under **Apache-2.0**; see [LICENSE](LICENSE) and [NOTICE](NOTICE). Redistribution must preserve applicable notices. The license does not require attribution merely for executing a program. Generated notebooks include author attribution by default.
+More capabilities, examples and package options are in the [technical guide](docs/guide.md). Created by **Eduardo J. Barrios**. Apache-2.0 licensed; see [LICENSE](LICENSE) and [NOTICE](NOTICE).
