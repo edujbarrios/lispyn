@@ -75,3 +75,9 @@
   `(do
     (import lispyn.dependencies)
     (lispyn.dependencies.use-package ~requirement ~@options)))
+
+(defmacro pip-install [#* requirements]
+  "Generate an independent dependency cell; install only when executed."
+  `(do
+    (import lispyn.dependencies [ensure-packages])
+    (ensure-packages ~@requirements)))
