@@ -22,7 +22,7 @@ def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="lispyn", description="Hy experiments, Python notebooks, PyTorch freedom."
     )
-    p.add_argument("--version", action="version", version="lispyn 0.19.0a1")
+    p.add_argument("--version", action="version", version="lispyn 0.20.0a1")
     sub = p.add_subparsers(dest="command", required=True)
     health = sub.add_parser("doctor", help="Inspect installation and optional tools without modifying anything")
     health.add_argument("--json", action="store_true", help="Print machine-readable environment summary")
@@ -48,6 +48,7 @@ def parser() -> argparse.ArgumentParser:
     compare.add_argument("--metric", default="loss", help="Metric name without train_/val_ prefix")
     compare.add_argument("--split", choices=("train", "val"), default="val")
     compare.add_argument("--mode", choices=("min", "max"), default=None)
+    compare.add_argument("--baseline", help="Run directory name for relative best/final gains")
     compare.add_argument("--output", type=Path, help="Export summary as .md, .csv, or .json")
     compare.add_argument("--plot", type=Path, help="Save combined PNG/SVG plot (requires plots extra)")
     compare.add_argument("--theme", default="docusaurus-dark",
@@ -84,7 +85,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "compare":
             from .comparison import compare_experiments, format_comparison, save_comparison
             summary = compare_experiments(args.directories, metric=args.metric,
-                                          split=args.split, mode=args.mode)
+                                          split=args.split, mode=args.mode, baseline=args.baseline)
             print(format_comparison(summary))
             if args.output is not None:
                 print(f"Summary saved: {save_comparison(summary, args.output)}")
