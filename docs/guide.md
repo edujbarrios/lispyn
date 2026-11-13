@@ -6,7 +6,7 @@ Lispyn is an experimental, open-source project originally created by **Eduardo J
 
 Lispyn extends [Hy](https://hylang.org/) (a Lisp running on Python). It does **not** replace Python, hide PyTorch, or require developers to reimplement familiar ML APIs. Import Python modules and call their functions directly.
 
-> Status: **v0.10.0a1 (experimental)**. No stability guarantees; not yet published on PyPI.
+> Status: **v0.11.0a1 (experimental)**. No stability guarantees; not yet published on PyPI.
 
 ## Install from source
 
@@ -422,3 +422,46 @@ lispyn report runs/demo --plot runs/demo/curves.svg --metric loss \
 ```
 
 See [examples/curve_designs.hy](../examples/curve_designs.hy).
+
+## Real notebook Markdown macros and generated example gallery (v0.11 alpha)
+
+The Markdown macros accept literal strings as top-level forms:
+
+```clojure
+(require lispyn.macros [md markdown])
+(md "# Notebook title" "Brief explanation with **formatting**.")
+(print 42)
+(markdown "## Evaluation" "Scores and charts.")
+```
+
+`lispyn build` translates them into normal Markdown cells; it never evaluates
+the Markdown. `lispyn run` directly runs the Hy source: the macros are
+documentation no-ops. Dynamic expressions, nested forms and directives sharing
+a source line with other Hy forms are intentionally rejected. If using the
+older `; %% [markdown]` / `; %% [code]` markers, they remain supported.
+
+**Notebook compilation happens code cell by code cell.** Repeat the required
+`(require lispyn.macros [...])` in each cell where its macro is used.
+Runtime variables survive between cells, just as in a normal Jupyter session.
+
+Gallery: `lispyn gallery` compiles curated sources from `examples/` into
+`example_generated_notebooks/`. The command does **not** run the notebook.
+Each notebook has stable cell IDs and includes a Markdown author notice.
+Run a selected experiment with `lispyn execute examples/name.hy -o
+example_generated_notebooks/name.ipynb` to save *real* execution outputs.
+
+### Two-stage ResNet18 fine-tuning
+
+See [examples/resnet_finetune_300.hy](../examples/resnet_finetune_300.hy)
+for a full model, data, Markdown, metrics and plotting pipeline.
+It expects `examples/data/resnet_images/<class_name>/*.jpg` (or PNG) and
+pretrained weights downloaded by TorchVision on first execution.
+
+The helper macros `(head-tune model train-data "fc" :epochs 10 ...)`
+and `(full-tune model train-data :epochs 300 ...)` delegate to native
+PyTorch via `lispyn.workflow.train()`. The first freezes backbone parameters;
+the second unfreezes every parameter and starts a fresh optimizer at a
+lower learning rate. They support any compatible native PyTorch model
+(not just ResNet). Separate experiment directories retain individual
+checkpoints and training metrics. The full 300-epoch run is **not** performed
+by the test suite, and compiled examples do not contain artificial results.

@@ -40,3 +40,27 @@
   `(do
     (import lispyn.plots [make-plotter])
     (setv ~name (make-plotter ~@options))))
+
+(defmacro md [#* content]
+  "Document a notebook cell; Lispyn turns literal top-level calls into Markdown."
+  None)
+
+(defmacro markdown [#* content]
+  "Long-form alias for md."
+  None)
+
+(defmacro head-tune [model data head #* options]
+  "Train only named model head using the native PyTorch optimizer."
+  `(do
+    (import lispyn.workflow [train])
+    (train ~model ~data :head ~head ~@options)))
+
+(defmacro full-tune [model data #* options]
+  "Unfreeze all layers, then fine-tune with a fresh native optimizer."
+  (setv model-symbol (hy.gensym "lispyn_model"))
+  `(do
+    (import lispyn.training [trainable])
+    (import lispyn.workflow [train])
+    (setv ~model-symbol ~model)
+    (trainable ~model-symbol)
+    (train ~model-symbol ~data ~@options)))

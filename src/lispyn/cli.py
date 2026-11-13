@@ -13,13 +13,14 @@ from .compiler import LispynError, check_source, run_hy
 from .notebooks import build_notebook, execute_notebook, write_notebook
 from .reproducibility import summarize_run
 from .scaffold import create_experiment
+from .gallery import generate_gallery
 
 
 def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="lispyn", description="Hy experiments, Python notebooks, PyTorch freedom."
     )
-    p.add_argument("--version", action="version", version="lispyn 0.10.0a1")
+    p.add_argument("--version", action="version", version="lispyn 0.11.0a1")
     sub = p.add_subparsers(dest="command", required=True)
     for name, help_text in [
         ("build", "Generate a Python Jupyter notebook without executing it"),
@@ -33,6 +34,11 @@ def parser() -> argparse.ArgumentParser:
         if name == "execute":
             action.add_argument("--timeout", type=int, default=900, help="Per-cell timeout in seconds")
             action.add_argument("--kernel", default="python3", help="Installed Jupyter kernel name")
+    gallery = sub.add_parser(
+        "gallery", help="Compile examples into example_generated_notebooks/ without execution"
+    )
+    gallery.add_argument("--source-dir", type=Path, default=Path("examples"))
+    gallery.add_argument("--output-dir", type=Path, default=Path("example_generated_notebooks"))
     starter = sub.add_parser("new", help="Create a ready-to-edit Hy/Jupyter experiment")
     starter.add_argument("source", type=Path, help="Path for a new .hy file")
     report = sub.add_parser("report", help="Summarize a saved Lispyn experiment")
@@ -51,6 +57,11 @@ def parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     try:
+        if args.command == "gallery":
+            paths = generate_gallery(args.source_dir, args.output_dir)
+            for path in paths:
+                print(f"Generated: {path}")
+            return 0
         if args.command == "new":
             print(f"Created: {create_experiment(args.source)}")
             return 0
