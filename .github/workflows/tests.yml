@@ -5,7 +5,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         python-version: ['3.11', '3.12']
@@ -98,6 +98,8 @@ jobs:
       - name: Real LoRA and TorchAudio integration (Python 3.11)
         if: matrix.python-version == '3.11'
         run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg
           python -m pip install -e '.[peft]'
           python -m pip install 'torchcodec==0.10.0' --index-url https://download.pytorch.org/whl/cpu
           pytest -q tests/test_peft_audio.py
