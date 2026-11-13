@@ -11,6 +11,10 @@ timestamp validation for pandas and native PyTorch adapters. The new temporal
 macros support one-call fold-scoring callbacks and privacy-minimal JSON
 reports. A runnable synthetic Hy demo is compiled into the notebook gallery.
 
+To verify the Hy-first walk-forward workflow from the checked-out repository,
+run `lispyn run examples/temporal_cross_validation.hy` after installing a
+native PyTorch build. The example uses synthetic, chronological observations.
+
 Package metadata, CLI version and distribution verification are aligned to
 `0.23.0a1`. The official trusted-publishing workflow validates, builds,
 uploads to PyPI and tags the successfully published release.
