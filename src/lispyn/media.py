@@ -25,11 +25,12 @@ def image_folder(root, *, transform=None):
     return datasets.ImageFolder(str(root), transform=transform or transforms.ToTensor())
 
 
-def text_dataset(path, *, text_key="text", label_key=None, encoding="utf-8"):
+def text_dataset(path, *, text_key="text", label_key=None, label_cast=None, encoding="utf-8"):
     """Read .txt, .csv, .json or .jsonl into a native torch Dataset.
 
-    Each item is {'text': str} plus optional {'label': raw_label}. Tokenization
-    is intentionally separate: pass a tokenizer collator to DataLoader.
+    Each item is {'text': str} plus optional {'label': raw_label}. For CSV
+    classification labels, pass label_cast=int or a custom label encoder.
+    Tokenization is separate: pass token_collate(tokenizer) to DataLoader.
     """
     from torch.utils.data import Dataset
 
@@ -56,7 +57,8 @@ def text_dataset(path, *, text_key="text", label_key=None, encoding="utf-8"):
         if label_key is not None:
             if label_key not in row:
                 raise ValueError(f"Missing label field: {label_key}")
-            item["label"] = row[label_key]
+            item["label"] = (label_cast(row[label_key]) if label_cast is not None
+                             else row[label_key])
         output.append(item)
 
     class TextDataset(Dataset):
