@@ -25,7 +25,7 @@ ATTRIBUTION = (
 # Comment markers work in both ordinary Hy execution and notebook compilation.
 CELL_MARKER = re.compile(r"^\s*;\s*%%(?:\s*\[(code|markdown)\])?\s*$")
 # A literal top-level markdown macro is a first-class cell boundary.
-MARKDOWN_FORM = re.compile(r"(?m)^\s*\((?:md|markdown)(?:\s|\))")
+NOTEBOOK_FORM = re.compile(r"(?m)^\s*\((?:md|markdown|pip-install)(?:\s|\))")
 
 
 def split_sections(text: str) -> list[tuple[str, str]]:
@@ -69,13 +69,13 @@ def split_sections(text: str) -> list[tuple[str, str]]:
 
 
 def split_markdown_macros(code: str) -> list[tuple[str, str]]:
-    """Extract literal, standalone top-level (md "...") forms as Markdown.
+    """Extract top-level Markdown and pip-install forms into notebook cells.
 
-    Hy's reader supplies form positions; we never evaluate Markdown arguments
-    or use regex to guess where a nested or multiline Lisp form ends.
-    The directive must be the only form on its start/end lines.
+    The Hy reader supplies exact form positions. These special forms must
+    occupy their own lines. Their arguments are literal strings only, so
+    notebook generation can validate them without executing any installations.
     """
-    if not MARKDOWN_FORM.search(code):
+    if not NOTEBOOK_FORM.search(code):
         return [("code", code)] if code.strip() else []
     import hy
     from hy.models import Expression, String
@@ -83,14 +83,14 @@ def split_markdown_macros(code: str) -> list[tuple[str, str]]:
     try:
         forms = list(hy.read_many(code))
     except Exception as exc:
-        raise LispynError(f"Cannot parse Hy source for Markdown cells: {exc}") from exc
+        raise LispynError(f"Cannot parse Hy source for notebook cells: {exc}") from exc
 
     lines = code.splitlines(keepends=True)
-    sections = []
+    sections: list[tuple[str, str]] = []
     cursor = 0
     found = False
 
-    def append_code(end):
+    def append_code(end: int) -> None:
         chunk = "".join(lines[cursor:end]).strip()
         if chunk and any(line.strip() and not line.lstrip().startswith(";")
                          for line in chunk.splitlines()):
@@ -98,27 +98,49 @@ def split_markdown_macros(code: str) -> list[tuple[str, str]]:
 
     for index, form in enumerate(forms):
         if not (isinstance(form, Expression) and form and
-                str(form[0]) in ("md", "markdown")):
+                str(form[0]) in ("md", "markdown", "pip-install")):
             continue
+        name = str(form[0])
         start = form.start_line - 1
         end = form.end_line
         if (start < cursor or
                 (index > 0 and forms[index - 1].end_line >= form.start_line) or
                 (index + 1 < len(forms) and
                  forms[index + 1].start_line <= form.end_line)):
-            raise LispynError("Markdown macros must occupy their own lines")
-        if not form[1:] or not all(isinstance(part, String) for part in form[1:]):
+            raise LispynError(
+                "Markdown and pip-install macros must occupy their own lines"
+            )
+        if not form[1:] or not all(isinstance(item, String) for item in form[1:]):
+            if name == "pip-install":
+                raise LispynError("(pip-install ...) accepts literal package strings only")
             raise LispynError("(md ...) accepts one or more literal Markdown strings only")
-        content = "\n\n".join(str(part) for part in form[1:]).strip()
-        if not content:
-            raise LispynError("Markdown cell text cannot be empty")
+
+        texts = [str(item) for item in form[1:]]
         append_code(start)
-        sections.append(("markdown", content))
+        if name == "pip-install":
+            from .dependencies import _parse
+            try:
+                for requirement in texts:
+                    _parse(requirement, None)
+            except ValueError as exc:
+                raise LispynError(f"Invalid pip-install cell: {exc}") from exc
+            params = ", ".join(repr(requirement) for requirement in texts)
+            script = (
+                "# Lispyn: install missing packages in the active Jupyter kernel\n"
+                "from lispyn.dependencies import ensure_packages\n"
+                f"ensure_packages({params})"
+            )
+            sections.append(("dependencies", script))
+        else:
+            content = "\n\n".join(texts).strip()
+            if not content:
+                raise LispynError("Markdown cell text cannot be empty")
+            sections.append(("markdown", content))
         cursor = end
         found = True
 
     if not found:
-        raise LispynError("Markdown macros must be top-level forms")
+        raise LispynError("Markdown and pip-install macros must be top-level forms")
     append_code(len(lines))
     return sections
 
@@ -134,7 +156,7 @@ def compile_section(code: str, *, source: Path) -> str:
 def build_notebook(source: Path) -> nbformat.NotebookNode:
     """Generate notebook cells without executing Python.
 
-    Hy Markdown forms and the old '; %%' comment markers are supported.
+    Hy Markdown/pip-install forms and old '; %%' markers are supported.
     Each code cell is compiled independently; repeat (require ...) for any
     macro you use in a later code cell.
     """
@@ -148,16 +170,20 @@ def build_notebook(source: Path) -> nbformat.NotebookNode:
             parts.append((kind, content))
 
     has_markers = any(CELL_MARKER.match(line) for line in text.splitlines())
-    has_markdown_forms = any(MARKDOWN_FORM.search(content) for kind, content in
-                             split_sections(text) if kind == "code")
+    has_directives = any(NOTEBOOK_FORM.search(content) for kind, content in
+                         split_sections(text) if kind == "code")
     cells = [new_markdown_cell(f"# {source.stem}\n\n{ATTRIBUTION}")]
 
-    if not has_markers and not has_markdown_forms:
+    if not has_markers and not has_directives:
         cells.append(new_code_cell(compile_hy(source)))
     else:
         for kind, content in parts:
             if kind == "markdown":
                 cells.append(new_markdown_cell(content))
+            elif kind == "dependencies":
+                cells.append(new_code_cell(
+                    content, metadata={"tags": ["lispyn-pip-install"]}
+                ))
             else:
                 cells.append(new_code_cell(compile_section(content, source=source)))
 
