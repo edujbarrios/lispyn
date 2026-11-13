@@ -6,7 +6,7 @@ Lispyn is an experimental, open-source project originally created by **Eduardo J
 
 Lispyn extends [Hy](https://hylang.org/) (a Lisp running on Python). It does **not** replace Python, hide PyTorch, or require developers to reimplement familiar ML APIs. Import Python modules and call their functions directly.
 
-> Status: **v0.4.0a1 (experimental)**. No stability guarantees; not yet published on PyPI.
+> Status: **v0.5.0a1 (experimental)**. No stability guarantees; not yet published on PyPI.
 
 ## Install from source
 
@@ -107,6 +107,7 @@ Use source comment markers to request Jupyter Markdown and Python code cells. Ma
 - [ ] More dataset formats and stratified/grouped splitting
 - [x] Optional Hugging Face PEFT/LoRA adapter utilities and offline text demo
 - [x] Pretrained TorchVision recipe and genuine WAV decoding tests
+- [x] Metrics, JSON history and automatic best-checkpoint saving
 - [ ] Reproducibility reports and richer error diagnostics
 
 
@@ -180,6 +181,56 @@ For image inference and transfer learning use `torchvision.models.*_Weights.DEFA
 For audio reading, current TorchAudio `load()` delegates to **TorchCodec**. Install matching `torch`, `torchaudio`, `torchcodec` and system FFmpeg support as needed. The automated test suite generates an actual WAV file and checks decode, resampling and AudioFolder loading, in addition to the synthetic spectrogram example. See [TorchAudio installation notes](https://docs.pytorch.org/audio/stable/installation).
 
 **Scope:** LoRA fine-tuning, classifier-only tuning, and full tuning work on supported models. QLoRA/quantization, distributed training, speech recognition pipelines, streaming datasets and automatic task inference are not provided yet. The user's data/models may contain sensitive content and must be handled according to their permissions and licenses.
+
+## Training with metrics and checkpoints (v0.5 alpha)
+
+Train image, text or audio models through the same small helper, while using
+native PyTorch datasets, modules, optimizers and loss functions.
+
+```clojure
+(import torch)
+(import lispyn.training [fit accuracy])
+
+(setv history
+  (fit model train-loader optimizer
+    :loss-fn (torch.nn.CrossEntropyLoss)
+    :validation val-loader
+    :epochs 5
+    :metrics "accuracy"
+    :save-best "checkpoints/best.pt"
+    :log-path "history.json"))
+```
+
+Here `model`, `train-loader`, `val-loader` and `optimizer` are your existing
+PyTorch objects. The complete runnable demonstration is in
+[examples/compact_training.hy](examples/compact_training.hy). Run it with:
+
+```bash
+lispyn execute examples/compact_training.hy
+```
+
+**New `fit()` options:**
+
+- `metrics="accuracy"` or `metrics={"metric_name": metric_fn}`; a custom
+  metric receives `(logits, labels)` and returns one numeric batch score.
+- `save_best="best.pt"` writes model and optimizer state on improvement;
+  the default monitor is `val_loss` when validation is present, otherwise
+  `train_loss`. Set `monitor="val_accuracy", mode="max"` to prefer accuracy.
+- `log_path="history.json"` writes metric and loss arrays after every epoch.
+- `evaluate_metrics(...)` returns loss plus optional metrics; existing
+  `evaluate(...)` still returns a single float. `load_checkpoint(...)`
+  restores the checkpoint.
+
+The checkpoint represents the **best epoch**. Training continues afterward,
+so the in-memory model ends at the final epoch; restore the best one explicitly.
+History values are **unweighted means of per-batch** values, not dataset-wide
+sample-weighted statistics. The built-in accuracy metric expects multiclass
+logits `[batch, classes]` and class labels `[batch]`. A custom `step`
+returns a scalar loss and cannot supply prediction metrics in this version.
+
+For PEFT models, a regular `save_best` checkpoint stores the complete
+`state_dict`. Use `save_adapter(...)` separately when you want a compact
+adapter-only artifact. The base model must be available when restoring adapters.
 
 ## Contributing
 
