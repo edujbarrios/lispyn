@@ -11,13 +11,14 @@ import sys
 
 from .compiler import LispynError, check_source, run_hy
 from .notebooks import build_notebook, execute_notebook, write_notebook
+from .reproducibility import summarize_run
 
 
 def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="lispyn", description="Hy experiments, Python notebooks, PyTorch freedom."
     )
-    p.add_argument("--version", action="version", version="lispyn 0.6.0a1")
+    p.add_argument("--version", action="version", version="lispyn 0.7.0a1")
     sub = p.add_subparsers(dest="command", required=True)
     for name, help_text in [
         ("build", "Generate a Python Jupyter notebook without executing it"),
@@ -31,12 +32,17 @@ def parser() -> argparse.ArgumentParser:
         if name == "execute":
             action.add_argument("--timeout", type=int, default=900, help="Per-cell timeout in seconds")
             action.add_argument("--kernel", default="python3", help="Installed Jupyter kernel name")
+    report = sub.add_parser("report", help="Summarize a saved Lispyn experiment")
+    report.add_argument("directory", type=Path, help="Directory with manifest.json")
     return p
 
 
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     try:
+        if args.command == "report":
+            print(summarize_run(args.directory))
+            return 0
         source = check_source(args.source)
         if args.command == "run":
             return run_hy(source)

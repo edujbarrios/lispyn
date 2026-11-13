@@ -10,3 +10,4 @@ examples/*.ipynb
 
 # Local experiment outputs
 examples/artifacts/
+examples/runs/

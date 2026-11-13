@@ -2,14 +2,10 @@
 ; SPDX-License-Identifier: Apache-2.0
 
 (defmacro with-seed [seed #* body]
-  "Set Python and PyTorch random seeds, then evaluate BODY."
-  (setv seed-symbol (hy.gensym "lispyn_seed"))
+  "Seed Python, NumPy (when installed) and torch before evaluating BODY."
   `(do
-    (import random)
-    (import torch)
-    (setv ~seed-symbol ~seed)
-    (random.seed ~seed-symbol)
-    (torch.manual_seed ~seed-symbol)
+    (import lispyn.reproducibility [seed-all])
+    (seed-all ~seed)
     ~@body))
 
 (defmacro train-for [model loader optimizer criterion epochs]
