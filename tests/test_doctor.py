@@ -16,7 +16,7 @@ def test_doctor_does_not_import_or_install_optional_packages(monkeypatch):
         raise metadata.PackageNotFoundError(name)
 
     monkeypatch.setattr(doctor.metadata, "version", fake_version)
-    monkeypatch.setattr(doctor.shutil, "which", lambda name: "/bin/hy2py")
+    monkeypatch.setattr(doctor, "find_hy_executable", lambda name: "/bin/hy2py")
     result = doctor.inspect_environment()
     assert result["can_build"] is True
     assert result["can_execute"] is True
@@ -31,7 +31,7 @@ def test_doctor_missing_essentials_returns_actionable_instructions(monkeypatch):
         raise metadata.PackageNotFoundError(name)
 
     monkeypatch.setattr(doctor.metadata, "version", missing)
-    monkeypatch.setattr(doctor.shutil, "which", lambda name: None)
+    monkeypatch.setattr(doctor, "find_hy_executable", lambda name: None)
     report = doctor.inspect_environment()
     assert not report["can_build"]
     assert not report["can_execute"]

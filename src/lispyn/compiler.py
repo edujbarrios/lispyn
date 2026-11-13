@@ -8,6 +8,18 @@ from __future__ import annotations
 from pathlib import Path
 import shutil
 import subprocess
+import sys
+
+
+def find_hy_executable(name: str) -> str | None:
+    """Find the Hy script in the *current Python environment*, even if its
+    bin/Scripts directory has not been activated in PATH.
+    """
+    scripts = Path(sys.executable).resolve().parent
+    for candidate in (scripts / name, scripts / (name + ".exe")):
+        if candidate.is_file():
+            return str(candidate)
+    return shutil.which(name)
 
 
 class LispynError(Exception):
@@ -30,9 +42,9 @@ def compile_hy(source: Path, *, cwd: Path | None = None) -> str:
     code you trust. This is not a sandbox.
     """
     source = check_source(source)
-    hy2py = shutil.which("hy2py")
+    hy2py = find_hy_executable("hy2py")
     if hy2py is None:
-        raise LispynError("hy2py not found. Install Lispyn with: pip install -e .")
+        raise LispynError("hy2py not found in this Python environment. Install Hy and Lispyn.")
     result = subprocess.run(
         [hy2py, str(source)],
         cwd=cwd or source.parent,
@@ -50,7 +62,7 @@ def compile_hy(source: Path, *, cwd: Path | None = None) -> str:
 def run_hy(source: Path) -> int:
     """Execute trusted Hy source without creating a notebook."""
     source = check_source(source)
-    hy = shutil.which("hy")
+    hy = find_hy_executable("hy")
     if hy is None:
-        raise LispynError("hy not found. Install Lispyn with: pip install -e .")
+        raise LispynError("hy not found in this Python environment. Install Hy and Lispyn.")
     return subprocess.run([hy, str(source)], cwd=source.parent, check=False).returncode

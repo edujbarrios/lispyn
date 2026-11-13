@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from importlib import metadata
 import platform
-import shutil
+from .compiler import find_hy_executable
 
 from . import __version__
 
@@ -28,7 +28,7 @@ def inspect_environment() -> dict:
         except metadata.PackageNotFoundError:
             packages[name] = None
 
-    hy2py = bool(shutil.which("hy2py"))
+    hy2py = bool(find_hy_executable("hy2py"))
     core_ready = all(packages[name] is not None for name in _CORE) and hy2py
     notebook_ready = core_ready and all(
         packages[name] is not None for name in _NOTEBOOK
