@@ -15,7 +15,7 @@ def find_hy_executable(name: str) -> str | None:
     """Find the Hy script in the *current Python environment*, even if its
     bin/Scripts directory has not been activated in PATH.
     """
-    scripts = Path(sys.executable).resolve().parent
+    scripts = Path(sys.executable).parent
     for candidate in (scripts / name, scripts / (name + ".exe")):
         if candidate.is_file():
             return str(candidate)
