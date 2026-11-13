@@ -6,7 +6,7 @@ Lispyn is an experimental, open-source project originally created by **Eduardo J
 
 Lispyn extends [Hy](https://hylang.org/) (a Lisp running on Python). It does **not** replace Python, hide PyTorch, or require developers to reimplement familiar ML APIs. Import Python modules and call their functions directly.
 
-> Status: **v0.15.0a1 (experimental)**. No stability guarantees; not yet published on PyPI.
+> Status: **v0.16.0a1 (experimental)**. No stability guarantees; not yet published on PyPI.
 
 ## Install from source
 
@@ -573,3 +573,33 @@ epoch counts. Only recorded values are plotted.
 The [synthetic plotting example](../examples/synthetic_curves.hy)
 generates both PNGs embedded in the README. Both are deterministic
 **synthetic examples** and require no downloads or model training.
+
+## Classification evaluation and reusable confusion matrices (v0.16 alpha)
+
+Class labels and predictions can be plotted without scikit-learn. Use the
+`confusion-matrix` and `defconfusion` **compile-time Hy macros**:
+
+```clojure
+(require lispyn.macros [confusion-matrix defconfusion])
+(defconfusion my-report :theme "docusaurus-dark"
+  :palette "turquoise-spectrum" :title-size 16)
+(my-report actual predicted :classes ["cat" "dog"]
+  :normalize "true" :title "Classifier results" :save "matrix.png")
+
+; Or create one plot directly:
+(confusion-matrix actual predicted :normalize "all" :save "all.png")
+```
+
+`lispyn.classification.confusion_counts(actual, predicted, classes=None)`
+returns the raw count matrix and ordered class labels. The source accepts
+one-dimensional arrays, lists or scalar tensors. Class order defaults to
+the first observed occurrence, unless `:classes` explicitly sets the order.
+Unknown observed classes are rejected rather than silently excluded.
+
+`normalize` supports `None` (counts), `"true"` (per actual class),
+`"pred"` (per predicted class) and `"all"` (whole dataset). Zero-count
+denominators produce zeros. The optional plotting dependency is Matplotlib
+only, not scikit-learn. The result is a native Matplotlib Figure.
+
+See [`examples/confusion_matrix.hy`](../examples/confusion_matrix.hy) for a
+synthetic example and its generated image in `docs/images/`.

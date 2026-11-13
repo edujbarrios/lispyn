@@ -49,6 +49,12 @@ Full reproducible source: [synthetic_curves.hy](https://github.com/edujbarrios/l
 · [generated Jupyter notebook](https://github.com/edujbarrios/lispyn/blob/main/example_generated_notebooks/synthetic_curves.ipynb).
 Regenerate the figures with `lispyn run examples/synthetic_curves.hy`.
 
+Classification reports are equally concise: the new `defconfusion` macro
+creates a reusable dark-themed confusion matrix from actual and predicted labels.
+See the [Lisp example](https://github.com/edujbarrios/lispyn/blob/main/examples/confusion_matrix.hy)
+and its [generated figure](https://github.com/edujbarrios/lispyn/blob/main/docs/images/synthetic_confusion_matrix.png).
+The example uses **synthetic class labels**, not real model predictions.
+
 ## Full experiment — ResNet18, two-stage fine-tuning
 
 The following is the complete source of [`examples/resnet_finetune_300.hy`](https://github.com/edujbarrios/lispyn/blob/main/examples/resnet_finetune_300.hy), including its Markdown cells. Put your images in `examples/data/resnet_images/<class_name>/*.jpg` (or `.png`); each class needs multiple images. The first stage trains the classifier for **10 epochs**, then the second unfreezes all layers for **300 epochs**.

@@ -38,7 +38,7 @@ jobs:
               assert any(n.endswith('/NOTICE') for n in names)
               assert any(n.endswith('/entry_points.txt') for n in names)
               assert 'Name: lispyn' in metadata
-              assert 'Version: 0.15.0a1' in metadata
+              assert 'Version: 0.16.0a1' in metadata
               assert 'License-Expression: Apache-2.0' in metadata
           with taropen(sdist) as archive:
               names = archive.getnames()
@@ -67,7 +67,7 @@ jobs:
           from pathlib import Path
           report = json.loads(Path('/tmp/wheel-doctor.json').read_text())
           assert report['can_build']
-          assert report['lispyn'] == '0.15.0a1'
+          assert report['lispyn'] == '0.16.0a1'
           nb = nbformat.read('/tmp/installed.ipynb', as_version=4)
           assert any('lispyn-pip-install' in c.metadata.get('tags', [])
                      for c in nb.cells if c.cell_type == 'code')

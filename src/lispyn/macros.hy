@@ -87,3 +87,15 @@
   `(do
     (import lispyn.plots [plot-comparison])
     (plot-comparison ~runs ~@options)))
+
+(defmacro confusion-matrix [actual predicted #* options]
+  "Plot classification labels as a styled confusion matrix."
+  `(do
+    (import lispyn.classification [plot-confusion-matrix])
+    (plot-confusion-matrix ~actual ~predicted ~@options)))
+
+(defmacro defconfusion [name #* options]
+  "Create a reusable confusion-matrix design with default options."
+  `(do
+    (import lispyn.classification [make-confusion-plotter])
+    (setv ~name (make-confusion-plotter ~@options))))

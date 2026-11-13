@@ -24,3 +24,5 @@ The ResNet18 recipe now includes runtime `ensure-package` / `use-package` macros
 The gallery also includes `synthetic_curves.ipynb`, a complete no-model-training Matplotlib example. Its generated PNG is committed at `docs/images/synthetic_training_curves.png` and embedded in the main README.
 
 Synthetic demo: `synthetic_curves.ipynb` generates two committed PNG figures with the `docusaurus-dark` theme and `turquoise-spectrum` palette, one showing train/validation curves and the other comparing three synthetic runs. Both are generated, not fabricated model results.
+
+The gallery also includes `confusion_matrix.ipynb`: a synthetic classification example with a reusable `defconfusion` macro and a turquoise-on-dark matrix figure at `docs/images/synthetic_confusion_matrix.png`. It is compiled without execution or fabricated model predictions.
