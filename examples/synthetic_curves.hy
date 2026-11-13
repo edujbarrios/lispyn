@@ -60,6 +60,9 @@
 (md "## Compare multiple experiments"
     "The **compare-curves** macro plots multiple named runs together using the same seven-color turquoise palette. These are also entirely synthetic.")
 
+; Every notebook code cell is compiled separately, so require its macros again.
+(require lispyn.macros [compare-curves])
+
 (setv variants
   {"Baseline · synthetic"
     {"val_loss"
