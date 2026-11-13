@@ -6,7 +6,7 @@ Lispyn is an experimental, open-source project originally created by **Eduardo J
 
 Lispyn extends [Hy](https://hylang.org/) (a Lisp running on Python). It does **not** replace Python, hide PyTorch, or require developers to reimplement familiar ML APIs. Import Python modules and call their functions directly.
 
-> Status: **v0.12.0a1 (experimental)**. No stability guarantees; not yet published on PyPI.
+> Status: **v0.13.0a1 (experimental)**. No stability guarantees; not yet published on PyPI.
 
 ## Install from source
 
@@ -503,3 +503,39 @@ do not perform GPU wheel selection or dependency environment isolation.
 Use `(import math)` or `(import your_library)` directly if packages are
 already available; these helpers are optional conveniences, not a replacement
 for Hy's normal Python interoperability.
+
+## Dedicated pip-install cells and a synthetic plotting demo (v0.13 alpha)
+
+Write `(pip-install "matplotlib>=3.8" "numpy")` at the **top level**
+of a Hy file, on its own lines, after `(require lispyn.macros [pip-install])`.
+`lispyn build` turns this form into a **dedicated Python Jupyter code cell**,
+tagged `lispyn-pip-install`, containing a call to `ensure_packages`.
+Installed requirements and standard-library modules are reported and skipped.
+Missing named packages are installed only on **notebook execution** using
+the current kernel's Python executable. Do not install arbitrary dependency
+lists from untrusted notebooks; packages may run installation scripts.
+
+```clojure
+(require lispyn.macros [pip-install])
+(pip-install "math" "packaging>=23" "matplotlib>=3.8")
+
+; Code after the setup cell:
+(require lispyn.macros [use-package])
+(setv math (use-package "math" :install False))
+(print (math.sqrt 16))
+```
+
+`pip-install` accepts only literal named package strings; options such as
+pip flags, URLs or dynamic expressions are rejected in compiled notebook
+cells. If a package is missing, you can opt out of automatic installation
+using the `ensure-package` macro with `:install False` instead.
+
+Hy-to-Python compilation and gallery generation do not trigger pip.
+Any newly installed native extension may require restarting the Jupyter
+kernel before import. For CUDA builds use the official PyTorch installation
+command in a suitable virtual environment beforehand.
+
+The [synthetic plotting example](../examples/synthetic_curves.hy) includes
+the pip-install macro, a named Matplotlib theme and a deterministic synthetic
+loss history. Run `lispyn run examples/synthetic_curves.hy` to regenerate
+`docs/images/synthetic_training_curves.png` for the README.

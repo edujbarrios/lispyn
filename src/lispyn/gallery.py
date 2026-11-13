@@ -14,6 +14,7 @@ from .notebooks import build_notebook, write_notebook
 
 EXAMPLE_SOURCES = (
     "markdown_cells.hy",
+    "synthetic_curves.hy",
     "resnet_finetune_300.hy",
     "one_call_training.hy",
     "curve_designs.hy",

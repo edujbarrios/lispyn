@@ -4,6 +4,25 @@
 
 Lispyn uses [Hy](https://hylang.org/) macros to make PyTorch experiments shorter, expressive and reusable. A single `.hy` source can describe **Markdown cells, dependencies, datasets, fine-tuning and plots**; Lispyn compiles it into a standard Python Jupyter notebook without needing a separate Hy kernel.
 
+## Matplotlib in a few lines
+
+Build a reusable style for training and validation curves. In this small example, `history` contains **synthetic** loss values:
+
+```hy
+(require lispyn.macros [defcurve])
+(setv history {"train_loss" [1.2 0.8 0.5]
+               "val_loss" [1.3 0.95 0.7]})
+(defcurve my-style :theme "paper"
+  :train-color "#2563EB" :val-color "#D97706")
+(my-style history :metric "loss" :title "My first training curves"
+  :save "training.png")
+```
+
+The <a href="examples/synthetic_curves.hy">full demo</a> uses 18 synthetic epochs to produce this image directly from Hy and Matplotlib—**not results from a trained model**:
+
+![Synthetic training and validation loss plotted by Lispyn](docs/images/synthetic_training_curves.png)
+
+Generate the image with `lispyn run examples/synthetic_curves.hy`; the generated notebook is in [`example_generated_notebooks/synthetic_curves.ipynb`](example_generated_notebooks/synthetic_curves.ipynb).
 ## Full experiment — ResNet18, two-stage fine-tuning
 
 The following is the complete source of [`examples/resnet_finetune_300.hy`](examples/resnet_finetune_300.hy), including its Markdown cells. Put your images in `examples/data/resnet_images/<class_name>/*.jpg` (or `.png`); each class needs multiple images. The first stage trains the classifier for **10 epochs**, then the second unfreezes all layers for **300 epochs**.
@@ -19,15 +38,15 @@ The following is the complete source of [`examples/resnet_finetune_300.hy`](exam
     "**Author:** Eduardo J. Barrios · **Source:** Lispyn.")
 
 (md "## Install required libraries"
-    "The **ensure-package** macro checks packages in the active Python/Jupyter kernel. Already available packages report *Requirement already installed in this environment*; missing ones are installed with that interpreter’s pip."
-    "Python standard-library modules such as `math` need no installation. For CUDA/accelerator setups, install the matching PyTorch and TorchVision builds beforehand. Package installations may require a kernel restart.")
+    "The **pip-install** macro generates a dedicated Python notebook setup cell. Already available packages report *Requirement already installed in this environment*; only missing packages are installed in the current kernel."
+    "Python standard-library modules such as `math` need no installation. For CUDA/accelerator setups, install matching PyTorch/TorchVision builds beforehand. Installing native packages may require a kernel restart.")
 
-(require lispyn.macros [ensure-package use-package])
-(setv math (use-package "math"))
+(require lispyn.macros [pip-install])
+(pip-install "torch" "torchvision" "matplotlib>=3.8")
+
+(require lispyn.macros [use-package])
+(setv math (use-package "math" :install False))
 (print "math.sqrt(16):" (math.sqrt 16))
-(ensure-package "torch")
-(ensure-package "torchvision")
-(ensure-package "matplotlib>=3.8")
 
 (md "## Load and split the image dataset"
     "Use the original TorchVision preprocessing for the pretrained ResNet18 weights. Classes come from your own image folders; samples are split reproducibly into training and validation.")
@@ -113,7 +132,7 @@ The following is the complete source of [`examples/resnet_finetune_300.hy`](exam
 
 To install Lispyn from this repository, use `python -m pip install -e ".[notebook,plots]"`. Run `lispyn build examples/resnet_finetune_300.hy` to regenerate the notebook, or `lispyn execute examples/resnet_finetune_300.hy -o example_generated_notebooks/resnet_finetune_300.ipynb` to **actually train** and save the outputs.
 
-The `ensure-package` macro checks availability when the notebook **runs**, not when it compiles. Available packages print *Requirement already installed in this environment*. Missing named packages can be installed through the notebook kernel’s Python interpreter. Python's standard-library `math` module requires no pip install. GPU-compatible PyTorch builds should normally be installed separately in advance; installing packages into a running kernel may require a restart.
+The `pip-install` macro creates a dedicated dependency cell that checks availability when the notebook **runs**, not when it compiles. Available packages print *Requirement already installed in this environment*. Missing named packages can be installed through the notebook kernel’s Python interpreter. Python's standard-library `math` module requires no pip install. GPU-compatible PyTorch builds should normally be installed separately in advance; installing packages into a running kernel may require a restart.
 
 **This experiment has not been trained for 300 epochs in CI.** It needs an image dataset and may require substantial compute. Stratified sample-level splitting is not group-aware; use a grouped split when images come from the same subjects, patients or sessions.
 

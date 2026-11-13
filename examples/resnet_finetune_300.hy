@@ -8,15 +8,15 @@
     "**Author:** Eduardo J. Barrios · **Source:** Lispyn.")
 
 (md "## Install required libraries"
-    "The **ensure-package** macro checks packages in the active Python/Jupyter kernel. Already available packages report *Requirement already installed in this environment*; missing ones are installed with that interpreter’s pip."
-    "Python standard-library modules such as `math` need no installation. For CUDA/accelerator setups, install the matching PyTorch and TorchVision builds beforehand. Package installations may require a kernel restart.")
+    "The **pip-install** macro generates a dedicated Python notebook setup cell. Already available packages report *Requirement already installed in this environment*; only missing packages are installed in the current kernel."
+    "Python standard-library modules such as `math` need no installation. For CUDA/accelerator setups, install matching PyTorch/TorchVision builds beforehand. Installing native packages may require a kernel restart.")
 
-(require lispyn.macros [ensure-package use-package])
-(setv math (use-package "math"))
+(require lispyn.macros [pip-install])
+(pip-install "torch" "torchvision" "matplotlib>=3.8")
+
+(require lispyn.macros [use-package])
+(setv math (use-package "math" :install False))
 (print "math.sqrt(16):" (math.sqrt 16))
-(ensure-package "torch")
-(ensure-package "torchvision")
-(ensure-package "matplotlib>=3.8")
 
 (md "## Load and split the image dataset"
     "Use the original TorchVision preprocessing for the pretrained ResNet18 weights. Classes come from your own image folders; samples are split reproducibly into training and validation.")
