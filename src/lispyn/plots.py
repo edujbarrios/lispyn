@@ -130,7 +130,10 @@ def plot_history(source, *, metric="loss", save=None, theme="clean",
     ax.set_ylabel(ylabel if ylabel is not None else label, color=foreground)
     ax.set_title(title if title is not None else f"Lispyn · {label}",
                  color=foreground)
-    ax.grid(bool(grid), color=theme_colors["grid"], alpha=0.45)
+    if grid:
+        ax.grid(True, color=theme_colors["grid"], alpha=0.45)
+    else:
+        ax.grid(False)
     if legend:
         ax.legend(facecolor=theme_colors["axes"], edgecolor=theme_colors["grid"],
                   labelcolor=foreground)
