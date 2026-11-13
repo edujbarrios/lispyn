@@ -19,6 +19,8 @@ EXAMPLE_SOURCES = (
     "confusion_matrix.hy",
     "early_stopping.hy",
     "advanced_training.hy",
+    "cross_validation.hy",
+    "repeated_cross_validation.hy",
     "resnet_finetune_300.hy",
     "one_call_training.hy",
     "curve_designs.hy",
