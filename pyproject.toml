@@ -19,7 +19,7 @@ data = ["pandas>=2"]
 vision = ["torch", "torchvision", "pillow"]
 audio = ["torch", "torchaudio", "torchcodec"]
 text = ["torch"]
-peft = ["peft>=0.15", "transformers>=4.45,<6"]
+peft = ["peft>=0.15", "transformers>=4.45,<5"]
 dev = ["pytest>=8", "nbclient>=0.9,<1", "ipykernel>=6"]
 
 [project.scripts]
