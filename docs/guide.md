@@ -734,3 +734,23 @@ Note: this release does not provide automatic mixed precision or
 resume-from-checkpoint. For complex schedulers and multiple optimizer
 parameter groups, the plotted learning rate is the first group's
 learning rate. Use native PyTorch controls for additional requirements.
+
+
+## Group-safe dataset splits and baseline-aware comparisons (0.20.0a1)
+
+`train_validation_split(frame, stratify="label", seed=42)` divides a DataFrame
+by class, keeping at least one record of each class in both partitions.
+`train_validation_split(frame, group="subject_id", seed=42)` instead keeps all
+rows belonging to each subject together. For arbitrary indexable PyTorch
+datasets use `split_dataset(dataset, groups=subject_ids, seed=42)`, passing a
+sequence with one group ID per sample. The number of groups must be at least
+two; grouped and stratified modes cannot be combined. Group assignments are
+reproducible for a fixed input and seed, but validation counts may differ
+from the requested fraction because groups are indivisible. Neither split
+requires scikit-learn.
+
+`lispyn compare runs/baseline runs/candidate --baseline baseline` adds the
+absolute `best_gain` and `final_gain` fields to Markdown, CSV, or JSON
+reports. Gains are direction-aware: positive means improved relative to the
+baseline whether the selected metric is minimized (loss) or maximized
+(accuracy). The default comparison shape is unchanged.
