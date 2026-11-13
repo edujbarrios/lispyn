@@ -6,7 +6,7 @@ Lispyn is an experimental, open-source project originally created by **Eduardo J
 
 Lispyn extends [Hy](https://hylang.org/) (a Lisp running on Python). It does **not** replace Python, hide PyTorch, or require developers to reimplement familiar ML APIs. Import Python modules and call their functions directly.
 
-> Status: **v0.3.0a1 (experimental)**. No stability guarantees; not yet published on PyPI.
+> Status: **v0.4.0a1 (experimental)**. No stability guarantees; not yet published on PyPI.
 
 ## Install from source
 
@@ -105,7 +105,61 @@ Use source comment markers to request Jupyter Markdown and Python code cells. Ma
 - [x] Training, evaluation, checkpoint helpers and a train-for macro
 - [x] ImageFolder, text datasets with tokenization, and labeled audio folders
 - [ ] More dataset formats and stratified/grouped splitting
+- [x] Optional Hugging Face PEFT/LoRA adapter utilities and offline text demo
+- [x] Pretrained TorchVision recipe and genuine WAV decoding tests
 - [ ] Reproducibility reports and richer error diagnostics
+
+
+## LoRA adapters, pretrained vision and real audio (v0.4 alpha)
+
+**Use native PyTorch. Add only the abstraction you need.**
+
+Install optional text/adapter dependencies (choose the correct torch build for your CPU/GPU first):
+
+```bash
+python -m pip install -e ".[peft]"
+```
+
+A short Hy example for **LoRA fine-tuning**:
+
+```clojure
+(import torch)
+(import lispyn.peft_utils [lora parameter-counts save-adapter])
+(import lispyn.training [fit])
+
+(setv model (lora model ["query" "value"] :rank 8 :task-type "SEQ_CLS"))
+(setv optim (torch.optim.AdamW
+  (filter (fn [p] p.requires_grad) (.parameters model)) :lr 0.0001))
+(setv history (fit model batches optim :epochs 3))
+(save-adapter model "adapters/experiment")
+```
+
+Here \`model\` is an existing compatible Transformers model and \`batches\` is a loader returning mappings with \`input_ids\`, \`attention_mask\`, and \`labels\`. LoRA targets depend on the model architecture. A small, completely offline BERT demonstration lives at [examples/text_lora.hy](examples/text_lora.hy).
+
+- \`lora(model, ["query", "value"], rank=8, task_type="SEQ_CLS")\` uses **Hugging Face PEFT**; it is not a new LoRA implementation. The original model is modified by PEFT.
+- \`parameter_counts(model)\` reports the trainable/total parameters and percentage.
+- \`save_adapter(model, folder)\` and \`load_adapter(base_model, folder)\` save/load LoRA adapters, not complete pretrained weights. You must retain or re-download the compatible base model separately.
+- Full fine-tuning is still available: \`trainable(model)\` unfreezes all parameters. For head-only training, \`trainable(model, "fc")\` freezes the rest.
+
+### Examples
+
+```bash
+# Tiny BERT + LoRA, no model download (requires optional peft extra)
+lispyn execute examples/text_lora.hy
+
+# Native TorchAudio mel spectrogram, no downloads
+lispyn execute examples/audio_features.hy
+
+# Real ResNet18 transfer learning: supply photos/class_name/*.jpg
+# (downloads the official pretrained weights on first use)
+lispyn execute examples/vision_transfer.hy
+```
+
+For image inference and transfer learning use \`torchvision.models.*_Weights.DEFAULT\` with \`weights.transforms()\` to match pretrained normalization and resize. See [TorchVision's model guide](https://docs.pytorch.org/vision/main/models.html).
+
+For audio reading, current TorchAudio \`load()\` delegates to **TorchCodec**. Install matching \`torch\`, \`torchaudio\`, \`torchcodec\` and system FFmpeg support as needed. The automated test suite generates an actual WAV file and checks decode, resampling and AudioFolder loading, in addition to the synthetic spectrogram example. See [TorchAudio installation notes](https://docs.pytorch.org/audio/stable/installation).
+
+**Scope:** LoRA fine-tuning, classifier-only tuning, and full tuning work on supported models. QLoRA/quantization, distributed training, speech recognition pipelines, streaming datasets and automatic task inference are not provided yet. The user's data/models may contain sensitive content and must be handled according to their permissions and licenses.
 
 ## Contributing
 
