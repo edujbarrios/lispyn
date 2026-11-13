@@ -6,7 +6,7 @@ Lispyn is an experimental, open-source project originally created by **Eduardo J
 
 Lispyn extends [Hy](https://hylang.org/) (a Lisp running on Python). It does **not** replace Python, hide PyTorch, or require developers to reimplement familiar ML APIs. Import Python modules and call their functions directly.
 
-> Status: **v0.5.0a1 (experimental)**. No stability guarantees; not yet published on PyPI.
+> Status: **v0.6.0a1 (experimental)**. No stability guarantees; not yet published on PyPI.
 
 ## Install from source
 
@@ -108,6 +108,8 @@ Use source comment markers to request Jupyter Markdown and Python code cells. Ma
 - [x] Optional Hugging Face PEFT/LoRA adapter utilities and offline text demo
 - [x] Pretrained TorchVision recipe and genuine WAV decoding tests
 - [x] Metrics, JSON history and automatic best-checkpoint saving
+- [x] One-call PyTorch and LoRA training with automatic optimizer/device
+- [x] Typed labels for CSV text datasets
 - [ ] Reproducibility reports and richer error diagnostics
 
 
@@ -231,6 +233,61 @@ returns a scalar loss and cannot supply prediction metrics in this version.
 For PEFT models, a regular `save_best` checkpoint stores the complete
 `state_dict`. Use `save_adapter(...)` separately when you want a compact
 adapter-only artifact. The base model must be available when restoring adapters.
+
+## One-call experiments (v0.6 alpha)
+
+Lispyn now provides `train()` in `lispyn.workflow`: it accepts native PyTorch
+`Dataset`, `DataLoader`, or an iterable of already prepared batches, creates
+a native optimizer, optionally applies head-only or PEFT LoRA fine-tuning,
+then delegates to `fit()`. **You can always call PyTorch directly**.
+
+```clojure
+(import torch)
+(import lispyn.workflow [train])
+
+(setv result
+  (train model dataset
+    :loss-fn (torch.nn.CrossEntropyLoss)
+    :validation valid-dataset
+    :epochs 5
+    :lr 0.0001
+    :metrics "accuracy"
+    :save-best "best.pt"))
+(print result.history)
+```
+
+The `model`, `dataset` and `valid-dataset` here are ordinary PyTorch objects.
+For a full working offline example, use:
+
+```bash
+lispyn execute examples/one_call_training.hy
+```
+
+Choose `head="fc"` to train the named classifier head, or use
+`lora_modules=["query", "value"], lora_rank=8, lora_task_type="SEQ_CLS"`
+for LoRA through optional Hugging Face PEFT. These options cannot be combined.
+Use the offline `examples/one_call_lora.hy` to exercise the LoRA path.
+
+`train()` returns an object containing `.model`, `.optimizer`, `.history`,
+and `.device`. The model may be a new PEFT-wrapped model, so use the returned
+`.model` after LoRA. The default optimizer is AdamW; alternatives are
+`"adam"`, `"sgd"` or a PyTorch optimizer class. Arbitrary optimizer arguments
+can be forwarded in `optimizer_kwargs`.
+
+`device="auto"` selects CUDA, then MPS, then CPU according to PyTorch's
+availability checks. An explicit `device="cpu"` is helpful when debugging
+or producing CPU-only notebook examples.
+
+**Text CSV labels:** `text_dataset("train.csv", label_key="label", label_cast=int)`
+converts numeric CSV labels to integers for `token_collate(...)`. A custom
+`label_cast` callable can map named labels. Without it, CSV labels remain
+strings, as read by Python's CSV parser.
+
+**Scope:** This wrapper does not choose a loss function automatically, download
+models, tokenize text automatically, quantize models, or hide PyTorch features.
+The dataset split must be prepared separately and should not leak samples
+between training and validation. For standard PEFT adapter-only saves use
+`save_adapter()` separately from `save_best` full state dictionaries.
 
 ## Contributing
 
