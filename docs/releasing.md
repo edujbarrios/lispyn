@@ -3,6 +3,14 @@
 Lispyn uses [PyPI Trusted Publishing](https://docs.pypi.org/trusted-publishers/using-a-publisher/).
 No long-lived PyPI API token or password is stored in GitHub.
 
+## Release payload: 0.20.0a1
+
+This release adds grouped train/validation splits, optional class-stratified
+tabular splits and baseline-aware experiment comparisons. Package metadata,
+CLI version and distribution verification are aligned to `0.20.0a1`.
+The normal trusted-publishing workflow validates the build, tests it and
+publishes to PyPI before creating the annotated version tag.
+
 ## First alpha: 0.17.0a1 (published)
 
 The initial PyPI Pending Trusted Publisher was registered with:
