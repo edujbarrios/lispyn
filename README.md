@@ -43,6 +43,9 @@ git clone https://github.com/edujbarrios/lispyn.git
 cd lispyn
 python -m pip install -e ".[notebook,data]"
 
+# Start a new Lisp experiment
+lispyn new experiment.hy
+
 # Hy → inspectable Python Jupyter notebook (no cell execution)
 lispyn build examples/reproducible_run.hy
 
@@ -56,7 +59,7 @@ lispyn report examples/runs/smoke
 lispyn run examples/first_experiment.hy
 ```
 
-`build` compiles Hy into a `.ipynb` with Python code cells; `execute` runs that notebook; `run` uses Hy directly. Markers such as `; %% [markdown]` create separate notebook sections.
+`new` creates an editable Hy experiment without running it or overwriting an existing file. `build` compiles Hy into a `.ipynb` with Python code cells; `execute` runs that notebook; `run` uses Hy directly. Markers such as `; %% [markdown]` create separate notebook sections.
 
 ## What works today
 
@@ -78,7 +81,7 @@ Examples: [`stratified_inference.hy`](examples/stratified_inference.hy), [`one_c
 2. **Keep experiments inspectable:** generated Python notebooks and explicit outputs.
 3. **Keep the ecosystem open:** native Python functions, community macros, small tested releases.
 
-**Experimental v0.8.0-alpha:** APIs may change. Recording a seed and package versions helps repeat an experiment but does not guarantee deterministic GPU execution. Notebook compilation may execute Hy macros: **run only trusted `.hy` files**. The run manifest does not store dataset contents or secrets; using the same data and base weights remains your responsibility.
+**Experimental v0.8.1-alpha:** APIs may change. Recording a seed and package versions helps repeat an experiment but does not guarantee deterministic GPU execution. Notebook compilation may execute Hy macros: **run only trusted `.hy` files**. The run manifest does not store dataset contents or secrets; using the same data and base weights remains your responsibility.
 
 For API details, optional installation and advanced examples, see the [extended guide](docs/guide.md). Contributions and issues are welcome.
 

@@ -12,13 +12,14 @@ import sys
 from .compiler import LispynError, check_source, run_hy
 from .notebooks import build_notebook, execute_notebook, write_notebook
 from .reproducibility import summarize_run
+from .scaffold import create_experiment
 
 
 def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="lispyn", description="Hy experiments, Python notebooks, PyTorch freedom."
     )
-    p.add_argument("--version", action="version", version="lispyn 0.8.0a1")
+    p.add_argument("--version", action="version", version="lispyn 0.8.1a1")
     sub = p.add_subparsers(dest="command", required=True)
     for name, help_text in [
         ("build", "Generate a Python Jupyter notebook without executing it"),
@@ -32,6 +33,8 @@ def parser() -> argparse.ArgumentParser:
         if name == "execute":
             action.add_argument("--timeout", type=int, default=900, help="Per-cell timeout in seconds")
             action.add_argument("--kernel", default="python3", help="Installed Jupyter kernel name")
+    starter = sub.add_parser("new", help="Create a ready-to-edit Hy/Jupyter experiment")
+    starter.add_argument("source", type=Path, help="Path for a new .hy file")
     report = sub.add_parser("report", help="Summarize a saved Lispyn experiment")
     report.add_argument("directory", type=Path, help="Directory with manifest.json")
     return p
@@ -40,6 +43,9 @@ def parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     try:
+        if args.command == "new":
+            print(f"Created: {create_experiment(args.source)}")
+            return 0
         if args.command == "report":
             print(summarize_run(args.directory))
             return 0

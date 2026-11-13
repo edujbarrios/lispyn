@@ -21,7 +21,7 @@
   `(do
     (import torch)
     (setv ~model-symbol ~model)
-    (setv ~previous-mode ~model-symbol.training)
+    (setv ~previous-mode (getattr ~model-symbol "training"))
     (.eval ~model-symbol)
     (try
       (with [(torch.inference_mode)]

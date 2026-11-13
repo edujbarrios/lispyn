@@ -16,6 +16,16 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - run: python -m pip install -e '.[dev,data]'
       - run: pytest -q
+      - name: New experiment scaffolding
+        run: |
+          lispyn new examples/generated_starter.hy
+          lispyn build examples/generated_starter.hy
+          python - <<'PY'
+          import nbformat
+          nb = nbformat.read('examples/generated_starter.ipynb', as_version=4)
+          assert any('Eduardo J. Barrios' in cell.source for cell in nb.cells if cell.cell_type == 'markdown')
+          assert sum(cell.cell_type == 'code' for cell in nb.cells) >= 1
+          PY
       - name: Hy translation smoke test
         run: |
           python - <<'PY'
@@ -91,10 +101,11 @@ jobs:
         if: matrix.python-version == '3.11'
         run: |
           python -m pip install 'torch==2.10.0+cpu' --index-url https://download.pytorch.org/whl/cpu
-          pytest -q tests/test_tracking.py tests/test_workflow.py tests/test_reproducibility.py tests/test_split_dataset.py tests/test_macros.py
+          pytest -q tests/test_tracking.py tests/test_workflow.py tests/test_reproducibility.py tests/test_split_dataset.py tests/test_macros.py tests/test_scaffold.py
           lispyn execute examples/compact_training.hy --timeout 120
           lispyn execute examples/reproducible_run.hy --timeout 120
           lispyn execute examples/stratified_inference.hy --timeout 120
+          lispyn execute examples/generated_starter.hy --timeout 120
           lispyn report examples/runs/smoke
           lispyn execute examples/one_call_training.hy --timeout 120
           python - <<'PY'
