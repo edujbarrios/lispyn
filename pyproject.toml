@@ -1,16 +1,27 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "lispyn"
-version = "0.13.0a1"
+version = "0.14.0a1"
 description = "Lisp-powered PyTorch experiments and Jupyter notebooks, built on Hy."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
 authors = [{name = "Eduardo J. Barrios"}]
 keywords = ["lisp", "hy", "jupyter", "pytorch", "notebooks", "machine-learning"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = ["hy>=1.0,<2.0", "nbformat>=5.8,<6", "packaging>=23"]
 
 [project.optional-dependencies]
@@ -29,6 +40,8 @@ lispyn = "lispyn.cli:main"
 [project.urls]
 Homepage = "https://github.com/edujbarrios/lispyn"
 Repository = "https://github.com/edujbarrios/lispyn"
+Issues = "https://github.com/edujbarrios/lispyn/issues"
+Documentation = "https://github.com/edujbarrios/lispyn/blob/main/docs/guide.md"
 
 [tool.setuptools.packages.find]
 where = ["src"]

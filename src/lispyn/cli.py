@@ -6,6 +6,7 @@ Copyright 2026 Eduardo J. Barrios. SPDX-License-Identifier: Apache-2.0.
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 import sys
 
@@ -14,14 +15,17 @@ from .notebooks import build_notebook, execute_notebook, write_notebook
 from .reproducibility import summarize_run
 from .scaffold import create_experiment
 from .gallery import generate_gallery
+from .doctor import inspect_environment, format_report
 
 
 def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="lispyn", description="Hy experiments, Python notebooks, PyTorch freedom."
     )
-    p.add_argument("--version", action="version", version="lispyn 0.13.0a1")
+    p.add_argument("--version", action="version", version="lispyn 0.14.0a1")
     sub = p.add_subparsers(dest="command", required=True)
+    health = sub.add_parser("doctor", help="Inspect installation and optional tools without modifying anything")
+    health.add_argument("--json", action="store_true", help="Print machine-readable environment summary")
     for name, help_text in [
         ("build", "Generate a Python Jupyter notebook without executing it"),
         ("execute", "Generate, execute, and save the Jupyter notebook"),
@@ -57,6 +61,10 @@ def parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     try:
+        if args.command == "doctor":
+            report = inspect_environment()
+            print(json.dumps(report, indent=2) if args.json else format_report(report))
+            return 0
         if args.command == "gallery":
             paths = generate_gallery(args.source_dir, args.output_dir)
             for path in paths:

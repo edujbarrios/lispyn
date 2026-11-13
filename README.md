@@ -4,6 +4,13 @@
 
 Lispyn uses [Hy](https://hylang.org/) macros to make PyTorch experiments shorter, expressive and reusable. A single `.hy` source can describe **Markdown cells, dependencies, datasets, fine-tuning and plots**; Lispyn compiles it into a standard Python Jupyter notebook without needing a separate Hy kernel.
 
+**Installation:** for development, clone the repository and use
+`python -m pip install -e ".[dev,notebook,plots]"`. For users, we are
+preparing a PyPI release; `pip install lispyn` is intended **after publication**,
+not a claim that a package is already available there. Check your local setup
+with `lispyn doctor` (or `lispyn doctor --json`). See
+[release instructions](https://github.com/edujbarrios/lispyn/blob/main/docs/releasing.md).
+
 ## Matplotlib in a few lines
 
 Build a reusable style for training and validation curves. In this small example, `history` contains **synthetic** loss values:
@@ -18,14 +25,14 @@ Build a reusable style for training and validation curves. In this small example
   :save "training.png")
 ```
 
-The <a href="examples/synthetic_curves.hy">full demo</a> uses 18 synthetic epochs to produce this image directly from Hy and Matplotlib—**not results from a trained model**:
+The <a href="https://github.com/edujbarrios/lispyn/blob/main/examples/synthetic_curves.hy">full demo</a> uses 18 synthetic epochs to produce this image directly from Hy and Matplotlib—**not results from a trained model**:
 
-![Synthetic training and validation loss plotted by Lispyn](docs/images/synthetic_training_curves.png)
+![Synthetic training and validation loss plotted by Lispyn](https://raw.githubusercontent.com/edujbarrios/lispyn/main/docs/images/synthetic_training_curves.png)
 
-Generate the image with `lispyn run examples/synthetic_curves.hy`; the generated notebook is in [`example_generated_notebooks/synthetic_curves.ipynb`](example_generated_notebooks/synthetic_curves.ipynb).
+Generate the image with `lispyn run examples/synthetic_curves.hy`; the generated notebook is in [`example_generated_notebooks/synthetic_curves.ipynb`](https://github.com/edujbarrios/lispyn/blob/main/example_generated_notebooks/synthetic_curves.ipynb).
 ## Full experiment — ResNet18, two-stage fine-tuning
 
-The following is the complete source of [`examples/resnet_finetune_300.hy`](examples/resnet_finetune_300.hy), including its Markdown cells. Put your images in `examples/data/resnet_images/<class_name>/*.jpg` (or `.png`); each class needs multiple images. The first stage trains the classifier for **10 epochs**, then the second unfreezes all layers for **300 epochs**.
+The following is the complete source of [`examples/resnet_finetune_300.hy`](https://github.com/edujbarrios/lispyn/blob/main/examples/resnet_finetune_300.hy), including its Markdown cells. Put your images in `examples/data/resnet_images/<class_name>/*.jpg` (or `.png`); each class needs multiple images. The first stage trains the classifier for **10 epochs**, then the second unfreezes all layers for **300 epochs**.
 
 ```clojure
 ; ResNet18 experiment: all results are Python/Jupyter notebook cells.
@@ -128,7 +135,7 @@ The following is the complete source of [`examples/resnet_finetune_300.hy`](exam
 
 ## Generated notebook
 
-**[Open the generated ResNet18 notebook](example_generated_notebooks/resnet_finetune_300.ipynb)** in [`example_generated_notebooks/`](example_generated_notebooks/). It contains real Markdown and translated Python code cells, but **no simulated losses or training outputs**. Use `lispyn gallery` to regenerate the examples without running training.
+**[Open the generated ResNet18 notebook](https://github.com/edujbarrios/lispyn/blob/main/example_generated_notebooks/resnet_finetune_300.ipynb)** in [`example_generated_notebooks/`](https://github.com/edujbarrios/lispyn/tree/main/example_generated_notebooks/). It contains real Markdown and translated Python code cells, but **no simulated losses or training outputs**. Use `lispyn gallery` to regenerate the examples without running training.
 
 To install Lispyn from this repository, use `python -m pip install -e ".[notebook,plots]"`. Run `lispyn build examples/resnet_finetune_300.hy` to regenerate the notebook, or `lispyn execute examples/resnet_finetune_300.hy -o example_generated_notebooks/resnet_finetune_300.ipynb` to **actually train** and save the outputs.
 
@@ -136,4 +143,4 @@ The `pip-install` macro creates a dedicated dependency cell that checks availabi
 
 **This experiment has not been trained for 300 epochs in CI.** It needs an image dataset and may require substantial compute. Stratified sample-level splitting is not group-aware; use a grouped split when images come from the same subjects, patients or sessions.
 
-More capabilities, examples and package options are in the [technical guide](docs/guide.md). Created by **Eduardo J. Barrios**. Apache-2.0 licensed; see [LICENSE](LICENSE) and [NOTICE](NOTICE).
+More capabilities, examples and package options are in the [technical guide](https://github.com/edujbarrios/lispyn/blob/main/docs/guide.md). Created by **Eduardo J. Barrios**. Apache-2.0 licensed; see [LICENSE](https://github.com/edujbarrios/lispyn/blob/main/LICENSE) and [NOTICE](https://github.com/edujbarrios/lispyn/blob/main/NOTICE).
