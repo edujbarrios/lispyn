@@ -122,3 +122,18 @@ def use_package(requirement: str, *, import_name: str | None = None,
             f"{module!r} could not be imported. You may need to restart "
             "the kernel after package installation."
         ) from exc
+
+
+
+def ensure_packages(*requirements: str, install: bool = True) -> list[str]:
+    """Check a list of named packages for a dedicated notebook pip cell.
+
+    Validate every requirement *before* trying to install anything; then
+    skip the distributions/modules already available in this kernel.
+    """
+    if not requirements:
+        raise ValueError("pip-install requires at least one named package")
+    for requirement in requirements:
+        _parse(requirement, None)
+    return [ensure_package(requirement, install=install)
+            for requirement in requirements]
