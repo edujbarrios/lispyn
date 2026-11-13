@@ -19,7 +19,7 @@
 
 ; The independent held-out test set is not included in model selection.
 (setv training (get partitions 0))
-(setv fold-labels (lfor index (.indices training) (get labels index)))
+(setv fold-labels (lfor index (getattr training "indices") (get labels index)))
 (setv scores [])
 (for [[fold-train fold-validation]
       (cross-validation-folds training :n-splits 5 :labels fold-labels :seed 42)]
