@@ -36,3 +36,15 @@ def test_with_eval_restores_train_mode_after_exception(tmp_path):
     assert "restored" in result.stdout
     notebook = build_notebook(source)
     assert "inference_mode" in notebook.cells[-1].source
+
+
+
+def test_macro_in_second_notebook_cell_expands():
+    """Regression: each separately compiled cell needs its own require."""
+    from lispyn.notebooks import build_notebook
+
+    source = Path(__file__).resolve().parents[1] / "examples" / "stratified_inference.hy"
+    notebook = build_notebook(source)
+    last_cell = notebook.cells[-1].source
+    assert "inference_mode" in last_cell
+    assert "with_eval(" not in last_cell
