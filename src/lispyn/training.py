@@ -1,4 +1,4 @@
-"""Small PyTorch training and transfer-learning helpers.
+"""Small, reusable PyTorch training, metrics and checkpoint helpers.
 
 Copyright 2026 Eduardo J. Barrios. SPDX-License-Identifier: Apache-2.0.
 """
@@ -6,6 +6,8 @@ Copyright 2026 Eduardo J. Barrios. SPDX-License-Identifier: Apache-2.0.
 from __future__ import annotations
 
 from collections.abc import Mapping
+import json
+import math
 from pathlib import Path
 
 
@@ -14,7 +16,7 @@ def trainable(model, *layers):
 
     trainable(model, 'fc') trains only ResNet's final classifier.
     trainable(model) enables full fine-tuning (all parameters).
-    Returns model so calls can be chained. Create optimizer *after* calling.
+    Create the optimizer *after* calling this function.
     """
     parameters = list(model.named_parameters())
     if layers and not any(
@@ -37,78 +39,177 @@ def _move(value, device):
     return value.to(device) if hasattr(value, "to") else value
 
 
-def _batch_loss(model, batch, loss_fn, step, device):
+def accuracy(logits, labels):
+    """Top-1 classification accuracy for logits [batch, classes]."""
+    if logits.ndim != 2 or logits.shape[1] < 2 or labels.ndim != 1:
+        raise ValueError("accuracy expects logits [batch, classes] and labels [batch]")
+    if logits.shape[0] != labels.shape[0]:
+        raise ValueError("Logits and labels must have the same batch size")
+    return (logits.argmax(dim=-1) == labels).float().mean().item()
+
+
+def _metrics(metrics):
+    if metrics is None:
+        return {}
+    if metrics == "accuracy":
+        return {"accuracy": accuracy}
+    if not isinstance(metrics, Mapping) or not metrics:
+        raise ValueError("metrics must be 'accuracy' or a mapping of metric names to callables")
+    if any(not isinstance(k, str) or not k or k == "loss" or not callable(v)
+           for k, v in metrics.items()):
+        raise ValueError("Metric names must be nonempty strings (not 'loss') with callable values")
+    return dict(metrics)
+
+
+def _batch_result(model, batch, loss_fn, step, device):
+    """One forward pass produces both the loss and optional prediction metrics."""
     batch = _move(batch, device)
+    logits = labels = None
     if step is not None:
         loss = step(model, batch)
     elif isinstance(batch, Mapping):
-        # Natural fit for Hugging Face models whose forward returns .loss.
+        labels = batch.get("labels")
         output = model(**batch)
+        logits = (output.logits if hasattr(output, "logits")
+                  else output.get("logits") if isinstance(output, Mapping)
+                  else None)
         if loss_fn is None:
-            loss = output.loss if hasattr(output, "loss") else output["loss"]
+            loss = (output.loss if hasattr(output, "loss")
+                    else output["loss"])
         else:
-            label = batch.get("labels")
-            if label is None:
+            if labels is None:
                 raise ValueError("Labeled mapping batch must contain 'labels'")
-            logits = (output.logits if hasattr(output, "logits") else
-                      output["logits"] if isinstance(output, Mapping) else output)
-            loss = loss_fn(logits, label)
+            if logits is None:
+                raise ValueError("Model output must provide logits to use loss_fn")
+            loss = loss_fn(logits, labels)
     else:
         if loss_fn is None:
             raise ValueError("Pass loss_fn for (inputs, labels) batches")
         inputs, labels = batch
-        loss = loss_fn(model(inputs), labels)
+        logits = model(inputs)
+        loss = loss_fn(logits, labels)
     if getattr(loss, "ndim", None) != 0:
         raise ValueError("Training step must return a scalar loss tensor")
-    return loss
+    return loss, logits, labels
+
+
+def _batch_loss(model, batch, loss_fn, step, device):
+    """Backward-compatible internal helper."""
+    return _batch_result(model, batch, loss_fn, step, device)[0]
+
+
+def _epoch(model, loader, *, loss_fn, step, device, metrics, optimizer=None):
+    import torch
+
+    if optimizer is None:
+        model.eval()
+    else:
+        model.train()
+    totals = {"loss": 0.0, **{name: 0.0 for name in metrics}}
+    count = 0
+    context = torch.no_grad() if optimizer is None else torch.enable_grad()
+    with context:
+        for batch in loader:
+            if optimizer is not None:
+                optimizer.zero_grad()
+            loss, logits, labels = _batch_result(model, batch, loss_fn, step, device)
+            if optimizer is not None:
+                loss.backward()
+                optimizer.step()
+            totals["loss"] += float(loss.detach().item())
+            if metrics:
+                if logits is None or labels is None:
+                    raise ValueError(
+                        "Metrics need model logits and labels; "
+                        "custom step(model, batch) only returns loss"
+                    )
+                with torch.no_grad():
+                    for name, metric_fn in metrics.items():
+                        value = metric_fn(logits.detach(), labels.detach())
+                        totals[name] += float(value.item() if hasattr(value, "item") else value)
+            count += 1
+    if not count:
+        raise ValueError("Training/validation loader is empty")
+    return {name: total / count for name, total in totals.items()}
+
+
+def evaluate_metrics(model, loader, *, loss_fn=None, metrics=None,
+                     step=None, device="cpu"):
+    """Evaluate and return {'loss': value, 'accuracy': ...} without gradients."""
+    if step is not None and metrics is not None:
+        raise ValueError("Custom step is loss-only; omit metrics or use a standard model output")
+    model.to(device)
+    return _epoch(model, loader, loss_fn=loss_fn, metrics=_metrics(metrics),
+                  step=step, device=device)
 
 
 def evaluate(model, loader, *, loss_fn=None, step=None, device="cpu"):
-    """Mean validation loss over batches; custom step(model, batch) optional."""
-    import torch
-
-    model.to(device)
-    model.eval()
-    total = count = 0
-    with torch.no_grad():
-        for batch in loader:
-            total += float(_batch_loss(model, batch, loss_fn, step, device).item())
-            count += 1
-    if not count:
-        raise ValueError("Validation loader is empty")
-    return total / count
+    """Mean validation loss per batch (backward-compatible float result)."""
+    return evaluate_metrics(
+        model, loader, loss_fn=loss_fn, step=step, device=device
+    )["loss"]
 
 
 def fit(model, loader, optimizer, *, loss_fn=None, epochs=1, device="cpu",
-        validation=None, step=None):
-    """Train using native torch, returning history of per-batch mean losses.
+        validation=None, step=None, metrics=None, save_best=None,
+        monitor=None, mode=None, log_path=None):
+    """Train with optional metrics, JSON history and best checkpoint.
 
-    Expected batches are (inputs, labels), Hugging Face-style mappings with
-    'labels', or anything supported by a custom step(model, batch) callable.
-    Use trainable(model, 'head') before constructing an optimizer for PEFT-like
-    head-only training; call trainable(model) for full fine-tuning.
+    - Standard batches: (inputs, labels) with loss_fn.
+    - Transformers: mappings with 'labels', model output with 'loss' and 'logits'.
+    - Custom step(model, batch): returns scalar loss, without extra metrics.
+    - metrics='accuracy' or {'name': fn(logits, labels)}.
+    - save_best='best.pt' uses minimum val_loss (or train_loss without validation).
+      Set monitor='val_accuracy', mode='max' to select by accuracy.
+    - Checkpoint saves the state at the *best epoch*; the in-memory model
+      remains at the final epoch. Use load_checkpoint to restore the best.
     """
-    if epochs < 1:
-        raise ValueError("epochs must be positive")
+    if not isinstance(epochs, int) or epochs < 1:
+        raise ValueError("epochs must be a positive integer")
+    callbacks = _metrics(metrics)
+    if step is not None and callbacks:
+        raise ValueError("Custom step is loss-only; omit metrics or use standard model outputs")
+    if mode not in (None, "min", "max"):
+        raise ValueError("mode must be 'min' or 'max'")
+    selection = monitor or ("val_loss" if validation is not None else "train_loss")
+    if not (selection.startswith("train_") or selection.startswith("val_")):
+        raise ValueError("monitor must start with train_ or val_")
+    group, key = selection.split("_", 1)
+    if key not in {"loss", *callbacks} or (group == "val" and validation is None):
+        raise ValueError(f"Untracked monitor: {selection}")
+    mode = mode or ("min" if key == "loss" else "max")
+
     model.to(device)
     history = {"train_loss": [], "val_loss": []}
-    for _ in range(epochs):
-        model.train()
-        total = count = 0
-        for batch in loader:
-            optimizer.zero_grad()
-            loss = _batch_loss(model, batch, loss_fn, step, device)
-            loss.backward()
-            optimizer.step()
-            total += float(loss.detach().item())
-            count += 1
-        if not count:
-            raise ValueError("Training loader is empty")
-        history["train_loss"].append(total / count)
+    for name in callbacks:
+        history[f"train_{name}"] = []
         if validation is not None:
-            history["val_loss"].append(
-                evaluate(model, validation, loss_fn=loss_fn, step=step, device=device)
-            )
+            history[f"val_{name}"] = []
+    best = math.inf if mode == "min" else -math.inf
+    for _ in range(epochs):
+        train = _epoch(model, loader, loss_fn=loss_fn, step=step, device=device,
+                       metrics=callbacks, optimizer=optimizer)
+        history["train_loss"].append(train["loss"])
+        for name in callbacks:
+            history[f"train_{name}"].append(train[name])
+        if validation is not None:
+            valid = _epoch(model, validation, loss_fn=loss_fn, step=step,
+                           device=device, metrics=callbacks)
+            history["val_loss"].append(valid["loss"])
+            for name in callbacks:
+                history[f"val_{name}"].append(valid[name])
+        current = history[selection][-1]
+        if not math.isfinite(current):
+            raise ValueError(f"Non-finite {selection}: {current}")
+        better = current < best if mode == "min" else current > best
+        if better:
+            best = current
+            if save_best is not None:
+                save_checkpoint(model, save_best, optimizer=optimizer, history=history)
+        if log_path is not None:
+            path = Path(log_path)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(history, indent=2) + "\n", encoding="utf-8")
     return history
 
 
