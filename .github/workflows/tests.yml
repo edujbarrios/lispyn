@@ -90,3 +90,15 @@ jobs:
           nb = nbformat.read('examples/dataset_experiment.ipynb', as_version=4)
           assert any('validation loss:' in str(o.get('text', '')) for o in nb.cells[-1].outputs)
           PY
+      - name: Compile LoRA, vision and audio Hy examples
+        run: |
+          lispyn build examples/text_lora.hy
+          lispyn build examples/vision_transfer.hy
+          lispyn build examples/audio_features.hy
+      - name: Real LoRA and TorchAudio integration (Python 3.11)
+        if: matrix.python-version == '3.11'
+        run: |
+          python -m pip install -e '.[peft]' torchcodec
+          pytest -q tests/test_peft_audio.py
+          lispyn execute examples/text_lora.hy --timeout 120
+          lispyn execute examples/audio_features.hy --timeout 120
