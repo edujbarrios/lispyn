@@ -220,6 +220,118 @@ def split_dataset(dataset, *, validation_fraction: float = 0.2,
     return Subset(dataset, train_indices), Subset(dataset, valid_indices)
 
 
+
+def _frame_partition_options(frame, *, stratify=None, group=None):
+    """Validate DataFrame columns and return positional class/group labels."""
+    if stratify is not None and group is not None:
+        raise ValueError("Choose either stratify or group, not both")
+    column = stratify if stratify is not None else group
+    if column is None:
+        return None, None
+    if not isinstance(column, str) or column not in frame.columns:
+        raise ValueError(f"Missing split column: {column}")
+    if frame[column].isna().any():
+        raise ValueError(f"Split column {column!r} contains missing values")
+    values = frame[column].tolist()
+    return (values, None) if stratify is not None else (None, values)
+
+
+def train_validation_test_split(frame, *, validation_fraction=0.2,
+                                test_fraction=0.2, seed=42, shuffle=True,
+                                stratify=None, group=None):
+    """Return (train, validation, test) DataFrames with disjoint rows.
+
+    `stratify="label"` retains each class in every partition.
+    `group="subject_id"` prevents any group leaking between partitions.
+    Neither option requires scikit-learn; exact sizes are not guaranteed for
+    per-class rounding or indivisible groups. The input frame is unchanged.
+    """
+    from .cross_validation import three_way_indices
+
+    labels, groups = _frame_partition_options(
+        frame, stratify=stratify, group=group
+    )
+    indices = three_way_indices(
+        len(frame), validation_fraction=validation_fraction,
+        test_fraction=test_fraction, seed=seed, shuffle=shuffle,
+        labels=labels, groups=groups,
+    )
+    return tuple(frame.iloc[partition].reset_index(drop=True)
+                 for partition in indices)
+
+
+def split_dataset_three(dataset, *, validation_fraction=0.2,
+                        test_fraction=0.2, seed=42, shuffle=True,
+                        stratify=False, labels=None, groups=None):
+    """Return train, validation and test PyTorch Subsets without copying data.
+
+    Pass labels=[...] or stratify=True to use dataset.targets (requires at
+    least three examples per class); alternatively pass groups=[...]
+    (requires three distinct groups). These options are exclusive.
+    """
+    from torch.utils.data import Subset
+    from .cross_validation import three_way_indices
+
+    if groups is not None and (stratify or labels is not None):
+        raise ValueError("Choose grouped or stratified splitting, not both")
+    if labels is None and stratify:
+        labels = getattr(dataset, "targets", None)
+        if labels is None:
+            raise ValueError("Stratified split requires labels or dataset.targets")
+    indices = three_way_indices(
+        len(dataset), validation_fraction=validation_fraction,
+        test_fraction=test_fraction, seed=seed, shuffle=shuffle,
+        labels=labels, groups=groups,
+    )
+    return tuple(Subset(dataset, partition) for partition in indices)
+
+
+def k_fold_split(frame, *, n_splits=5, seed=42, shuffle=True,
+                 stratify=None, group=None):
+    """Yield (train, validation) DataFrames for every k-fold iteration.
+
+    Each row appears exactly once as validation across all folds. Use
+    stratify='label' to balance classes or group='subject_id' to isolate
+    subjects. A separate held-out test partition should be evaluated only
+    after cross-validation and final model selection.
+    """
+    from .cross_validation import k_fold_indices
+
+    labels, groups = _frame_partition_options(
+        frame, stratify=stratify, group=group
+    )
+    for train, validation in k_fold_indices(
+        len(frame), n_splits=n_splits, seed=seed, shuffle=shuffle,
+        labels=labels, groups=groups,
+    ):
+        yield (frame.iloc[train].reset_index(drop=True),
+               frame.iloc[validation].reset_index(drop=True))
+
+
+def k_fold_dataset(dataset, *, n_splits=5, seed=42, shuffle=True,
+                   stratify=False, labels=None, groups=None):
+    """Yield disjoint (train, validation) PyTorch Subsets for k-fold CV.
+
+    Pass stratify=True for dataset.targets, labels=[...] for a custom
+    class vector, or groups=[...] for leakage-safe grouped folds.
+    Use a fresh model and optimizer for each yielded fold.
+    """
+    from torch.utils.data import Subset
+    from .cross_validation import k_fold_indices
+
+    if groups is not None and (stratify or labels is not None):
+        raise ValueError("Choose grouped or stratified splitting, not both")
+    if labels is None and stratify:
+        labels = getattr(dataset, "targets", None)
+        if labels is None:
+            raise ValueError("Stratified split requires labels or dataset.targets")
+    for train, validation in k_fold_indices(
+        len(dataset), n_splits=n_splits, seed=seed, shuffle=shuffle,
+        labels=labels, groups=groups,
+    ):
+        yield Subset(dataset, train), Subset(dataset, validation)
+
+
 def to_tensor(values, *, dtype=None, device=None):
     """Convert values into a tensor using the real, unrestricted torch API."""
     try:

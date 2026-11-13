@@ -22,7 +22,7 @@ def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="lispyn", description="Hy experiments, Python notebooks, PyTorch freedom."
     )
-    p.add_argument("--version", action="version", version="lispyn 0.20.0a1")
+    p.add_argument("--version", action="version", version="lispyn 0.21.0a1")
     sub = p.add_subparsers(dest="command", required=True)
     health = sub.add_parser("doctor", help="Inspect installation and optional tools without modifying anything")
     health.add_argument("--json", action="store_true", help="Print machine-readable environment summary")
@@ -55,6 +55,10 @@ def parser() -> argparse.ArgumentParser:
                          choices=("clean", "paper", "dark", "docusaurus-dark"))
     compare.add_argument("--palette", default="turquoise-spectrum",
                          choices=("turquoise-spectrum",))
+    cv = sub.add_parser("cv-summary", help="Summarize numeric cross-validation fold scores")
+    cv.add_argument("scores", nargs="+", type=float, help="One metric score per validation fold")
+    cv.add_argument("--metric", default="score", help="Metric name, e.g. val_accuracy")
+    cv.add_argument("--output", type=Path, help="Optional .json summary output")
     starter = sub.add_parser("new", help="Create a ready-to-edit Hy/Jupyter experiment")
     starter.add_argument("source", type=Path, help="Path for a new .hy file")
     report = sub.add_parser("report", help="Summarize a saved Lispyn experiment")
@@ -98,6 +102,19 @@ def main(argv: list[str] | None = None) -> int:
                                       save=args.plot)
                 plt.close(fig)
                 print(f"Plot saved: {args.plot.expanduser().resolve()}")
+            return 0
+        if args.command == "cv-summary":
+            from .cross_validation import summarize_cv_scores
+            summary = summarize_cv_scores(args.scores, metric=args.metric)
+            report = json.dumps(summary, indent=2)
+            print(report)
+            if args.output is not None:
+                path = args.output.expanduser()
+                if path.suffix.lower() != ".json":
+                    raise LispynError("CV summary output must be .json")
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(report + "\n", encoding="utf-8")
+                print(f"Summary saved: {path}")
             return 0
         if args.command == "gallery":
             paths = generate_gallery(args.source_dir, args.output_dir)

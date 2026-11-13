@@ -131,3 +131,15 @@
   `(do
     (import lispyn.plots [plot-learning-rate])
     (plot-learning-rate ~history ~@options)))
+
+(defmacro train-val-test [dataset #* options]
+  "Create train, validation and test PyTorch Subsets with no data leakage."
+  `(do
+    (import lispyn.data [split-dataset-three])
+    (split-dataset-three ~dataset ~@options)))
+
+(defmacro cross-validation-folds [dataset #* options]
+  "Yield seeded, optionally stratified or grouped PyTorch k-fold Subsets."
+  `(do
+    (import lispyn.data [k-fold-dataset])
+    (k-fold-dataset ~dataset ~@options)))
