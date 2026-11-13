@@ -222,3 +222,28 @@ def test_hy_macros_compile_and_execute(tmp_path):
     )
     assert process.returncode == 0, process.stderr
     assert "CV MACROS OK" in process.stdout
+
+
+def test_tabular_hy_macros_compile(tmp_path):
+    pytest.importorskip("hy")
+    from lispyn.notebooks import build_notebook
+
+    source = tmp_path / "tabular_cv.hy"
+    source.write_text(
+        '(require lispyn.macros [tabular-train-val-test\\n'
+        ' tabular-cross-validation-folds repeated-tabular-folds\\n'
+        ' cross-validate-table save-cross-validation])\\n'
+        '(setv parts (tabular-train-val-test frame :group "subject"))\\n'
+        '(setv folds (tabular-cross-validation-folds frame :n-splits 3))\\n'
+        '(setv repeats (repeated-tabular-folds frame :n-splits 3))\\n'
+        '(setv summary (cross-validate-table frame scorer :n-splits 3))\\n'
+        '(save-cross-validation summary "report.json")\\n',
+        encoding="utf-8",
+    )
+    nb = build_notebook(source)
+    source_code = "\\n".join(c.source for c in nb.cells if c.cell_type == "code")
+    assert "train_validation_test_split" in source_code
+    assert "k_fold_split" in source_code
+    assert "repeated_k_fold_split" in source_code
+    assert "run_frame_cross_validation" in source_code
+    assert "save_cv_report" in source_code
