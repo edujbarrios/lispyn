@@ -7,3 +7,6 @@ build/
 dist/
 .ipynb_checkpoints/
 examples/*.ipynb
+
+# Local experiment outputs
+examples/artifacts/
