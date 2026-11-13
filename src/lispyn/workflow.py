@@ -64,7 +64,8 @@ def train(model, data, *, loss_fn=None, validation=None, epochs=1, lr=1e-3,
           lora_modules=None, lora_rank=8, lora_task_type=None,
           step=None, save_best=None, log_path=None, monitor=None, mode=None,
           experiment_dir=None, patience=None, min_delta=0.0,
-          save_last=None):
+          save_last=None, accumulation_steps=1, gradient_clip=None,
+          scheduler=None, scheduler_kwargs=None):
     """Train or fine-tune with one call, keeping native PyTorch escape hatches.
 
     - data and validation: torch Dataset, DataLoader or iterable of batches.
@@ -81,6 +82,10 @@ def train(model, data, *, loss_fn=None, validation=None, epochs=1, lr=1e-3,
       as the minimum improvement. Default: train all epochs.
     - save_last='last.pt' writes model/optimizer each completed epoch.
       With experiment_dir and patience, last.pt is created automatically.
+    - accumulation_steps: microbatches per optimizer update (default 1).
+    - gradient_clip: optional global L2 norm threshold before optimizer.step().
+    - scheduler: 'cosine', 'step', 'plateau', or a PyTorch scheduler factory.
+      scheduler_kwargs overrides the selected scheduler's defaults.
     - Returns a Run with the model at its last epoch (best weights are in best.pt).
     """
     import torch
@@ -126,6 +131,38 @@ def train(model, data, *, loss_fn=None, validation=None, epochs=1, lr=1e-3,
         raise ValueError("Use lr= instead of optimizer_kwargs['lr']")
     opt = optimizer_class(parameters, lr=lr, **options)
 
+    # Instantiate native LR schedules after constructing the optimizer.
+    scheduler_options = dict(scheduler_kwargs or {})
+    if scheduler is None:
+        if scheduler_options:
+            raise ValueError("scheduler_kwargs requires a scheduler")
+        schedule = None
+        schedule_name = None
+    elif isinstance(scheduler, str):
+        schedule_name = scheduler.lower()
+        schedules = {
+            "cosine": (torch.optim.lr_scheduler.CosineAnnealingLR,
+                       {"T_max": epochs}),
+            "step": (torch.optim.lr_scheduler.StepLR,
+                     {"step_size": max(1, epochs // 3), "gamma": 0.5}),
+            "plateau": (torch.optim.lr_scheduler.ReduceLROnPlateau,
+                        {"mode": mode or (
+                            "min" if (monitor or (
+                                "val_loss" if validation is not None
+                                else "train_loss"
+                            )).endswith("_loss") else "max"
+                        )}),
+        }
+        if schedule_name not in schedules:
+            raise ValueError("Unknown scheduler: choose cosine, step, or plateau")
+        schedule_cls, defaults = schedules[schedule_name]
+        schedule = schedule_cls(opt, **{**defaults, **scheduler_options})
+    elif callable(scheduler):
+        schedule_name = getattr(scheduler, "__name__", type(scheduler).__name__)
+        schedule = scheduler(opt, **scheduler_options)
+    else:
+        raise TypeError("scheduler must be a scheduler name or a PyTorch scheduler factory")
+
     training = _loader(data, batch_size=batch_size, shuffle=True, seed=seed)
     valid = (None if validation is None else
              _loader(validation, batch_size=batch_size, shuffle=False, seed=None))
@@ -164,6 +201,9 @@ def train(model, data, *, loss_fn=None, validation=None, epochs=1, lr=1e-3,
                 "patience": patience,
                 "min_delta": min_delta,
                 "save_last": save_last is not None,
+                "accumulation_steps": accumulation_steps,
+                "gradient_clip": gradient_clip,
+                "scheduler": schedule_name,
                 "metrics": metric_names,
                 "validation": valid is not None,
                 "tuning": tuning,
@@ -185,6 +225,8 @@ def train(model, data, *, loss_fn=None, validation=None, epochs=1, lr=1e-3,
             validation=valid, step=step, metrics=metrics, save_best=save_best,
             log_path=log_path, monitor=monitor, mode=mode,
             patience=patience, min_delta=min_delta, save_last=save_last,
+            accumulation_steps=accumulation_steps,
+            gradient_clip=gradient_clip, scheduler=schedule,
         )
     except Exception as exc:
         if manifest is not None:

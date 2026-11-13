@@ -24,10 +24,11 @@ jobs:
           import nbformat
           folder = Path('example_generated_notebooks')
           notebooks = sorted(folder.glob('*.ipynb'))
-          assert len(notebooks) >= 11
+          assert len(notebooks) >= 12
           assert (folder / 'synthetic_curves.ipynb').is_file()
           assert (folder / 'confusion_matrix.ipynb').is_file()
           assert (folder / 'early_stopping.ipynb').is_file()
+          assert (folder / 'advanced_training.ipynb').is_file()
           assert (folder / 'notebook_metadata.ipynb').is_file()
           for file in notebooks:
               notebook = nbformat.read(file, as_version=4)
@@ -142,7 +143,7 @@ jobs:
         run: |
           python -m pip install 'torch==2.10.0+cpu' --index-url https://download.pytorch.org/whl/cpu
           python -m pip install -e '.[plots]'
-          pytest -q tests/test_comparison.py tests/test_classification_report.py tests/test_notebook_metadata.py tests/test_early_stopping.py tests/test_tracking.py tests/test_workflow.py tests/test_reproducibility.py tests/test_split_dataset.py tests/test_macros.py tests/test_scaffold.py tests/test_plots.py tests/test_curve_designs.py tests/test_dark_plotting.py tests/test_classification.py tests/test_markdown_macros.py tests/test_training_macros.py tests/test_pip_cells.py
+          pytest -q tests/test_advanced_training.py tests/test_comparison.py tests/test_classification_report.py tests/test_notebook_metadata.py tests/test_early_stopping.py tests/test_tracking.py tests/test_workflow.py tests/test_reproducibility.py tests/test_split_dataset.py tests/test_macros.py tests/test_scaffold.py tests/test_plots.py tests/test_curve_designs.py tests/test_dark_plotting.py tests/test_classification.py tests/test_markdown_macros.py tests/test_training_macros.py tests/test_pip_cells.py
           lispyn execute examples/synthetic_curves.hy --timeout 120
           lispyn execute examples/confusion_matrix.hy --timeout 120
           lispyn execute examples/notebook_metadata.hy --timeout 60
@@ -174,6 +175,22 @@ jobs:
           lispyn execute examples/compact_training.hy --timeout 120
           lispyn execute examples/reproducible_run.hy --timeout 120
           lispyn execute examples/early_stopping.hy --timeout 120
+          lispyn execute examples/advanced_training.hy --timeout 180
+          test -s examples/runs/advanced-training/loss.png
+          test -s examples/runs/advanced-training/learning_rate.png
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('examples/runs/advanced-training')
+          manifest = json.loads((p / 'manifest.json').read_text())
+          history = json.loads((p / 'history.json').read_text())
+          assert manifest['status'] == 'completed'
+          assert manifest['config']['accumulation_steps'] == 3
+          assert manifest['config']['gradient_clip'] == 1.0
+          assert manifest['config']['scheduler'] == 'cosine'
+          assert len(history['learning_rate']) == 12
+          assert history['learning_rate'][0] > history['learning_rate'][-1]
+          PY
           test -s examples/runs/early-stop/best.pt
           test -s examples/runs/early-stop/last.pt
           test -s examples/runs/early-stop/loss.png

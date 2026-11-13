@@ -98,7 +98,25 @@ def _batch_loss(model, batch, loss_fn, step, device):
     return _batch_result(model, batch, loss_fn, step, device)[0]
 
 
-def _epoch(model, loader, *, loss_fn, step, device, metrics, optimizer=None):
+
+def _optimizer_update(optimizer, *, gradient_clip=None):
+    """Apply one optional global-norm clip and optimizer step."""
+    if gradient_clip is not None:
+        import torch
+
+        parameters = [
+            parameter for group in optimizer.param_groups
+            for parameter in group["params"] if parameter.grad is not None
+        ]
+        torch.nn.utils.clip_grad_norm_(
+            parameters, gradient_clip, error_if_nonfinite=True
+        )
+    optimizer.step()
+    optimizer.zero_grad()
+
+
+def _epoch(model, loader, *, loss_fn, step, device, metrics, optimizer=None,
+           accumulation_steps=1, gradient_clip=None):
     import torch
 
     if optimizer is None:
@@ -108,14 +126,20 @@ def _epoch(model, loader, *, loss_fn, step, device, metrics, optimizer=None):
     totals = {"loss": 0.0, **{name: 0.0 for name in metrics}}
     count = 0
     context = torch.no_grad() if optimizer is None else torch.enable_grad()
+    pending = 0
+    if optimizer is not None:
+        optimizer.zero_grad()
     with context:
         for batch in loader:
-            if optimizer is not None:
-                optimizer.zero_grad()
             loss, logits, labels = _batch_result(model, batch, loss_fn, step, device)
             if optimizer is not None:
-                loss.backward()
-                optimizer.step()
+                # Each group averages its microbatch losses. The last, shorter
+                # group is rescaled below to preserve the correct mean.
+                (loss / accumulation_steps).backward()
+                pending += 1
+                if pending == accumulation_steps:
+                    _optimizer_update(optimizer, gradient_clip=gradient_clip)
+                    pending = 0
             totals["loss"] += float(loss.detach().item())
             if metrics:
                 if logits is None or labels is None:
@@ -130,6 +154,15 @@ def _epoch(model, loader, *, loss_fn, step, device, metrics, optimizer=None):
             count += 1
     if not count:
         raise ValueError("Training/validation loader is empty")
+    if optimizer is not None and pending:
+        # Normalize the incomplete final accumulation window by its actual
+        # number of microbatches, not the requested accumulation_steps.
+        adjustment = accumulation_steps / pending
+        for group in optimizer.param_groups:
+            for parameter in group["params"]:
+                if parameter.grad is not None:
+                    parameter.grad.mul_(adjustment)
+        _optimizer_update(optimizer, gradient_clip=gradient_clip)
     return {name: total / count for name, total in totals.items()}
 
 
@@ -153,7 +186,8 @@ def evaluate(model, loader, *, loss_fn=None, step=None, device="cpu"):
 def fit(model, loader, optimizer, *, loss_fn=None, epochs=1, device="cpu",
         validation=None, step=None, metrics=None, save_best=None,
         monitor=None, mode=None, log_path=None, patience=None,
-        min_delta=0.0, save_last=None):
+        min_delta=0.0, save_last=None, accumulation_steps=1,
+        gradient_clip=None, scheduler=None):
     """Train with optional metrics, JSON history and best checkpoint.
 
     - Standard batches: (inputs, labels) with loss_fn.
@@ -168,9 +202,31 @@ def fit(model, loader, optimizer, *, loss_fn=None, epochs=1, device="cpu",
       exceeding min_delta on the selected monitor. No early stop by default.
     - save_last='last.pt' saves the latest model/optimizer after each epoch,
       allowing the last completed epoch to survive an interrupted run.
+    - accumulation_steps=N accumulates gradients across N microbatches
+      before updating the optimizer (the incomplete final group is averaged).
+    - gradient_clip=float applies finite global gradient norm clipping
+      once per optimizer step, after accumulation.
+    - scheduler is a native PyTorch scheduler stepped after every epoch;
+      ReduceLROnPlateau receives the monitored metric. Its starting LR for
+      each epoch is recorded in history['learning_rate'].
+      These settings use native PyTorch and do not enable mixed precision.
     """
     if isinstance(epochs, bool) or not isinstance(epochs, int) or epochs < 1:
         raise ValueError("epochs must be a positive integer")
+    if (isinstance(accumulation_steps, bool) or
+            not isinstance(accumulation_steps, int) or accumulation_steps < 1):
+        raise ValueError("accumulation_steps must be a positive integer")
+    if gradient_clip is not None and (
+        isinstance(gradient_clip, bool)
+        or not isinstance(gradient_clip, (int, float))
+        or not math.isfinite(gradient_clip) or gradient_clip <= 0
+    ):
+        raise ValueError("gradient_clip must be a positive finite number or None")
+    if scheduler is not None and (
+        not callable(getattr(scheduler, "step", None))
+        or optimizer is None
+    ):
+        raise ValueError("scheduler must be a PyTorch scheduler with an optimizer")
     if patience is not None and (
         isinstance(patience, bool) or not isinstance(patience, int) or patience < 1
     ):
@@ -201,11 +257,17 @@ def fit(model, loader, optimizer, *, loss_fn=None, epochs=1, device="cpu",
         history[f"train_{name}"] = []
         if validation is not None:
             history[f"val_{name}"] = []
+    if scheduler is not None:
+        history["learning_rate"] = []
     best = math.inf if mode == "min" else -math.inf
     stale_epochs = 0
     for _ in range(epochs):
+        if scheduler is not None:
+            history["learning_rate"].append(float(optimizer.param_groups[0]["lr"]))
         train = _epoch(model, loader, loss_fn=loss_fn, step=step, device=device,
-                       metrics=callbacks, optimizer=optimizer)
+                       metrics=callbacks, optimizer=optimizer,
+                       accumulation_steps=accumulation_steps,
+                       gradient_clip=gradient_clip)
         history["train_loss"].append(train["loss"])
         for name in callbacks:
             history[f"train_{name}"].append(train[name])
@@ -229,6 +291,13 @@ def fit(model, loader, optimizer, *, loss_fn=None, epochs=1, device="cpu",
                 save_checkpoint(model, save_best, optimizer=optimizer, history=history)
         else:
             stale_epochs += 1
+        if scheduler is not None:
+            import torch
+
+            if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+                scheduler.step(current)
+            else:
+                scheduler.step()
         if save_last is not None:
             save_checkpoint(model, save_last, optimizer=optimizer, history=history)
         if log_path is not None:

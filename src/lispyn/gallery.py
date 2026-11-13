@@ -18,6 +18,7 @@ EXAMPLE_SOURCES = (
     "synthetic_curves.hy",
     "confusion_matrix.hy",
     "early_stopping.hy",
+    "advanced_training.hy",
     "resnet_finetune_300.hy",
     "one_call_training.hy",
     "curve_designs.hy",

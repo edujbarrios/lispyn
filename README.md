@@ -183,6 +183,40 @@ weights can be restored explicitly with `load_checkpoint`.
 Try the [offline early-stopping notebook](https://github.com/edujbarrios/lispyn/blob/main/example_generated_notebooks/early_stopping.ipynb)
 or its [Lisp source](https://github.com/edujbarrios/lispyn/blob/main/examples/early_stopping.hy).
 
+## Advanced training: accumulate gradients, schedule learning rates
+
+Lispyn now supports native PyTorch gradient accumulation, optional global
+gradient clipping and per-epoch learning-rate schedulers. Express the policy
+once in Lisp and use the same Matplotlib styles to present real results:
+
+```hy
+(require lispyn.macros [train-accumulating learning-rate-curve])
+(setv run
+  (train-accumulating model training-data 4
+    :validation validation-data
+    :loss-fn criterion
+    :epochs 100
+    :lr 0.001
+    :gradient-clip 1.0
+    :scheduler "cosine"
+    :experiment-dir "runs/optimized"))
+
+(learning-rate-curve run
+  :theme "docusaurus-dark"
+  :palette "turquoise-spectrum"
+  :save "runs/optimized/learning_rate.svg")
+```
+
+`accumulation-steps` changes the **optimizer update frequency**, not the
+number of training examples; the last partial group is handled correctly.
+`gradient-clip` applies after accumulating gradients. Schedulers include
+`cosine`, `step`, and `plateau`, plus native PyTorch scheduler factories.
+Learning rates are recorded in `history.json` and the returned Run.
+
+An [offline working example](https://github.com/edujbarrios/lispyn/blob/main/examples/advanced_training.hy)
+and its [generated notebook](https://github.com/edujbarrios/lispyn/blob/main/example_generated_notebooks/advanced_training.ipynb)
+show the full process with a tiny CPU PyTorch classifier and dark turquoise
+training/learning-rate plots.
 ## Full experiment — ResNet18, two-stage fine-tuning
 
 The following is the complete source of [`examples/resnet_finetune_300.hy`](https://github.com/edujbarrios/lispyn/blob/main/examples/resnet_finetune_300.hy), including its Markdown cells. Put your images in `examples/data/resnet_images/<class_name>/*.jpg` (or `.png`); each class needs multiple images. The first stage trains the classifier for **10 epochs**, then the second unfreezes all layers for **300 epochs**.

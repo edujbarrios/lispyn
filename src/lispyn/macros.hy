@@ -119,3 +119,15 @@
   `(do
     (import lispyn.classification)
     (lispyn.classification.classification_report ~actual ~predicted ~@options)))
+
+(defmacro train-accumulating [model data steps #* options]
+  "Train with STEPS microbatches per optimizer update; forwards PyTorch options."
+  `(do
+    (import lispyn.workflow [train])
+    (train ~model ~data :accumulation-steps ~steps ~@options)))
+
+(defmacro learning-rate-curve [history #* options]
+  "Visualize a native PyTorch learning-rate scheduler as a Matplotlib figure."
+  `(do
+    (import lispyn.plots [plot-learning-rate])
+    (plot-learning-rate ~history ~@options)))

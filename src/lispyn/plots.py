@@ -290,3 +290,31 @@ def plot_comparison(runs, *, metric="loss", split="val", save=None,
                 color=colors[order[index % len(order)]], label=name,
                 linewidth=linewidth, marker=marker, alpha=alpha)
     return _finalize(fig, ax, design=design, legend=legend, dpi=dpi, save=save)
+
+
+def plot_learning_rate(source, *, save=None, theme='docusaurus-dark',
+                       palette='turquoise-spectrum', title='Learning rate schedule',
+                       subtitle=None, xlabel='Epoch', ylabel='Learning rate',
+                       figsize=(8, 4.5), linewidth=2.5, dpi=150,
+                       marker='.', grid=True):
+    """Plot the per-epoch learning rates recorded by a PyTorch scheduler.
+
+    Accepts a Run, history mapping or path to history.json. The returned
+    Matplotlib Figure inherits Lispyn's theme/palette without modifying
+    the user's global Matplotlib rcParams.
+    """
+    values = _values(_read_history(source), 'learning_rate')
+    if not values:
+        raise ValueError('No learning_rate values recorded; set scheduler= when training')
+    _positive('linewidth', linewidth, 40)
+    design = _design(theme=theme, palette=palette)
+    fig, ax = _figure(
+        figsize=figsize, design=design, title=title, subtitle=subtitle,
+        xlabel=xlabel, ylabel=ylabel, title_size=15,
+        label_size=11, tick_size=10, grid=grid,
+    )
+    ax.plot(range(1, len(values) + 1), values,
+            color=design['train_color'], linewidth=linewidth, marker=marker,
+            label='Learning rate')
+    ax.set_xlim(left=1, right=max(2, len(values)))
+    return _finalize(fig, ax, design=design, legend=False, dpi=dpi, save=save)

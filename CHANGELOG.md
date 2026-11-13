@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.19.0a1 — Advanced native PyTorch training controls
+
+- Add true gradient accumulation with correctly normalized incomplete final windows.
+- Add optional global gradient-norm clipping before optimizer updates.
+- Add cosine, step and plateau learning-rate schedulers, plus custom native PyTorch factories.
+- Record the learning rate at each epoch and add a themed learning-rate plot macro.
+- Add real CPU training and scheduler tests and a generated Hy/Jupyter demonstration.
+- Keep the existing defaults unchanged for users who do not enable these features.
+
 ## 0.18.0a1 — 2026-11-13 — Richer notebooks, experiment comparisons and reports
 
 - Fix README package badges: official PyPI version/Python support, main-branch CI, explicit Apache-2.0 license.

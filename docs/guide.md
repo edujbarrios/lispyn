@@ -692,3 +692,45 @@ are maximized. Override with `--mode min` or `--mode max`.
 Export tables as `.md`, `.csv` or `.json`, and draw one figure containing
 all runs with the same Docusaurus-dark/turquoise plotting themes.
 The plotting dependency remains optional.
+
+## v0.19 alpha: accumulating gradients, clipping and native LR schedules
+
+Native PyTorch training can now accumulate gradients across microbatches
+before each optimizer update, apply global gradient-norm clipping, and
+step a learning-rate scheduler once per epoch. New options in both
+`lispyn.workflow.train` and `lispyn.training.fit`:
+
+- `accumulation_steps=1`: positive integer; `1` preserves the original behavior.
+- `gradient_clip=None`: optional positive finite maximum global gradient norm.
+- `scheduler=None`: native scheduler object in `fit`, or named
+  `"cosine"`, `"step"`, `"plateau"`/PyTorch factory in `train`.
+- `scheduler_kwargs=None`: additional native constructor options.
+
+Gradient accumulation normalizes the mean loss across each group of
+microbatches; the final partial group is scaled by its actual size.
+The recorded losses/metrics still represent per-microbatch averages.
+For variable microbatch sizes, the gradients are averaged by microbatch
+rather than by individual sample. For exact per-sample weighting, handle
+loss normalization in a custom PyTorch step instead.
+
+```clojure
+(require lispyn.macros [train-accumulating learning-rate-curve])
+(setv run (train-accumulating model data 3
+  :loss-fn criterion :validation validation
+  :epochs 40 :lr 0.0003 :gradient-clip 1.0
+  :scheduler "cosine" :scheduler-kwargs {"eta_min" 0.00001}
+  :experiment-dir "runs/my-model"))
+(learning-rate-curve run :save "runs/my-model/lr.svg")
+```
+
+Native `StepLR` and `CosineAnnealingLR` advance after each epoch.
+`ReduceLROnPlateau` receives the tracked validation/training monitor.
+`history['learning_rate']` records the **starting** optimizer learning rate
+for each epoch and is included in the saved JSON and state dict history.
+Schedulers are created after the optimizer, and can also be passed as
+factories for custom PyTorch schedules.
+
+Note: this release does not provide automatic mixed precision or
+resume-from-checkpoint. For complex schedulers and multiple optimizer
+parameter groups, the plotted learning rate is the first group's
+learning rate. Use native PyTorch controls for additional requirements.
