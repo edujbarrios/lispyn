@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.22.0a1 — 2026-11-13 — Hy-first repeated cross-validation
+
+- Add `cross-validate` and `cross-validate-table` Hy macros to run a fold-scoring callback directly from Lisp, with explicit fresh model initialization per fold.
+- Add reproducible repeated k-fold CV for pandas and PyTorch, supporting class stratification or group-leakage prevention without scikit-learn.
+- Report per-fold scores and sizes, mean, standard deviation, min/max and validation-size weighted mean, with a privacy-minimal JSON export macro.
+- Add `repeated-cross-validation-folds`, `repeated-tabular-folds`, `tabular-train-val-test` and `tabular-cross-validation-folds` Hy macros.
+- Include working synthetic PyTorch Hy demonstration in the generated Jupyter gallery; extend tests for Hy execution, deterministic folds and grouped isolation.
+- Preserve existing CV APIs, macros and the original two-way/three-way split defaults.
+
+
 ## 0.21.0a1 — 2026-11-13 — Held-out test splits and k-fold cross-validation
 
 - Add reproducible train/validation/test splits for pandas and PyTorch, with optional stratification or leakage-safe group boundaries.
