@@ -264,6 +264,13 @@ jobs:
       - run: test -s docs/images/synthetic_confusion_matrix.png
       - name: Commit verified compiled notebooks
         run: |
+          # Do not publish artifacts built from an obsolete commit: a newer
+          # main push will run its own gallery job with the correct sources.
+          git fetch origin main
+          if [ "$(git rev-parse origin/main)" != "$GITHUB_SHA" ]; then
+            echo "main advanced since this workflow started; skip stale gallery."
+            exit 0
+          fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add example_generated_notebooks/*.ipynb docs/images/synthetic_training_curves.png docs/images/synthetic_comparison_curves.png docs/images/synthetic_confusion_matrix.png
