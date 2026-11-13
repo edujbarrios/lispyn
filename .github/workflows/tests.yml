@@ -80,12 +80,17 @@ jobs:
         run: lispyn build examples/vision_finetune.hy
       - name: Compile concise experiment
         run: lispyn build examples/compact_training.hy
+      - name: Compile one-call workflows
+        run: |
+          lispyn build examples/one_call_training.hy
+          lispyn build examples/one_call_lora.hy
       - name: Train with accuracy and best checkpoint (Python 3.11)
         if: matrix.python-version == '3.11'
         run: |
           python -m pip install 'torch==2.10.0+cpu' --index-url https://download.pytorch.org/whl/cpu
-          pytest -q tests/test_tracking.py
+          pytest -q tests/test_tracking.py tests/test_workflow.py
           lispyn execute examples/compact_training.hy --timeout 120
+          lispyn execute examples/one_call_training.hy --timeout 120
           python - <<'PY'
           import json
           import nbformat
@@ -122,6 +127,7 @@ jobs:
           sudo apt-get install -y ffmpeg
           python -m pip install -e '.[peft]'
           python -m pip install 'torchcodec==0.10.0' --index-url https://download.pytorch.org/whl/cpu
-          pytest -q tests/test_peft_audio.py
+          pytest -q tests/test_peft_audio.py tests/test_workflow.py
           lispyn execute examples/text_lora.hy --timeout 120
+          lispyn execute examples/one_call_lora.hy --timeout 120
           lispyn execute examples/audio_features.hy --timeout 120
