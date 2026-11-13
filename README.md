@@ -110,6 +110,26 @@ Use source comment markers to request Jupyter Markdown and Python code cells. Ma
 - [ ] Reproducibility reports and richer error diagnostics
 
 
+## Images, text, audio and fine-tuning (v0.3 alpha)
+
+Lispyn keeps the full native PyTorch, TorchVision and TorchAudio APIs available through Hy.
+
+- `image_folder("images/", transform=...)`: wraps `torchvision.datasets.ImageFolder` for `images/class_name/*.jpg`. For pretrained models, supply the weights' recommended transforms.
+- `text_dataset("train.jsonl", text_key="text", label_key="label")`: reads `.txt`, `.csv`, `.json`, `.jsonl`. Use `token_collate(tokenizer)` with compatible tokenizers (e.g. Hugging Face) inside a `DataLoader`.
+- `audio_folder("audio/", sample_rate=16000, num_frames=16000)`: labeled folder dataset, backed by `torchaudio.load`; supports resampling and fixed-length waveforms, with directory layout `audio/class_name/clip.wav`.
+- `trainable(model, "fc")`: freeze other parameters and train only the named layer. `trainable(model)` unfreezes all parameters for full fine-tuning. Create your optimizer **after** changing which layers are trainable.
+- `fit(model, loader, optimizer, loss_fn=..., epochs=..., validation=...)`, `evaluate(...)`, `save_checkpoint(...)`, `load_checkpoint(...)`: train, validate and save PyTorch state dicts. For nonstandard model/batch formats use a custom `step(model, batch)` callback.
+
+Run a minimal model using TorchVision's synthetic `FakeData`—no data downloads:
+
+```bash
+lispyn execute examples/vision_finetune.hy
+```
+
+Choose the correct matching versions of `torch`, `torchvision`, `torchaudio` and optional `torchcodec` for your environment, especially for GPU installs. In recent TorchAudio versions, media decoding depends on TorchCodec and often FFmpeg; see the [official installation guide](https://docs.pytorch.org/audio/stable/installation).
+
+These v0.3 helpers cover classifier/head-only and full fine-tuning. v0.4 adds PEFT/LoRA separately; QLoRA and distributed training are still out of scope.
+
 ## LoRA adapters, pretrained vision and real audio (v0.4 alpha)
 
 **Use native PyTorch. Add only the abstraction you need.**
@@ -134,12 +154,12 @@ A short Hy example for **LoRA fine-tuning**:
 (save-adapter model "adapters/experiment")
 ```
 
-Here \`model\` is an existing compatible Transformers model and \`batches\` is a loader returning mappings with \`input_ids\`, \`attention_mask\`, and \`labels\`. LoRA targets depend on the model architecture. A small, completely offline BERT demonstration lives at [examples/text_lora.hy](examples/text_lora.hy).
+Here `model` is an existing compatible Transformers model and `batches` is a loader returning mappings with `input_ids`, `attention_mask`, and `labels`. LoRA targets depend on the model architecture. A small, completely offline BERT demonstration lives at [examples/text_lora.hy](examples/text_lora.hy).
 
-- \`lora(model, ["query", "value"], rank=8, task_type="SEQ_CLS")\` uses **Hugging Face PEFT**; it is not a new LoRA implementation. The original model is modified by PEFT.
-- \`parameter_counts(model)\` reports the trainable/total parameters and percentage.
-- \`save_adapter(model, folder)\` and \`load_adapter(base_model, folder)\` save/load LoRA adapters, not complete pretrained weights. You must retain or re-download the compatible base model separately.
-- Full fine-tuning is still available: \`trainable(model)\` unfreezes all parameters. For head-only training, \`trainable(model, "fc")\` freezes the rest.
+- `lora(model, ["query", "value"], rank=8, task_type="SEQ_CLS")` uses **Hugging Face PEFT**; it is not a new LoRA implementation. The original model is modified by PEFT.
+- `parameter_counts(model)` reports the trainable/total parameters and percentage.
+- `save_adapter(model, folder)` and `load_adapter(base_model, folder)` save/load LoRA adapters, not complete pretrained weights. You must retain or re-download the compatible base model separately.
+- Full fine-tuning is still available: `trainable(model)` unfreezes all parameters. For head-only training, `trainable(model, "fc")` freezes the rest.
 
 ### Examples
 
@@ -155,9 +175,9 @@ lispyn execute examples/audio_features.hy
 lispyn execute examples/vision_transfer.hy
 ```
 
-For image inference and transfer learning use \`torchvision.models.*_Weights.DEFAULT\` with \`weights.transforms()\` to match pretrained normalization and resize. See [TorchVision's model guide](https://docs.pytorch.org/vision/main/models.html).
+For image inference and transfer learning use `torchvision.models.*_Weights.DEFAULT` with `weights.transforms()` to match pretrained normalization and resize. See [TorchVision's model guide](https://docs.pytorch.org/vision/main/models.html).
 
-For audio reading, current TorchAudio \`load()\` delegates to **TorchCodec**. Install matching \`torch\`, \`torchaudio\`, \`torchcodec\` and system FFmpeg support as needed. The automated test suite generates an actual WAV file and checks decode, resampling and AudioFolder loading, in addition to the synthetic spectrogram example. See [TorchAudio installation notes](https://docs.pytorch.org/audio/stable/installation).
+For audio reading, current TorchAudio `load()` delegates to **TorchCodec**. Install matching `torch`, `torchaudio`, `torchcodec` and system FFmpeg support as needed. The automated test suite generates an actual WAV file and checks decode, resampling and AudioFolder loading, in addition to the synthetic spectrogram example. See [TorchAudio installation notes](https://docs.pytorch.org/audio/stable/installation).
 
 **Scope:** LoRA fine-tuning, classifier-only tuning, and full tuning work on supported models. QLoRA/quantization, distributed training, speech recognition pipelines, streaming datasets and automatic task inference are not provided yet. The user's data/models may contain sensitive content and must be handled according to their permissions and licenses.
 
@@ -169,22 +189,3 @@ Issues and pull requests are welcome. Keep changes small, documented, and tested
 
 Copyright © 2026 **Eduardo J. Barrios**. Licensed under the **Apache License 2.0**; see [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE). Redistributions must preserve applicable copyright and attribution notices under that license. Apache-2.0 does **not** require citation merely for running Lispyn or using a generated notebook. Notebooks include author attribution by default.
 
-## Images, text, audio and fine-tuning (v0.3 alpha)
-
-Lispyn keeps the full native PyTorch, TorchVision and TorchAudio APIs available through Hy.
-
-- `image_folder("images/", transform=...)`: wraps `torchvision.datasets.ImageFolder` for `images/class_name/*.jpg`. For pretrained models, supply the weights' recommended transforms.
-- `text_dataset("train.jsonl", text_key="text", label_key="label")`: reads `.txt`, `.csv`, `.json`, `.jsonl`. Use `token_collate(tokenizer)` with compatible tokenizers (e.g. Hugging Face) inside a `DataLoader`.
-- `audio_folder("audio/", sample_rate=16000, num_frames=16000)`: labeled folder dataset, backed by `torchaudio.load`; supports resampling and fixed-length waveforms, with directory layout `audio/class_name/clip.wav`.
-- `trainable(model, "fc")`: freeze other parameters and train only the named layer. `trainable(model)` unfreezes all parameters for full fine-tuning. Create your optimizer **after** changing which layers are trainable.
-- `fit(model, loader, optimizer, loss_fn=..., epochs=..., validation=...)`, `evaluate(...)`, `save_checkpoint(...)`, `load_checkpoint(...)`: train, validate and save PyTorch state dicts. For nonstandard model/batch formats use a custom `step(model, batch)` callback.
-
-Run a minimal model using TorchVision's synthetic `FakeData`—no data downloads:
-
-```bash
-lispyn execute examples/vision_finetune.hy
-```
-
-Choose the correct matching versions of `torch`, `torchvision`, `torchaudio` and optional `torchcodec` for your environment, especially for GPU installs. In recent TorchAudio versions, media decoding depends on TorchCodec and often FFmpeg; see the [official installation guide](https://docs.pytorch.org/audio/stable/installation).
-
-The v0.3 helpers cover **classifier/head-only and full fine-tuning**, not LoRA, QLoRA, distributed training or automatic hyperparameter search. Text tokenizers and pretrained model weights are supplied by the user and may require external downloads.
