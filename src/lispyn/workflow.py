@@ -16,7 +16,7 @@ from collections.abc import Mapping
 
 from . import __version__
 from .reproducibility import environment_info, seed_all, utc_now, write_json
-from .training import fit, trainable
+from .training import _best_epoch, fit, trainable
 
 
 @dataclass
@@ -28,6 +28,7 @@ class Run:
     optimizer: Any
     device: str
     manifest_path: Path | None = None
+    stopped_early: bool = False
 
 
 def device_auto() -> str:
@@ -62,7 +63,8 @@ def train(model, data, *, loss_fn=None, validation=None, epochs=1, lr=1e-3,
           metrics=None, device="auto", seed=None, head=None,
           lora_modules=None, lora_rank=8, lora_task_type=None,
           step=None, save_best=None, log_path=None, monitor=None, mode=None,
-          experiment_dir=None):
+          experiment_dir=None, patience=None, min_delta=0.0,
+          save_last=None):
     """Train or fine-tune with one call, keeping native PyTorch escape hatches.
 
     - data and validation: torch Dataset, DataLoader or iterable of batches.
@@ -75,7 +77,11 @@ def train(model, data, *, loss_fn=None, validation=None, epochs=1, lr=1e-3,
       mapping batches can provide their own scalar model loss.
     - experiment_dir='runs/demo' opt-in: best.pt, history.json and a
       privacy-conscious manifest.json with seed and dependency versions.
-    - Returns a Run object with model, history, optimizer, device and manifest_path.
+    - patience=N enables early stopping on a selected metric, with min_delta
+      as the minimum improvement. Default: train all epochs.
+    - save_last='last.pt' writes model/optimizer each completed epoch.
+      With experiment_dir and patience, last.pt is created automatically.
+    - Returns a Run with the model at its last epoch (best weights are in best.pt).
     """
     import torch
 
@@ -133,6 +139,8 @@ def train(model, data, *, loss_fn=None, validation=None, epochs=1, lr=1e-3,
             save_best = directory / "best.pt"
         if log_path is None:
             log_path = directory / "history.json"
+        if save_last is None and patience is not None:
+            save_last = directory / "last.pt"
         manifest_path = directory / "manifest.json"
         metric_names = (
             [metrics] if isinstance(metrics, str) else
@@ -153,6 +161,9 @@ def train(model, data, *, loss_fn=None, validation=None, epochs=1, lr=1e-3,
                 "seed": seed, "epochs": epochs, "lr": lr,
                 "batch_size": batch_size,
                 "optimizer": type(opt).__name__,
+                "patience": patience,
+                "min_delta": min_delta,
+                "save_last": save_last is not None,
                 "metrics": metric_names,
                 "validation": valid is not None,
                 "tuning": tuning,
@@ -173,6 +184,7 @@ def train(model, data, *, loss_fn=None, validation=None, epochs=1, lr=1e-3,
             model, training, opt, loss_fn=loss_fn, epochs=epochs, device=device,
             validation=valid, step=step, metrics=metrics, save_best=save_best,
             log_path=log_path, monitor=monitor, mode=mode,
+            patience=patience, min_delta=min_delta, save_last=save_last,
         )
     except Exception as exc:
         if manifest is not None:
@@ -186,15 +198,21 @@ def train(model, data, *, loss_fn=None, validation=None, epochs=1, lr=1e-3,
         values = history[tracked]
         maximize = (mode == "max" if mode is not None
                     else not tracked.endswith("_loss"))
-        best_value = max(values) if maximize else min(values)
+        completed = len(history["train_loss"])
+        best_epoch, best_value = _best_epoch(
+            values, mode="max" if maximize else "min", min_delta=min_delta
+        )
         manifest["status"] = "completed"
         manifest["completed_at"] = utc_now()
         manifest["summary"] = {
             "monitor": tracked,
             "mode": "max" if maximize else "min",
-            "epoch": values.index(best_value) + 1,
+            "epoch": best_epoch,
             "value": best_value,
+            "epochs_completed": completed,
+            "stopped_early": completed < epochs,
         }
         write_json(manifest_path, manifest)
     return Run(model=model, history=history, optimizer=opt,
-               device=str(device), manifest_path=manifest_path)
+               device=str(device), manifest_path=manifest_path,
+               stopped_early=len(history["train_loss"]) < epochs)

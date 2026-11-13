@@ -55,6 +55,33 @@ See the [Lisp example](https://github.com/edujbarrios/lispyn/blob/main/examples/
 and its [generated figure](https://github.com/edujbarrios/lispyn/blob/main/docs/images/synthetic_confusion_matrix.png).
 The example uses **synthetic class labels**, not real model predictions.
 
+## Train smarter with one Lisp macro
+
+Long PyTorch experiments can stop when a selected validation metric stops
+improving. The new `train-until` macro handles this policy while keeping
+checkpoints, histories, and the exact number of completed epochs:
+
+```hy
+(require lispyn.macros [train-until])
+(setv run
+  (train-until model training-data 8
+    :validation validation-data
+    :loss-fn loss-function
+    :epochs 300
+    :min-delta 0.0005
+    :experiment-dir "runs/experiment"))
+```
+
+`300` is the maximum: if the monitored loss does not improve by more
+than `min-delta` for eight consecutive epochs, training stops early.
+With an experiment directory, the run records `best.pt`, `last.pt`,
+`history.json`, and a summary of the completed epochs in `manifest.json`.
+The model returned by the run remains at the **last** epoch; the best
+weights can be restored explicitly with `load_checkpoint`.
+
+Try the [offline early-stopping notebook](https://github.com/edujbarrios/lispyn/blob/main/example_generated_notebooks/early_stopping.ipynb)
+or its [Lisp source](https://github.com/edujbarrios/lispyn/blob/main/examples/early_stopping.hy).
+
 ## Full experiment — ResNet18, two-stage fine-tuning
 
 The following is the complete source of [`examples/resnet_finetune_300.hy`](https://github.com/edujbarrios/lispyn/blob/main/examples/resnet_finetune_300.hy), including its Markdown cells. Put your images in `examples/data/resnet_images/<class_name>/*.jpg` (or `.png`); each class needs multiple images. The first stage trains the classifier for **10 epochs**, then the second unfreezes all layers for **300 epochs**.

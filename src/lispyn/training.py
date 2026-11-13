@@ -152,7 +152,8 @@ def evaluate(model, loader, *, loss_fn=None, step=None, device="cpu"):
 
 def fit(model, loader, optimizer, *, loss_fn=None, epochs=1, device="cpu",
         validation=None, step=None, metrics=None, save_best=None,
-        monitor=None, mode=None, log_path=None):
+        monitor=None, mode=None, log_path=None, patience=None,
+        min_delta=0.0, save_last=None):
     """Train with optional metrics, JSON history and best checkpoint.
 
     - Standard batches: (inputs, labels) with loss_fn.
@@ -163,9 +164,24 @@ def fit(model, loader, optimizer, *, loss_fn=None, epochs=1, device="cpu",
       Set monitor='val_accuracy', mode='max' to select by accuracy.
     - Checkpoint saves the state at the *best epoch*; the in-memory model
       remains at the final epoch. Use load_checkpoint to restore the best.
+    - patience=N stops after N consecutive epochs without an improvement
+      exceeding min_delta on the selected monitor. No early stop by default.
+    - save_last='last.pt' saves the latest model/optimizer after each epoch,
+      allowing the last completed epoch to survive an interrupted run.
     """
-    if not isinstance(epochs, int) or epochs < 1:
+    if isinstance(epochs, bool) or not isinstance(epochs, int) or epochs < 1:
         raise ValueError("epochs must be a positive integer")
+    if patience is not None and (
+        isinstance(patience, bool) or not isinstance(patience, int) or patience < 1
+    ):
+        raise ValueError("patience must be a positive integer or None")
+    if (isinstance(min_delta, bool) or not isinstance(min_delta, (int, float))
+            or not math.isfinite(min_delta) or min_delta < 0):
+        raise ValueError("min_delta must be a finite nonnegative number")
+    if save_last is not None and save_best is not None and (
+        Path(save_last).expanduser().resolve() == Path(save_best).expanduser().resolve()
+    ):
+        raise ValueError("save_last and save_best must use different paths")
     callbacks = _metrics(metrics)
     if step is not None and callbacks:
         raise ValueError("Custom step is loss-only; omit metrics or use standard model outputs")
@@ -186,6 +202,7 @@ def fit(model, loader, optimizer, *, loss_fn=None, epochs=1, device="cpu",
         if validation is not None:
             history[f"val_{name}"] = []
     best = math.inf if mode == "min" else -math.inf
+    stale_epochs = 0
     for _ in range(epochs):
         train = _epoch(model, loader, loss_fn=loss_fn, step=step, device=device,
                        metrics=callbacks, optimizer=optimizer)
@@ -201,16 +218,37 @@ def fit(model, loader, optimizer, *, loss_fn=None, epochs=1, device="cpu",
         current = history[selection][-1]
         if not math.isfinite(current):
             raise ValueError(f"Non-finite {selection}: {current}")
-        better = current < best if mode == "min" else current > best
+        better = (
+            current < best - min_delta if mode == "min"
+            else current > best + min_delta
+        )
         if better:
             best = current
+            stale_epochs = 0
             if save_best is not None:
                 save_checkpoint(model, save_best, optimizer=optimizer, history=history)
+        else:
+            stale_epochs += 1
+        if save_last is not None:
+            save_checkpoint(model, save_last, optimizer=optimizer, history=history)
         if log_path is not None:
             path = Path(log_path)
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(json.dumps(history, indent=2) + "\n", encoding="utf-8")
+        if patience is not None and stale_epochs >= patience:
+            break
     return history
+
+
+def _best_epoch(values, *, mode, min_delta=0.0):
+    """Return (1-based epoch, value) matching early-stopping checkpoint selection."""
+    best = math.inf if mode == "min" else -math.inf
+    epoch = None
+    for index, value in enumerate(values, 1):
+        better = value < best - min_delta if mode == "min" else value > best + min_delta
+        if better:
+            epoch, best = index, value
+    return epoch, best
 
 
 def save_checkpoint(model, path, *, optimizer=None, history=None):

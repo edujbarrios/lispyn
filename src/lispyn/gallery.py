@@ -16,6 +16,7 @@ EXAMPLE_SOURCES = (
     "markdown_cells.hy",
     "synthetic_curves.hy",
     "confusion_matrix.hy",
+    "early_stopping.hy",
     "resnet_finetune_300.hy",
     "one_call_training.hy",
     "curve_designs.hy",

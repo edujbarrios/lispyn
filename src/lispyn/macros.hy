@@ -99,3 +99,9 @@
   `(do
     (import lispyn.classification [make-confusion-plotter])
     (setv ~name (make-confusion-plotter ~@options))))
+
+(defmacro train-until [model data patience #* options]
+  "Train up to :epochs, stopping after PATIENCE epochs without improvement."
+  `(do
+    (import lispyn.workflow [train])
+    (train ~model ~data :patience ~patience ~@options)))

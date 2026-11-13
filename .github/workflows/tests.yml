@@ -24,9 +24,10 @@ jobs:
           import nbformat
           folder = Path('example_generated_notebooks')
           notebooks = sorted(folder.glob('*.ipynb'))
-          assert len(notebooks) >= 9
+          assert len(notebooks) >= 10
           assert (folder / 'synthetic_curves.ipynb').is_file()
           assert (folder / 'confusion_matrix.ipynb').is_file()
+          assert (folder / 'early_stopping.ipynb').is_file()
           for file in notebooks:
               notebook = nbformat.read(file, as_version=4)
               nbformat.validate(notebook)
@@ -140,7 +141,7 @@ jobs:
         run: |
           python -m pip install 'torch==2.10.0+cpu' --index-url https://download.pytorch.org/whl/cpu
           python -m pip install -e '.[plots]'
-          pytest -q tests/test_tracking.py tests/test_workflow.py tests/test_reproducibility.py tests/test_split_dataset.py tests/test_macros.py tests/test_scaffold.py tests/test_plots.py tests/test_curve_designs.py tests/test_dark_plotting.py tests/test_classification.py tests/test_markdown_macros.py tests/test_training_macros.py tests/test_pip_cells.py
+          pytest -q tests/test_early_stopping.py tests/test_tracking.py tests/test_workflow.py tests/test_reproducibility.py tests/test_split_dataset.py tests/test_macros.py tests/test_scaffold.py tests/test_plots.py tests/test_curve_designs.py tests/test_dark_plotting.py tests/test_classification.py tests/test_markdown_macros.py tests/test_training_macros.py tests/test_pip_cells.py
           lispyn execute examples/synthetic_curves.hy --timeout 120
           lispyn execute examples/confusion_matrix.hy --timeout 120
           python - <<'PY'
@@ -166,6 +167,22 @@ jobs:
           PY
           lispyn execute examples/compact_training.hy --timeout 120
           lispyn execute examples/reproducible_run.hy --timeout 120
+          lispyn execute examples/early_stopping.hy --timeout 120
+          test -s examples/runs/early-stop/best.pt
+          test -s examples/runs/early-stop/last.pt
+          test -s examples/runs/early-stop/loss.png
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('examples/runs/early-stop')
+          manifest = json.loads((p / 'manifest.json').read_text())
+          history = json.loads((p / 'history.json').read_text())
+          assert manifest['status'] == 'completed'
+          assert len(history['train_loss']) == manifest['summary']['epochs_completed']
+          assert manifest['summary']['epochs_completed'] <= 40
+          assert manifest['config']['patience'] == 4
+          assert manifest['config']['save_last'] is True
+          PY
           lispyn execute examples/stratified_inference.hy --timeout 120
           lispyn execute examples/generated_starter.hy --timeout 120
           lispyn execute examples/plot_experiment.hy --timeout 120

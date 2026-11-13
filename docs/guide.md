@@ -6,7 +6,7 @@ Lispyn is an experimental, open-source project originally created by **Eduardo J
 
 Lispyn extends [Hy](https://hylang.org/) (a Lisp running on Python). It does **not** replace Python, hide PyTorch, or require developers to reimplement familiar ML APIs. Import Python modules and call their functions directly.
 
-> Status: **v0.16.0a1 (experimental)**. No stability guarantees; not yet published on PyPI.
+> Status: **v0.17.0a1 (experimental)**. No stability guarantees; not yet published on PyPI.
 
 ## Install from source
 
@@ -603,3 +603,44 @@ only, not scikit-learn. The result is a native Matplotlib Figure.
 
 See [`examples/confusion_matrix.hy`](../examples/confusion_matrix.hy) for a
 synthetic example and its generated image in `docs/images/`.
+
+## Early stopping and last-epoch checkpoints (v0.17 alpha)
+
+Use `train-until` to express a reusable validation-guided training policy
+from Hy without replacing PyTorch's training loop:
+
+```clojure
+(require lispyn.macros [train-until])
+(setv result
+  (train-until model dataset 6
+    :validation validation-dataset
+    :loss-fn criterion :epochs 100 :min-delta 0.001
+    :monitor "val_loss" :device "auto"
+    :experiment-dir "runs/short"))
+(print result.stopped-early)
+```
+
+`patience` is the count of **consecutive epochs without a significant
+improvement** on the monitored metric. `min_delta` is the minimum absolute
+improvement to consider meaningful (default 0). The monitor defaults to
+`val_loss` with validation data, otherwise `train_loss`. As before, it can
+be set to a tracked custom metric such as `val_accuracy` and `mode` can
+be `min` or `max`. If patience is omitted, all requested epochs run.
+
+When enabled with `experiment_dir`, a separate `last.pt` is written after
+**each completed epoch** alongside `best.pt`, `history.json` and
+`manifest.json`. The last checkpoint contains model weights, optimizer
+state and history. The best checkpoint tracks the selected metric, using
+the same `min_delta` threshold. Both checkpoints are native PyTorch
+state dictionaries; loading one requires trusted files.
+
+These are **not** automatic resumption or full GPU determinism features.
+Early stopping does not automatically restore best weights in the live
+model; use `load_checkpoint` to do that explicitly. Saving the last
+checkpoint every epoch consumes extra disk space and may slow large
+experiments, so it is only automatic when both `experiment_dir` and
+`patience` are supplied. You can supply `save_last` explicitly as well.
+
+The manifest records `epochs_completed` and `stopped_early`, and
+`lispyn report runs/short` shows them. The [offline notebook example]
+(../examples/early_stopping.hy) uses a tiny PyTorch dataset.

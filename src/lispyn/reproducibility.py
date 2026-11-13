@@ -77,6 +77,12 @@ def summarize_run(directory) -> str:
     ]
     summary = data.get("summary")
     if summary:
+        completed = summary.get("epochs_completed")
+        if completed is not None:
+            lines.append(
+                f"Completed epochs: {completed}/{config.get('epochs')} "
+                f"({'early stopping' if summary.get('stopped_early') else 'all requested'})"
+            )
         lines.append(
             f"Best {summary['monitor']}: {summary['value']:.6g} "
             f"(epoch {summary['epoch']})"
