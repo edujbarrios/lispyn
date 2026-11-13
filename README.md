@@ -8,7 +8,7 @@
 
 Jupyter is great for exploring results; Lisp is great for **expressing and reusing the steps that produce them**. Its code-as-data design lets you turn recurring experiment patterns into small macros instead of copying cells between notebooks. Lispyn builds on [Hy](https://hylang.org/) to translate that Lisp source into Python notebooks you can inspect, run and share.
 
-**What it is:** Hy syntax and macros, plus focused helpers for datasets, training and Jupyter. **What it isn't:** a new interpreter, a replacement for PyTorch, or a mature standalone language. The macros are still small (`with-seed`, `with-eval`, `train-for`); most current features are ordinary Python functions callable from Hy. We're building the abstractions incrementally.
+**What it is:** Hy syntax and macros, plus focused helpers for datasets, training and Jupyter. **What it isn't:** a new interpreter, a replacement for PyTorch, or a mature standalone language. The macros are focused (`with-seed`, `with-eval`, `curve`, `defcurve`, `train-for`); most current features are ordinary Python functions callable from Hy. We're building the abstractions incrementally.
 
 ## A short experiment
 
@@ -64,6 +64,20 @@ lispyn run examples/first_experiment.hy
 
 `new` creates an editable Hy experiment without running it or overwriting an existing file. `build` compiles Hy into a `.ipynb` with Python code cells; `execute` runs that notebook; `run` uses Hy directly. Markers such as `; %% [markdown]` create separate notebook sections.
 
+## Design curves once, reuse them
+
+Create a personal Matplotlib style as a Lisp macro, then apply it to any recorded training run:
+
+```clojure
+(require lispyn.macros [defcurve])
+(defcurve my-style :theme "dark" :train-color "#22D3EE" :val-color "#FBBF24")
+(my-style result :metric "loss" :title "Training loss" :save "loss.png")
+(my-style result :metric "accuracy" :title "Accuracy" :save "accuracy.png")
+```
+
+Also available: `(curve result :theme "paper" :title "...")`. Choose colors,
+labels, line widths, figure dimensions and export paths. Install optional
+`.[plots]` support; see [the reusable curve example](examples/curve_designs.hy).
 ## What works today
 
 | Area | Current support |
@@ -74,7 +88,7 @@ lispyn run examples/first_experiment.hy
 | **Audio** | TorchAudio decoding, labeled folders and spectrograms |
 | **Training** | Head-only/full fine-tuning, LoRA, accuracy, checkpoints, metrics |
 | **Reproducibility** | Seeds, recorded environment/configuration, run reports |
-| **Jupyter** | Generate and execute Python notebooks; plot training history |
+| **Jupyter** | Generate and execute notebooks; reusable Matplotlib curve designs |
 
 Examples: [`plot_experiment.hy`](examples/plot_experiment.hy), [`stratified_inference.hy`](examples/stratified_inference.hy), [`one_call_training.hy`](examples/one_call_training.hy), [`one_call_lora.hy`](examples/one_call_lora.hy), [`vision_finetune.hy`](examples/vision_finetune.hy), [`audio_features.hy`](examples/audio_features.hy). Optional integrations need their compatible libraries installed.
 
@@ -84,7 +98,7 @@ Examples: [`plot_experiment.hy`](examples/plot_experiment.hy), [`stratified_infe
 2. **Keep experiments inspectable:** generated Python notebooks and explicit outputs.
 3. **Keep the ecosystem open:** native Python functions, community macros, small tested releases.
 
-**Experimental v0.9.0-alpha:** APIs may change. Recording a seed and package versions helps repeat an experiment but does not guarantee deterministic GPU execution. Notebook compilation may execute Hy macros: **run only trusted `.hy` files**. The run manifest does not store dataset contents or secrets; using the same data and base weights remains your responsibility.
+**Experimental v0.10.0-alpha:** APIs may change. Recording a seed and package versions helps repeat an experiment but does not guarantee deterministic GPU execution. Notebook compilation may execute Hy macros: **run only trusted `.hy` files**. The run manifest does not store dataset contents or secrets; using the same data and base weights remains your responsibility.
 
 For API details, optional installation and advanced examples, see the [extended guide](docs/guide.md). Contributions and issues are welcome.
 

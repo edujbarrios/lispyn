@@ -2,11 +2,11 @@
 
 **Lisp macros for Python, data science, PyTorch and Jupyter.**
 
-Lispyn is an experimental, open-source project originally created by **Eduardo J. Barrios**. AI makes code generation inexpensive; Lispyn explores a complementary idea: **create reusable abstractions for recurring ML experiments instead of regenerating the same code**.
+Lispyn is an experimental, open-source project originally created by **Eduardo J. Barrios**. Its purpose is to make Jupyter experimentation more concise and expressive through Lisp macros and reusable Python tooling.
 
 Lispyn extends [Hy](https://hylang.org/) (a Lisp running on Python). It does **not** replace Python, hide PyTorch, or require developers to reimplement familiar ML APIs. Import Python modules and call their functions directly.
 
-> Status: **v0.7.0a1 (experimental)**. No stability guarantees; not yet published on PyPI.
+> Status: **v0.10.0a1 (experimental)**. No stability guarantees; not yet published on PyPI.
 
 ## Install from source
 
@@ -368,3 +368,57 @@ lispyn report examples/runs/smoke --metric accuracy --plot examples/runs/smoke/a
 ```
 
 See [`examples/plot_experiment.hy`](../examples/plot_experiment.hy) for an offline example.
+
+
+## Reusable Matplotlib curve macros (v0.10 alpha)
+
+Reusable designs are the main reason to add a plotting macro instead of
+repeating PyPlot setup and labels in every notebook.
+
+```clojure
+(require lispyn.macros [curve defcurve])
+
+; Define a named design once, then reuse it
+(defcurve report-curve
+  :theme "paper"
+  :train-color "#2563EB"
+  :val-color "#D97706"
+  :xlabel "Epoch"
+  :train-label "Training"
+  :val-label "Validation")
+
+(report-curve result :metric "loss" :title "Loss curve"
+  :ylabel "Cross entropy" :save "figures/loss.png")
+(report-curve result :metric "accuracy" :title "Accuracy curve"
+  :save "figures/accuracy.svg")
+
+; For a one-off curve, without creating a named design
+(curve result :metric "loss" :theme "dark" :title "Dark report"
+  :train-color "cyan" :val-color "#FBBF24")
+```
+
+`curve` and `defcurve` are **Hy compile-time macros**, not aliases for Python
+functions. `defcurve` emits a reusable plotter; options passed when using
+it override defaults. Both delegate rendering to `lispyn.plots.plot_history`
+and use the original Matplotlib Figure object.
+
+Three built-in themes are `clean` (default), `dark`, and `paper`. Supported
+options include `:title`, `:xlabel`, `:ylabel`, `:train-label`, `:val-label`,
+`:train-color`, `:val-color`, `:figsize [8 4]`, `:linewidth 2`,
+`:grid True`, `:legend True`, `:dpi 140`, `:save "chart.png"`.
+
+Themings are local to each figure; they do not modify global Matplotlib
+configuration. As each Hy notebook code cell compiles independently,
+put `(require lispyn.macros [curve defcurve])` in the cell where you use
+the macros. A plotter defined in one executed cell remains available as
+a Python object to later cells.
+
+CLI reports can also control theme, text and colors:
+
+```bash
+lispyn report runs/demo --plot runs/demo/curves.svg --metric loss \
+  --theme dark --title "Experiment loss" \
+  --train-color '#22D3EE' --val-color '#FBBF24'
+```
+
+See [examples/curve_designs.hy](../examples/curve_designs.hy).

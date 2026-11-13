@@ -28,3 +28,15 @@
         ~@body)
       (finally
         (.train ~model-symbol ~previous-mode)))))
+
+(defmacro curve [history #* options]
+  "Generate a styled Matplotlib training curve from recorded metrics."
+  `(do
+    (import lispyn.plots [plot-history])
+    (plot-history ~history ~@options)))
+
+(defmacro defcurve [name #* options]
+  "Define a reusable curve design; its arguments become default plot options."
+  `(do
+    (import lispyn.plots [make-plotter])
+    (setv ~name (make-plotter ~@options))))

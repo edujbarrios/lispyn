@@ -19,7 +19,7 @@ def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="lispyn", description="Hy experiments, Python notebooks, PyTorch freedom."
     )
-    p.add_argument("--version", action="version", version="lispyn 0.9.0a1")
+    p.add_argument("--version", action="version", version="lispyn 0.10.0a1")
     sub = p.add_subparsers(dest="command", required=True)
     for name, help_text in [
         ("build", "Generate a Python Jupyter notebook without executing it"),
@@ -39,6 +39,12 @@ def parser() -> argparse.ArgumentParser:
     report.add_argument("directory", type=Path, help="Directory with manifest.json")
     report.add_argument("--plot", type=Path, help="Save an optional PNG/SVG metric plot")
     report.add_argument("--metric", default="loss", help="Metric to plot (default: loss)")
+    report.add_argument("--theme", default="clean", choices=["clean", "dark", "paper"])
+    report.add_argument("--title", help="Custom plot title")
+    report.add_argument("--xlabel", default="Epoch", help="Horizontal axis label")
+    report.add_argument("--ylabel", help="Vertical axis label")
+    report.add_argument("--train-color", help="Matplotlib training-curve color")
+    report.add_argument("--val-color", help="Matplotlib validation-curve color")
     return p
 
 
@@ -53,7 +59,11 @@ def main(argv: list[str] | None = None) -> int:
             if args.plot is not None:
                 from .plots import plot_history
                 fig = plot_history(args.directory / "history.json",
-                                   metric=args.metric, save=args.plot)
+                                   metric=args.metric, save=args.plot,
+                                   theme=args.theme, title=args.title,
+                                   xlabel=args.xlabel, ylabel=args.ylabel,
+                                   train_color=args.train_color,
+                                   val_color=args.val_color)
                 import matplotlib.pyplot as plt
                 plt.close(fig)
                 print(f"Plot saved: {args.plot.expanduser().resolve()}")
