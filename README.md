@@ -138,6 +138,40 @@ These calculations need neither scikit-learn nor Matplotlib. The
 generates a [Markdown metrics table](https://github.com/edujbarrios/lispyn/blob/main/docs/reports/synthetic_classification_report.md)
 alongside its turquoise confusion matrix.
 
+## New in 0.20.0a1: safer dataset splits and measurable gains
+
+Keep related samples together to avoid validation leakage from the same person,
+speaker, patient or session. Both APIs are seeded and do not require scikit-learn:
+
+```python
+from lispyn.data import train_validation_split, split_dataset
+
+# DataFrames: preserve the classes across partitions
+train_df, val_df = train_validation_split(frame, stratify="label", seed=42)
+
+# DataFrames: keep a whole subject in only one partition
+train_df, val_df = train_validation_split(frame, group="subject_id", seed=42)
+
+# Indexable PyTorch datasets: one group ID per sample
+train_set, val_set = split_dataset(dataset, groups=subject_ids, seed=42)
+```
+
+Stratified and grouped modes are separate options. Group-aware splitting
+prioritizes **no shared groups** over an exact validation fraction; at least two
+distinct groups are required. Stratification requires at least two rows per
+class.
+
+To compare a new experiment against a recorded baseline, use:
+
+```bash
+lispyn compare runs/baseline runs/finetuned --baseline baseline \
+  --metric loss --output comparison.csv
+```
+
+The optional `best_gain` and `final_gain` columns measure absolute metric
+improvement, where a **positive gain is always better**: lower loss or higher
+accuracy. Existing comparison output stays unchanged without `--baseline`.
+
 ## Structure Jupyter cells from Lisp
 
 Use literal macros for native Jupyter metadata and raw cells:
