@@ -55,6 +55,9 @@ lispyn execute examples/reproducible_run.hy
 # Read the recorded experiment
 lispyn report examples/runs/smoke
 
+# Optional: save a training curve (pip install -e ".[plots]")
+lispyn report examples/runs/smoke --plot examples/runs/smoke/loss.png
+
 # Run Hy directly, without a notebook
 lispyn run examples/first_experiment.hy
 ```
@@ -71,9 +74,9 @@ lispyn run examples/first_experiment.hy
 | **Audio** | TorchAudio decoding, labeled folders and spectrograms |
 | **Training** | Head-only/full fine-tuning, LoRA, accuracy, checkpoints, metrics |
 | **Reproducibility** | Seeds, recorded environment/configuration, run reports |
-| **Jupyter** | Generate, execute and save multi-cell Python notebooks |
+| **Jupyter** | Generate and execute Python notebooks; plot training history |
 
-Examples: [`stratified_inference.hy`](examples/stratified_inference.hy), [`one_call_training.hy`](examples/one_call_training.hy), [`one_call_lora.hy`](examples/one_call_lora.hy), [`vision_finetune.hy`](examples/vision_finetune.hy), [`audio_features.hy`](examples/audio_features.hy). Optional integrations need their compatible libraries installed.
+Examples: [`plot_experiment.hy`](examples/plot_experiment.hy), [`stratified_inference.hy`](examples/stratified_inference.hy), [`one_call_training.hy`](examples/one_call_training.hy), [`one_call_lora.hy`](examples/one_call_lora.hy), [`vision_finetune.hy`](examples/vision_finetune.hy), [`audio_features.hy`](examples/audio_features.hy). Optional integrations need their compatible libraries installed.
 
 ## Direction
 
@@ -81,7 +84,7 @@ Examples: [`stratified_inference.hy`](examples/stratified_inference.hy), [`one_c
 2. **Keep experiments inspectable:** generated Python notebooks and explicit outputs.
 3. **Keep the ecosystem open:** native Python functions, community macros, small tested releases.
 
-**Experimental v0.8.1-alpha:** APIs may change. Recording a seed and package versions helps repeat an experiment but does not guarantee deterministic GPU execution. Notebook compilation may execute Hy macros: **run only trusted `.hy` files**. The run manifest does not store dataset contents or secrets; using the same data and base weights remains your responsibility.
+**Experimental v0.9.0-alpha:** APIs may change. Recording a seed and package versions helps repeat an experiment but does not guarantee deterministic GPU execution. Notebook compilation may execute Hy macros: **run only trusted `.hy` files**. The run manifest does not store dataset contents or secrets; using the same data and base weights remains your responsibility.
 
 For API details, optional installation and advanced examples, see the [extended guide](docs/guide.md). Contributions and issues are welcome.
 

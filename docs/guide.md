@@ -341,3 +341,30 @@ Hy macro**, not a Python wrapper. Use only for inference, not training.
 
 The runnable offline example is
 [`examples/stratified_inference.hy`](../examples/stratified_inference.hy).
+
+## Visualize experiments in Jupyter (v0.9 alpha)
+
+Install optional plotting support with `python -m pip install -e ".[plots]"`.
+No Matplotlib dependency is needed for `lispyn build` or ordinary model training.
+
+```clojure
+(import lispyn.plots [plot-history])
+(plot-history result :metric "loss" :save "artifacts/loss.png")
+(plot-history result :metric "accuracy" :save "artifacts/accuracy.png")
+```
+
+The Python helper accepts the result of `lispyn.workflow.train`,
+a metrics-history dictionary, or a path to `history.json`.
+It plots **recorded** values only; it does not repeat training or evaluation.
+If the metric is absent or includes non-finite values, it fails with a
+clear error. One figure shows train/validation curves for a single metric,
+so metrics on different scales are not mixed on one axis.
+
+The CLI offers the same view without opening Jupyter:
+
+```bash
+lispyn report examples/runs/smoke --plot examples/runs/smoke/loss.png
+lispyn report examples/runs/smoke --metric accuracy --plot examples/runs/smoke/accuracy.svg
+```
+
+See [`examples/plot_experiment.hy`](../examples/plot_experiment.hy) for an offline example.

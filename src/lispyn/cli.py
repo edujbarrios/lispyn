@@ -19,7 +19,7 @@ def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="lispyn", description="Hy experiments, Python notebooks, PyTorch freedom."
     )
-    p.add_argument("--version", action="version", version="lispyn 0.8.1a1")
+    p.add_argument("--version", action="version", version="lispyn 0.9.0a1")
     sub = p.add_subparsers(dest="command", required=True)
     for name, help_text in [
         ("build", "Generate a Python Jupyter notebook without executing it"),
@@ -37,6 +37,8 @@ def parser() -> argparse.ArgumentParser:
     starter.add_argument("source", type=Path, help="Path for a new .hy file")
     report = sub.add_parser("report", help="Summarize a saved Lispyn experiment")
     report.add_argument("directory", type=Path, help="Directory with manifest.json")
+    report.add_argument("--plot", type=Path, help="Save an optional PNG/SVG metric plot")
+    report.add_argument("--metric", default="loss", help="Metric to plot (default: loss)")
     return p
 
 
@@ -48,6 +50,13 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         if args.command == "report":
             print(summarize_run(args.directory))
+            if args.plot is not None:
+                from .plots import plot_history
+                fig = plot_history(args.directory / "history.json",
+                                   metric=args.metric, save=args.plot)
+                import matplotlib.pyplot as plt
+                plt.close(fig)
+                print(f"Plot saved: {args.plot.expanduser().resolve()}")
             return 0
         source = check_source(args.source)
         if args.command == "run":
