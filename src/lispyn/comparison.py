@@ -12,11 +12,13 @@ from pathlib import Path
 from .plots import _read_history, _values
 
 
-def compare_experiments(directories, *, metric='loss', split='val', mode=None):
+def compare_experiments(directories, *, metric='loss', split='val', mode=None,
+                        baseline=None):
     """Return comparable summaries for two or more saved Lispyn histories.
 
     Each run is labeled by its directory name. Minimize loss by default;
-    maximize other metrics. Use mode='min'/'max' to override.
+    maximize other metrics. Use mode='min'/'max' to override. With a
+    baseline run name, add direction-aware gains (positive is better).
     """
     if split not in ('train', 'val'):
         raise ValueError("split must be 'train' or 'val'")
@@ -45,25 +47,41 @@ def compare_experiments(directories, *, metric='loss', split='val', mode=None):
             'best': best,
             'final': values[-1],
         })
-    return {'metric': metric, 'split': split, 'mode': direction, 'runs': rows}
+    summary = {'metric': metric, 'split': split, 'mode': direction, 'runs': rows}
+    if baseline is not None:
+        reference = next((row for row in rows if row['run'] == baseline), None)
+        if reference is None:
+            raise ValueError(f"Unknown baseline run: {baseline!r}")
+        sign = -1 if direction == 'min' else 1
+        for row in rows:
+            row['best_gain'] = sign * (row['best'] - reference['best'])
+            row['final_gain'] = sign * (row['final'] - reference['final'])
+        summary['baseline'] = baseline
+    return summary
 
 
 def format_comparison(summary):
     """Present the experiment summary as a Markdown table."""
+    baseline = summary.get('baseline')
+    suffix = f" vs {baseline}" if baseline is not None else ""
+    header = '| Run | Epochs | Best epoch | Best | Final |'
+    divider = '| --- | ---: | ---: | ---: | ---: |'
+    if baseline is not None:
+        header += ' Best gain | Final gain |'
+        divider += ' ---: | ---: |'
     lines = [
-        f'### {summary["split"]} {summary["metric"]} comparison ({summary["mode"]})',
+        f'### {summary["split"]} {summary["metric"]} comparison ({summary["mode"]}){suffix}',
         '',
-        '| Run | Epochs | Best epoch | Best | Final |',
-        '| --- | ---: | ---: | ---: | ---: |',
+        header, divider,
     ]
     for row in summary['runs']:
-        name = row['run'].replace('|', '\\|').replace('\n', ' ')
-        lines.append(
-            f'| {name} | {row["epochs"]} | {row["best_epoch"]} | '
-            f'{row["best"]:.6g} | {row["final"]:.6g} |'
-        )
-    return '\n'.join(lines)
-
+        name = row['run'].replace('|', '\\|').replace('\\n', ' ')
+        line = (f'| {name} | {row["epochs"]} | {row["best_epoch"]} | '
+                f'{row["best"]:.6g} | {row["final"]:.6g} |')
+        if baseline is not None:
+            line += f' {row["best_gain"]:+.6g} | {row["final_gain"]:+.6g} |'
+        lines.append(line)
+    return '\\n'.join(lines)
 
 def save_comparison(summary, output):
     """Export a comparison table to Markdown, JSON or CSV."""
@@ -78,9 +96,10 @@ def save_comparison(summary, output):
         target.write_text(json.dumps(summary, indent=2) + '\n', encoding='utf-8')
     else:
         with target.open('w', encoding='utf-8', newline='') as stream:
-            writer = csv.DictWriter(
-                stream, fieldnames=['run', 'epochs', 'best_epoch', 'best', 'final']
-            )
+            columns = ['run', 'epochs', 'best_epoch', 'best', 'final']
+            if summary.get('baseline') is not None:
+                columns += ['best_gain', 'final_gain']
+            writer = csv.DictWriter(stream, fieldnames=columns)
             writer.writeheader()
             writer.writerows(summary['runs'])
     return target
