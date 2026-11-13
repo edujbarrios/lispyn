@@ -1,8 +1,12 @@
 # Lispyn
 
-**Write experiments in Lisp. Build real Jupyter notebooks.**
+**Write complex experiments. Make them easy to understand, reuse, and share.**
 
-Lispyn uses [Hy](https://hylang.org/) macros to make PyTorch experiments shorter, expressive and reusable. A single `.hy` source can describe **Markdown cells, dependencies, datasets, fine-tuning and plots**; Lispyn compiles it into a standard Python Jupyter notebook without needing a separate Hy kernel.
+Great experiments deserve to be understood—not just executed. Whether you're exploring new AI models, fine-tuning neural networks, or running advanced training pipelines, you often need to **show others what you built, how it works, and what you learned**.
+
+**Lispyn** uses Lisp-based [Hy](https://hylang.org/) macros to turn repetitive steps into **concise, reusable building blocks**. Prepare datasets, train with PyTorch, document your choices in Markdown, and generate plots—all from a readable Lisp source that becomes a standard **Python Jupyter notebook**.
+
+Spend less time rewriting boilerplate and more time experimenting. When your dataset, model, or training strategy changes, adapt the macro and reuse the workflow. **Lisp for expressive experiments. Python for the ecosystem. Jupyter for sharing results.**
 
 **Installation:** for development, clone the repository and use
 `python -m pip install -e ".[dev,notebook,plots]"`. For users, we are
