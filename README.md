@@ -172,6 +172,63 @@ The optional `best_gain` and `final_gain` columns measure absolute metric
 improvement, where a **positive gain is always better**: lower loss or higher
 accuracy. Existing comparison output stays unchanged without `--baseline`.
 
+## Train/validation/test and k-fold cross-validation (0.21.0a1)
+
+Lispyn supports a **held-out test partition** alongside the training and
+validation sets, plus normal, stratified and group-safe k-fold cross-validation.
+All splits use a local seeded RNG and do not require scikit-learn.
+
+```python
+from lispyn.data import (
+    train_validation_test_split, split_dataset_three,
+    k_fold_split, k_fold_dataset,
+)
+from lispyn.cross_validation import summarize_cv_scores
+
+# pandas: a label in every split, or substitute group="subject_id"
+train_df, val_df, test_df = train_validation_test_split(
+    frame, stratify="label", validation_fraction=0.2, test_fraction=0.1, seed=42
+)
+
+# PyTorch: one subject/session ID per sample keeps groups separate
+train_set, val_set, test_set = split_dataset_three(
+    dataset, groups=subject_ids, validation_fraction=0.2, test_fraction=0.1
+)
+
+# Every sample is held out for validation exactly once across 5 folds
+folds = k_fold_dataset(train_set, n_splits=5, seed=42)
+scores = []
+for fold_train, fold_val in folds:
+    model = make_fresh_model()          # initialize a new model per fold
+    score = train_and_score(model, fold_train, fold_val)
+    scores.append(score)
+print(summarize_cv_scores(scores, metric="accuracy"))
+# Evaluate on test_set only after selecting your final model.
+```
+
+For class-balanced cross-validation use `k_fold_split(frame, stratify="label")`
+or `k_fold_dataset(dataset, labels=labels)`. For groups that must never span
+folds use `group="subject_id"` with DataFrames or `groups=ids` with PyTorch.
+Stratified and grouped modes cannot be combined. Each class must have at least
+`n_splits` samples for stratified k-fold; grouped k-fold requires at least
+`n_splits` unique groups. Three-way splits require at least three records per
+class or three groups, respectively. Group sizes may make fractions approximate.
+
+In **Hy**, the `train-val-test` and `cross-validation-folds` macros offer
+equivalent PyTorch entry points. See
+[the runnable synthetic source](examples/cross_validation.hy)
+and run `lispyn gallery` to compile it into a Jupyter notebook.
+
+For quick metric aggregation without storing predictions:
+
+```bash
+lispyn cv-summary 0.81 0.84 0.83 0.86 0.82 --metric accuracy --output folds.json
+```
+
+The output includes fold count, mean, population standard deviation, minimum
+and maximum. These scores are supplied by you; this command does not train
+models or evaluate a held-out test set.
+
 ## Structure Jupyter cells from Lisp
 
 Use literal macros for native Jupyter metadata and raw cells:
