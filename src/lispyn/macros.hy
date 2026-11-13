@@ -81,3 +81,9 @@
   `(do
     (import lispyn.dependencies [ensure-packages])
     (ensure-packages ~@requirements)))
+
+(defmacro compare-curves [runs #* options]
+  "Compare matching metrics from multiple named training runs in one chart."
+  `(do
+    (import lispyn.plots [plot-comparison])
+    (plot-comparison ~runs ~@options)))

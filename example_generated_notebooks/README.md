@@ -22,3 +22,5 @@ The generated notebooks retain Markdown, Python code, and attribution to **Eduar
 The ResNet18 recipe now includes runtime `ensure-package` / `use-package` macros for standard-library and third-party Python imports. Merely generating notebooks never calls pip.
 
 The gallery also includes `synthetic_curves.ipynb`, a complete no-model-training Matplotlib example. Its generated PNG is committed at `docs/images/synthetic_training_curves.png` and embedded in the main README.
+
+Synthetic demo: `synthetic_curves.ipynb` generates two committed PNG figures with the `docusaurus-dark` theme and `turquoise-spectrum` palette, one showing train/validation curves and the other comparing three synthetic runs. Both are generated, not fabricated model results.

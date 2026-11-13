@@ -6,7 +6,7 @@ Lispyn is an experimental, open-source project originally created by **Eduardo J
 
 Lispyn extends [Hy](https://hylang.org/) (a Lisp running on Python). It does **not** replace Python, hide PyTorch, or require developers to reimplement familiar ML APIs. Import Python modules and call their functions directly.
 
-> Status: **v0.13.0a1 (experimental)**. No stability guarantees; not yet published on PyPI.
+> Status: **v0.15.0a1 (experimental)**. No stability guarantees; not yet published on PyPI.
 
 ## Install from source
 
@@ -539,3 +539,37 @@ The [synthetic plotting example](../examples/synthetic_curves.hy) includes
 the pip-install macro, a named Matplotlib theme and a deterministic synthetic
 loss history. Run `lispyn run examples/synthetic_curves.hy` to regenerate
 `docs/images/synthetic_training_curves.png` for the README.
+
+## Dark plots, turquoise palettes and multi-run comparisons (v0.15 alpha)
+
+`plot_history`, `curve` and `defcurve` now support the theme
+`docusaurus-dark` (dark gray background, subtle grid, light text) and the
+seven-color `turquoise-spectrum` palette. Named designs remain reusable:
+
+```clojure
+(require lispyn.macros [defcurve compare-curves])
+(defcurve dark :theme "docusaurus-dark"
+  :palette "turquoise-spectrum" :title-size 18
+  :line-width 2.8 :fill-alpha 0.08)
+(dark run :metric "loss" :subtitle "Validation vs training"
+  :save "loss.png")
+
+; Compare multiple experiments with one macro:
+(compare-curves {"baseline" baseline-history "finetuned" tuned-history}
+  :metric "loss" :split "val" :theme "docusaurus-dark"
+  :palette "turquoise-spectrum" :save "comparison.svg")
+```
+
+The plotting API additionally accepts `:figure-bg`, `:axes-bg`,
+`:grid-color`, `:text-color`, `:spine-color`, `:legend-bg`,
+`:legend-edge`, `:train-color`, `:val-color`, `:subtitle`,
+`:title-size`, `:label-size`, `:tick-size`, `:marker`, `:alpha`,
+`:fill-alpha`, `:line-width`, `:figsize`, `:dpi` and label options.
+All options are scoped to the generated figure; Lispyn does not change
+global `matplotlib.rcParams`. The comparison helper plots a requested
+`train_` or `val_` metric from any number of named runs, with independent
+epoch counts. Only recorded values are plotted.
+
+The [synthetic plotting example](../examples/synthetic_curves.hy)
+generates both PNGs embedded in the README. Both are deterministic
+**synthetic examples** and require no downloads or model training.

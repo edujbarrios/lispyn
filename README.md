@@ -11,25 +11,40 @@ not a claim that a package is already available there. Check your local setup
 with `lispyn doctor` (or `lispyn doctor --json`). See
 [release instructions](https://github.com/edujbarrios/lispyn/blob/main/docs/releasing.md).
 
-## Matplotlib in a few lines
+## Matplotlib with reusable Lisp macros
 
-Build a reusable style for training and validation curves. In this small example, `history` contains **synthetic** loss values:
+Define a design once and apply it to any recorded history. This short example
+uses a dark gray background inspired by Docusaurus and the seven-color
+**turquoise-spectrum** palette:
 
 ```hy
-(require lispyn.macros [defcurve])
-(setv history {"train_loss" [1.2 0.8 0.5]
-               "val_loss" [1.3 0.95 0.7]})
-(defcurve my-style :theme "paper"
-  :train-color "#2563EB" :val-color "#D97706")
-(my-style history :metric "loss" :title "My first training curves"
+(require lispyn.macros [defcurve compare-curves])
+(setv history {"train_loss" [1.5 1.1 0.8 0.55]
+               "val_loss" [1.6 1.2 0.95 0.76]})
+(defcurve turquoise-dark
+  :theme "docusaurus-dark"
+  :palette "turquoise-spectrum"
+  :train-color "#40E0D0" :val-color "#8CF0EB"
+  :title-size 18 :line-width 2.8 :fill-alpha 0.08)
+(turquoise-dark history
+  :metric "loss" :title "Training dynamics"
+  :subtitle "Synthetic example · 4 epochs"
   :save "training.png")
 ```
 
-The <a href="https://github.com/edujbarrios/lispyn/blob/main/examples/synthetic_curves.hy">full demo</a> uses 18 synthetic epochs to produce this image directly from Hy and Matplotlib—**not results from a trained model**:
+**Generated from Lispyn + Matplotlib using synthetic values, not a trained model.**
 
-![Synthetic training and validation loss plotted by Lispyn](https://raw.githubusercontent.com/edujbarrios/lispyn/main/docs/images/synthetic_training_curves.png)
+![Turquoise training and validation lines on a Docusaurus-like dark gray background](https://raw.githubusercontent.com/edujbarrios/lispyn/main/docs/images/synthetic_training_curves.png)
 
-Generate the image with `lispyn run examples/synthetic_curves.hy`; the generated notebook is in [`example_generated_notebooks/synthetic_curves.ipynb`](https://github.com/edujbarrios/lispyn/blob/main/example_generated_notebooks/synthetic_curves.ipynb).
+The same Lisp file can compare several named runs, automatically assigning
+distinct colors from the palette:
+
+![Three synthetic validation curves in turquoise on a dark gray background](https://raw.githubusercontent.com/edujbarrios/lispyn/main/docs/images/synthetic_comparison_curves.png)
+
+Full reproducible source: [synthetic_curves.hy](https://github.com/edujbarrios/lispyn/blob/main/examples/synthetic_curves.hy)
+· [generated Jupyter notebook](https://github.com/edujbarrios/lispyn/blob/main/example_generated_notebooks/synthetic_curves.ipynb).
+Regenerate the figures with `lispyn run examples/synthetic_curves.hy`.
+
 ## Full experiment — ResNet18, two-stage fine-tuning
 
 The following is the complete source of [`examples/resnet_finetune_300.hy`](https://github.com/edujbarrios/lispyn/blob/main/examples/resnet_finetune_300.hy), including its Markdown cells. Put your images in `examples/data/resnet_images/<class_name>/*.jpg` (or `.png`); each class needs multiple images. The first stage trains the classifier for **10 epochs**, then the second unfreezes all layers for **300 epochs**.
