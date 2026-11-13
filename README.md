@@ -172,6 +172,57 @@ The optional `best_gain` and `final_gain` columns measure absolute metric
 improvement, where a **positive gain is always better**: lower loss or higher
 accuracy. Existing comparison output stays unchanged without `--baseline`.
 
+## Repeated cross-validation from Lisp macros (0.22.0a1)
+
+Lispyn's new **`cross-validate`** macro runs a Hy callback on each
+training/validation fold and returns a compact JSON-ready report. The callback
+creates a fresh model and optimizer per fold; PyTorch remains a native backend.
+Nothing from the held-out test set is passed to cross-validation.
+
+```hy
+(require lispyn.macros [cross-validate train-until save-cross-validation])
+(import torch)
+
+; `training` and `train-labels` come from a previous train-val-test split.
+(defn score-fold [fold-training fold-validation fold repeat]
+  (setv model (torch.nn.Linear 2 2)) ; new model for every fold
+  (setv run (train-until model fold-training 2
+    :validation fold-validation
+    :loss-fn (torch.nn.CrossEntropyLoss)
+    :metrics "accuracy"
+    :epochs 4 :batch-size 8
+    :seed (+ 42 (* repeat 100) fold)))
+  (get (get run.history "val_accuracy") -1))
+
+(setv summary (cross-validate training score-fold
+  :n-splits 4 :n-repeats 2 :labels train-labels
+  :metric "val_accuracy" :seed 42))
+(print "Fold mean:" (get summary "mean"))
+(print "Weighted mean:" (get summary "weighted_mean"))
+(save-cross-validation summary "runs/cv_report.json")
+```
+
+The `cross-validate` and `cross-validate-table` macros support one-off and
+repeated k-fold, optional stratification and **group-aware** folds. Repeated
+splits use different deterministic seeds. Each sample is held out exactly once
+*per repeat*. `weighted_mean` accounts for different validation fold sizes,
+which can arise with indivisible subjects/sessions. Reports include repeat,
+fold, split sizes, metric and aggregate scores, **not dataset rows or model
+predictions**. A score callback must return one finite real number; it should
+create a new model and optimizer each time.
+
+For lower-level control use `repeated-cross-validation-folds` (PyTorch) or
+`repeated-tabular-folds` (pandas), yielding
+`[repeat fold training validation]`. Tabular convenience macros
+`tabular-train-val-test` and `tabular-cross-validation-folds` are also
+available. Group labels and class labels are mutually exclusive, and must
+align with the **input dataset**; when working on a PyTorch `Subset`, select
+the appropriate `labels` or `groups` by its `indices`.
+
+See the [full Hy example](examples/repeated_cross_validation.hy), compiled
+by `lispyn gallery`, or run it directly using
+`lispyn run examples/repeated_cross_validation.hy` (requires PyTorch).
+
 ## Train/validation/test and k-fold cross-validation (0.21.0a1)
 
 **Author experiments in Hy (Lisp), with Lispyn macros as the main interface.**
