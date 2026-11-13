@@ -6,7 +6,7 @@ Lispyn is an experimental, open-source project originally created by **Eduardo J
 
 Lispyn extends [Hy](https://hylang.org/) (a Lisp running on Python). It does **not** replace Python, hide PyTorch, or require developers to reimplement familiar ML APIs. Import Python modules and call their functions directly.
 
-> Status: **v0.17.0a1 (experimental)**. No stability guarantees; not yet published on PyPI.
+> Status: **v0.18.0a1 (experimental)**. No stability guarantees; published as an experimental alpha on [PyPI](https://pypi.org/project/lispyn/).
 
 ## Install from source
 
@@ -644,3 +644,51 @@ experiments, so it is only automatic when both `experiment_dir` and
 The manifest records `epochs_completed` and `stopped_early`, and
 `lispyn report runs/short` shows them. The [offline notebook example]
 (../examples/early_stopping.hy) uses a tiny PyTorch dataset.
+
+## v0.18: classification metrics, notebook metadata and run comparisons
+
+### Class precision, recall, F1 and report exports
+
+```clojure
+(require lispyn.macros [classification-report])
+(setv report (classification-report y-true y-pred
+  :classes ["Cat" "Dog" "Bird"] :save "reports/classes.md"))
+(print (get report "macro_avg"))
+```
+
+Calculated metrics include precision, recall, F1, support for each class,
+overall accuracy, unweighted macro averages and support-weighted averages.
+Classes with zero examples or predictions receive zero where division
+would otherwise be undefined. Exports accept `.json` and `.md`.
+No scikit-learn dependency is required.
+
+### Raw cells and Jupyter code tags
+
+```clojure
+(require lispyn.macros [raw-cell cell-tags md])
+(raw-cell "<!-- Markdown exporter hint -->")
+(cell-tags "parameters" "hide-input")
+(setv learning-rate 0.001)
+```
+
+Top-level `raw-cell` writes a **raw** Jupyter cell, preserving literal
+strings without running them. `cell-tags` annotates the **next code cell**.
+Tags must be unique, literal, nonempty Jupyter identifiers; the directive
+must occur on its own line and cannot be left unattached. Jupyter
+notebooks preserve these tags, and the macros are Hy runtime no-ops.
+Repeat `(require ...)` in each generated code cell using macros.
+
+### Comparing recorded experiments
+
+```bash
+lispyn compare runs/a runs/b --metric loss --split val \
+  --output reports/compare.md --plot plots/compare.svg
+```
+
+`compare` reads `history.json` from each run without executing training.
+Comparisons report the final metric and the best recorded value with its
+1-based epoch. By default `loss` metrics are minimized; other metrics
+are maximized. Override with `--mode min` or `--mode max`.
+Export tables as `.md`, `.csv` or `.json`, and draw one figure containing
+all runs with the same Docusaurus-dark/turquoise plotting themes.
+The plotting dependency remains optional.

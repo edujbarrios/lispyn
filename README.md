@@ -1,6 +1,6 @@
 # Lispyn
 
-[![PyPI version](https://img.shields.io/pypi/v/lispyn.svg)](https://pypi.org/project/lispyn/) [![Python versions](https://img.shields.io/pypi/pyversions/lispyn.svg)](https://pypi.org/project/lispyn/) [![PyPI downloads](https://img.shields.io/pypi/dm/lispyn.svg)](https://pypi.org/project/lispyn/) [![CI](https://github.com/edujbarrios/lispyn/actions/workflows/tests.yml/badge.svg)](https://github.com/edujbarrios/lispyn/actions/workflows/tests.yml) [![License](https://img.shields.io/pypi/l/lispyn.svg)](https://github.com/edujbarrios/lispyn/blob/main/LICENSE)
+[![PyPI](https://img.shields.io/pypi/v/lispyn?label=PyPI&color=40e0d0)](https://pypi.org/project/lispyn/) [![Python](https://img.shields.io/pypi/pyversions/lispyn?color=008080)](https://pypi.org/project/lispyn/) [![Tests](https://github.com/edujbarrios/lispyn/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/edujbarrios/lispyn/actions/workflows/tests.yml) [![Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-006666)](https://github.com/edujbarrios/lispyn/blob/main/LICENSE)
 
 **Write complex experiments. Make them easy to understand, reuse, and share.**
 
@@ -70,6 +70,7 @@ for any macros used in a later cell because Hy code cells compile independently.
 `python -m pip install -e ".[dev,notebook,plots]"` instead.
 See the [technical guide](https://github.com/edujbarrios/lispyn/blob/main/docs/guide.md)
 and [release instructions](https://github.com/edujbarrios/lispyn/blob/main/docs/releasing.md).
+
 ## Matplotlib with reusable Lisp macros
 
 Define a design once and apply it to any recorded history. This short example
@@ -110,6 +111,51 @@ See the [Lisp example](https://github.com/edujbarrios/lispyn/blob/main/examples/
 and its [generated figure](https://github.com/edujbarrios/lispyn/blob/main/docs/images/synthetic_confusion_matrix.png).
 The example uses **synthetic class labels**, not real model predictions.
 
+## Compare experiments and share classification reports
+
+Compare two recorded training runs without rewriting plotting code:
+
+```bash
+lispyn compare runs/baseline runs/finetuned --metric loss --split val \
+  --output comparison.md --plot comparison.svg
+```
+
+`lispyn compare` also exports CSV or JSON and reports the best metric,
+its epoch, and the final value for each run. **No model execution is needed.**
+
+Create per-class precision, recall, F1 and support metrics from predictions:
+
+```hy
+(require lispyn.macros [classification-report])
+(setv scores (classification-report ["cat" "dog" "cat"]
+                                    ["cat" "dog" "dog"]
+                                    :save "classification.md"))
+(print (get scores "accuracy"))
+```
+
+These calculations need neither scikit-learn nor Matplotlib. The
+[synthetic classification example](https://github.com/edujbarrios/lispyn/blob/main/examples/confusion_matrix.hy)
+generates a [Markdown metrics table](https://github.com/edujbarrios/lispyn/blob/main/docs/reports/synthetic_classification_report.md)
+alongside its turquoise confusion matrix.
+
+## Structure Jupyter cells from Lisp
+
+Use literal macros for native Jupyter metadata and raw cells:
+
+```hy
+(require lispyn.macros [md raw-cell cell-tags])
+(md "## Hyperparameters" "Keep experiment settings in a tagged code cell.")
+(raw-cell "<!-- Exporter note: retained as a raw Jupyter cell -->")
+(require lispyn.macros [cell-tags])
+(cell-tags "parameters")
+(setv learning-rate 0.001)
+```
+
+`cell-tags` tags the **next code cell** (use `parameters` or `hide-input`).
+`raw-cell` creates a raw Jupyter cell without executing its text. Both
+remain harmless no-ops when you run trusted Hy directly. The
+[example notebook](https://github.com/edujbarrios/lispyn/blob/main/example_generated_notebooks/notebook_metadata.ipynb)
+shows the resulting cell types and tags.
 ## Train smarter with one Lisp macro
 
 Long PyTorch experiments can stop when a selected validation metric stops

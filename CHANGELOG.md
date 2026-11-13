@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.18.0a1 — Richer notebooks, experiment comparisons and reports
+
+- Fix README package badges: official PyPI version/Python support, main-branch CI, explicit Apache-2.0 license.
+- Add `classification-report` Hy macro and precision/recall/F1/support calculations with Markdown/JSON export, no scikit-learn dependency.
+- Add `raw-cell` and `cell-tags` macros for first-class Jupyter raw cells and cell metadata.
+- Add `lispyn compare` CLI with cross-run loss/accuracy summaries, Markdown/CSV/JSON export and optional combined SVG/PNG plots.
+- Extend generated gallery and synthetic classification report example.
+- Improve reusable PyPI workflow to validate each release version and tag after successful trusted publishing.
+
 ## 0.17.0a1 — First public PyPI alpha
 
 The first Lispyn alpha packages the Hy-to-Python Jupyter workflow.

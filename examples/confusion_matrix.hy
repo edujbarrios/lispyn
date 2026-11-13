@@ -32,3 +32,11 @@
   :save "../docs/images/synthetic_confusion_matrix.png")
 
 (print "Saved synthetic confusion-matrix figure.")
+
+; Generate a precision / recall / F1 table from exactly these synthetic labels.
+(require lispyn.macros [classification-report])
+(setv scores
+  (classification-report actual predicted
+    :classes labels
+    :save "../docs/reports/synthetic_classification_report.md"))
+(print "Classification accuracy:" (get scores "accuracy"))

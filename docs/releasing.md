@@ -3,7 +3,7 @@
 Lispyn uses [PyPI Trusted Publishing](https://docs.pypi.org/trusted-publishers/using-a-publisher/).
 No long-lived PyPI API token or password is stored in GitHub.
 
-## First alpha: 0.17.0a1
+## First alpha: 0.17.0a1 (published)
 
 The initial PyPI Pending Trusted Publisher was registered with:
 
@@ -12,12 +12,11 @@ The initial PyPI Pending Trusted Publisher was registered with:
 - Workflow: `release.yml`
 - GitHub environment: `pypi`
 
-The first release is triggered by the dedicated release commit on `main`.
+The first release was successfully published from a dedicated release commit on `main`.
 Workflow `.github/workflows/release.yml` validates the exact `pyproject.toml`
 version, runs tests, builds both wheel and sdist, checks package metadata
 and license files, and uploads the verified artifacts to PyPI using OIDC.
-Only **after PyPI confirms success** does the workflow create the
-`v0.17.0a1` Git tag.
+Only **after PyPI confirms success** does the workflow create the matching annotated Git tag.
 
 ### GitHub environment
 
@@ -33,11 +32,12 @@ environment name `pypi` exactly.
    `src/lispyn/cli.py`, and the hardcoded version checks in
    `.github/workflows/package.yml`.
 2. Run both the Tests and Package verification workflows on `main`.
-3. Create/push an annotated Git tag with the matching version (for example
-   `git tag -a v0.18.0a1 -m 'Lispyn 0.18.0a1'` and
-   `git push origin v0.18.0a1`). The release workflow checks that the
-   tag and package version match and publishes automatically after
-   any required environment approval.
+3. Create a release commit on `main` with the **exact** subject
+   `release: publish v0.18.0a1 [pypi]` (replace the version each time).
+   Alternatively create/push an annotated tag `v0.18.0a1` from a tested
+   commit. The release workflow verifies the name/version and then publishes
+   using the same PyPI Trusted Publisher. For release commits, GitHub
+   creates the annotated version tag **after** successful upload.
 4. Check [the package on PyPI](https://pypi.org/project/lispyn/), then
    install in a fresh environment:
 

@@ -24,10 +24,11 @@ jobs:
           import nbformat
           folder = Path('example_generated_notebooks')
           notebooks = sorted(folder.glob('*.ipynb'))
-          assert len(notebooks) >= 10
+          assert len(notebooks) >= 11
           assert (folder / 'synthetic_curves.ipynb').is_file()
           assert (folder / 'confusion_matrix.ipynb').is_file()
           assert (folder / 'early_stopping.ipynb').is_file()
+          assert (folder / 'notebook_metadata.ipynb').is_file()
           for file in notebooks:
               notebook = nbformat.read(file, as_version=4)
               nbformat.validate(notebook)
@@ -141,9 +142,10 @@ jobs:
         run: |
           python -m pip install 'torch==2.10.0+cpu' --index-url https://download.pytorch.org/whl/cpu
           python -m pip install -e '.[plots]'
-          pytest -q tests/test_early_stopping.py tests/test_tracking.py tests/test_workflow.py tests/test_reproducibility.py tests/test_split_dataset.py tests/test_macros.py tests/test_scaffold.py tests/test_plots.py tests/test_curve_designs.py tests/test_dark_plotting.py tests/test_classification.py tests/test_markdown_macros.py tests/test_training_macros.py tests/test_pip_cells.py
+          pytest -q tests/test_comparison.py tests/test_classification_report.py tests/test_notebook_metadata.py tests/test_early_stopping.py tests/test_tracking.py tests/test_workflow.py tests/test_reproducibility.py tests/test_split_dataset.py tests/test_macros.py tests/test_scaffold.py tests/test_plots.py tests/test_curve_designs.py tests/test_dark_plotting.py tests/test_classification.py tests/test_markdown_macros.py tests/test_training_macros.py tests/test_pip_cells.py
           lispyn execute examples/synthetic_curves.hy --timeout 120
           lispyn execute examples/confusion_matrix.hy --timeout 120
+          lispyn execute examples/notebook_metadata.hy --timeout 60
           python - <<'PY'
           from pathlib import Path
           from PIL import Image
@@ -157,6 +159,10 @@ jobs:
           assert comparison.is_file() and comparison.stat().st_size > 5000
           confusion = Path('docs/images/synthetic_confusion_matrix.png')
           assert confusion.is_file() and confusion.stat().st_size > 5000
+          classification = Path('docs/reports/synthetic_classification_report.md')
+          assert classification.is_file()
+          report_text = classification.read_text()
+          assert 'Precision' in report_text and 'Macro average' in report_text
           with Image.open(confusion).convert("RGB") as img:
               assert img.getpixel((0, 0)) == ImageColor.getrgb("#1B1B1D")
           with Image.open(image) as img:
@@ -262,6 +268,7 @@ jobs:
       - run: test -s docs/images/synthetic_training_curves.png
       - run: test -s docs/images/synthetic_comparison_curves.png
       - run: test -s docs/images/synthetic_confusion_matrix.png
+      - run: test -s docs/reports/synthetic_classification_report.md
       - name: Commit verified compiled notebooks
         run: |
           # Do not publish artifacts built from an obsolete commit: a newer
@@ -273,7 +280,7 @@ jobs:
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add example_generated_notebooks/*.ipynb docs/images/synthetic_training_curves.png docs/images/synthetic_comparison_curves.png docs/images/synthetic_confusion_matrix.png
+          git add example_generated_notebooks/*.ipynb docs/images/synthetic_training_curves.png docs/images/synthetic_comparison_curves.png docs/images/synthetic_confusion_matrix.png docs/reports/synthetic_classification_report.md
           if ! git diff --cached --quiet; then
             git commit -m 'docs: refresh compiled notebooks [gallery]'
             git push

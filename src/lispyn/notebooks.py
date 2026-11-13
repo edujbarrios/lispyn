@@ -11,7 +11,7 @@ import re
 import tempfile
 
 import nbformat
-from nbformat.v4 import new_code_cell, new_markdown_cell, new_notebook
+from nbformat.v4 import new_code_cell, new_markdown_cell, new_raw_cell, new_notebook
 
 from .compiler import LispynError, check_source, compile_hy
 
@@ -25,7 +25,8 @@ ATTRIBUTION = (
 # Comment markers work in both ordinary Hy execution and notebook compilation.
 CELL_MARKER = re.compile(r"^\s*;\s*%%(?:\s*\[(code|markdown)\])?\s*$")
 # A literal top-level markdown macro is a first-class cell boundary.
-NOTEBOOK_FORM = re.compile(r"(?m)^\s*\((?:md|markdown|pip-install)(?:\s|\))")
+NOTEBOOK_FORM = re.compile(r"(?m)^\s*\((?:md|markdown|pip-install|raw-cell|cell-tags)(?:\s|\))")
+CELL_TAG = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
 
 
 def split_sections(text: str) -> list[tuple[str, str]]:
@@ -69,7 +70,7 @@ def split_sections(text: str) -> list[tuple[str, str]]:
 
 
 def split_markdown_macros(code: str) -> list[tuple[str, str]]:
-    """Extract top-level Markdown and pip-install forms into notebook cells.
+    """Extract top-level Markdown, raw, tags and pip-install forms into cells.
 
     The Hy reader supplies exact form positions. These special forms must
     occupy their own lines. Their arguments are literal strings only, so
@@ -98,7 +99,8 @@ def split_markdown_macros(code: str) -> list[tuple[str, str]]:
 
     for index, form in enumerate(forms):
         if not (isinstance(form, Expression) and form and
-                str(form[0]) in ("md", "markdown", "pip-install")):
+                str(form[0]) in ("md", "markdown", "pip-install",
+                                 "raw-cell", "cell-tags")):
             continue
         name = str(form[0])
         start = form.start_line - 1
@@ -108,11 +110,15 @@ def split_markdown_macros(code: str) -> list[tuple[str, str]]:
                 (index + 1 < len(forms) and
                  forms[index + 1].start_line <= form.end_line)):
             raise LispynError(
-                "Markdown and pip-install macros must occupy their own lines"
+                "Notebook cell macros must occupy their own lines"
             )
         if not form[1:] or not all(isinstance(item, String) for item in form[1:]):
             if name == "pip-install":
                 raise LispynError("(pip-install ...) accepts literal package strings only")
+            if name == "cell-tags":
+                raise LispynError("(cell-tags ...) accepts literal tag strings only")
+            if name == "raw-cell":
+                raise LispynError("(raw-cell ...) accepts literal strings only")
             raise LispynError("(md ...) accepts one or more literal Markdown strings only")
 
         texts = [str(item) for item in form[1:]]
@@ -131,16 +137,22 @@ def split_markdown_macros(code: str) -> list[tuple[str, str]]:
                 f"ensure_packages({params})"
             )
             sections.append(("dependencies", script))
+        elif name == "cell-tags":
+            if not all(CELL_TAG.fullmatch(tag) for tag in texts):
+                raise LispynError("cell-tags must be nonempty Jupyter tag names")
+            if len(set(texts)) != len(texts):
+                raise LispynError("cell-tags must be unique")
+            sections.append(("tags", texts))
         else:
             content = "\n\n".join(texts).strip()
             if not content:
-                raise LispynError("Markdown cell text cannot be empty")
-            sections.append(("markdown", content))
+                raise LispynError("Markdown/raw cell text cannot be empty")
+            sections.append(("raw" if name == "raw-cell" else "markdown", content))
         cursor = end
         found = True
 
     if not found:
-        raise LispynError("Markdown and pip-install macros must be top-level forms")
+        raise LispynError("Notebook cell macros must be top-level forms")
     append_code(len(lines))
     return sections
 
@@ -156,7 +168,7 @@ def compile_section(code: str, *, source: Path) -> str:
 def build_notebook(source: Path) -> nbformat.NotebookNode:
     """Generate notebook cells without executing Python.
 
-    Hy Markdown/pip-install forms and old '; %%' markers are supported.
+    Hy Markdown/pip-install/raw/tags forms and old '; %%' markers are supported.
     Each code cell is compiled independently; repeat (require ...) for any
     macro you use in a later code cell.
     """
@@ -177,15 +189,33 @@ def build_notebook(source: Path) -> nbformat.NotebookNode:
     if not has_markers and not has_directives:
         cells.append(new_code_cell(compile_hy(source)))
     else:
+        pending_tags = None
         for kind, content in parts:
+            if kind == "tags":
+                if pending_tags is not None:
+                    raise LispynError("cell-tags must be followed by exactly one code cell")
+                pending_tags = content
+                continue
+            if pending_tags is not None and kind in ("markdown", "raw"):
+                raise LispynError("cell-tags must be followed by a code cell")
             if kind == "markdown":
-                cells.append(new_markdown_cell(content))
+                cell = new_markdown_cell(content)
+            elif kind == "raw":
+                cell = new_raw_cell(content)
             elif kind == "dependencies":
-                cells.append(new_code_cell(
+                cell = new_code_cell(
                     content, metadata={"tags": ["lispyn-pip-install"]}
-                ))
+                )
             else:
-                cells.append(new_code_cell(compile_section(content, source=source)))
+                cell = new_code_cell(compile_section(content, source=source))
+            if pending_tags is not None:
+                cell.metadata["tags"] = list(dict.fromkeys(
+                    [*cell.metadata.get("tags", []), *pending_tags]
+                ))
+                pending_tags = None
+            cells.append(cell)
+        if pending_tags is not None:
+            raise LispynError("cell-tags must be followed by a code cell")
 
     # Stable IDs mean gallery generation does not create meaningless git diffs.
     for index, cell in enumerate(cells):

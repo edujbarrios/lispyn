@@ -28,3 +28,5 @@ Synthetic demo: `synthetic_curves.ipynb` generates two committed PNG figures wit
 The gallery also includes `confusion_matrix.ipynb`: a synthetic classification example with a reusable `defconfusion` macro and a turquoise-on-dark matrix figure at `docs/images/synthetic_confusion_matrix.png`. It is compiled without execution or fabricated model predictions.
 
 `early_stopping.ipynb` demonstrates the `train-until` macro with a small CPU PyTorch model, Markdown narration, best/last checkpoint tracking, a run manifest and Docusaurus-dark loss curves. Gallery creation never executes the training loop.
+
+The new `notebook_metadata.ipynb` shows first-class raw Jupyter cells and parameter/hide-input tags. The `confusion_matrix.ipynb` also computes per-class classification scores; its synthetic Markdown report is generated at `docs/reports/synthetic_classification_report.md`.

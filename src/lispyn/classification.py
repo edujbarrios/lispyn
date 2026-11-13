@@ -168,3 +168,80 @@ def plot_confusion_matrix(actual, predicted, *, classes=None, normalize=None,
 def make_confusion_plotter(**defaults):
     """Return a reusable confusion-matrix plotter, customizable per call."""
     return partial(plot_confusion_matrix, **defaults)
+
+
+def classification_report(actual, predicted, *, classes=None, save=None):
+    """Compute precision, recall, F1, support and accuracy without sklearn.
+
+    Return JSON-friendly per-class and aggregate metrics. Zero-division scores
+    are 0.0 (including classes with no support or predictions). When save is
+    specified, export .json or .md based on the filename extension.
+    """
+    import json
+
+    counts, labels = confusion_counts(actual, predicted, classes=classes)
+    total = sum(sum(row) for row in counts)
+    correct = sum(counts[i][i] for i in range(len(counts)))
+    per_class = []
+    for i, label in enumerate(labels):
+        tp = counts[i][i]
+        support = sum(counts[i])
+        predicted_count = sum(row[i] for row in counts)
+        precision = tp / predicted_count if predicted_count else 0.0
+        recall = tp / support if support else 0.0
+        f1 = (2 * precision * recall / (precision + recall)
+              if precision + recall else 0.0)
+        per_class.append({
+            "label": str(label), "precision": precision,
+            "recall": recall, "f1": f1, "support": support,
+        })
+
+    macro = {
+        key: sum(row[key] for row in per_class) / len(per_class)
+        for key in ("precision", "recall", "f1")
+    }
+    weighted = {
+        key: sum(row[key] * row["support"] for row in per_class) / total
+        for key in ("precision", "recall", "f1")
+    }
+    report = {
+        "accuracy": correct / total, "total": total,
+        "per_class": per_class,
+        "macro_avg": {**macro, "support": total},
+        "weighted_avg": {**weighted, "support": total},
+    }
+    if save is not None:
+        output = Path(save).expanduser()
+        if output.suffix.lower() not in ('.json', '.md'):
+            raise ValueError('Classification report save path must end with .json or .md')
+        output.parent.mkdir(parents=True, exist_ok=True)
+        content = (json.dumps(report, indent=2, ensure_ascii=False) + '\n'
+                   if output.suffix.lower() == '.json'
+                   else format_classification_report(report) + '\n')
+        output.write_text(content, encoding='utf-8')
+    return report
+
+
+def format_classification_report(report, *, digits=3):
+    """Create a readable Markdown report suitable for Jupyter and GitHub."""
+    if isinstance(digits, bool) or not isinstance(digits, int) or not 0 <= digits <= 8:
+        raise ValueError('digits must be an integer from 0 to 8')
+    def fmt(value):
+        return f'{value:.{digits}f}'
+    def row(label, values):
+        label = str(label).replace('|', '\\|').replace('\n', ' ')
+        return (f'| {label} | {fmt(values["precision"])} | '
+                f'{fmt(values["recall"])} | {fmt(values["f1"])} | '
+                f'{values["support"]} |')
+    lines = [
+        '# Classification report',
+        '',
+        f'**Accuracy:** {fmt(report["accuracy"])} ({report["total"]} samples)',
+        '',
+        '| Class | Precision | Recall | F1 | Support |',
+        '| --- | ---: | ---: | ---: | ---: |',
+    ]
+    lines.extend(row(item['label'], item) for item in report['per_class'])
+    lines.append(row('Macro average', report['macro_avg']))
+    lines.append(row('Weighted average', report['weighted_avg']))
+    return '\n'.join(lines)

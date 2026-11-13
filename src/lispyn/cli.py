@@ -22,7 +22,7 @@ def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="lispyn", description="Hy experiments, Python notebooks, PyTorch freedom."
     )
-    p.add_argument("--version", action="version", version="lispyn 0.17.0a1")
+    p.add_argument("--version", action="version", version="lispyn 0.18.0a1")
     sub = p.add_subparsers(dest="command", required=True)
     health = sub.add_parser("doctor", help="Inspect installation and optional tools without modifying anything")
     health.add_argument("--json", action="store_true", help="Print machine-readable environment summary")
@@ -43,6 +43,17 @@ def parser() -> argparse.ArgumentParser:
     )
     gallery.add_argument("--source-dir", type=Path, default=Path("examples"))
     gallery.add_argument("--output-dir", type=Path, default=Path("example_generated_notebooks"))
+    compare = sub.add_parser("compare", help="Compare two or more saved Lispyn runs")
+    compare.add_argument("directories", nargs="+", type=Path, help="Run directories with history.json")
+    compare.add_argument("--metric", default="loss", help="Metric name without train_/val_ prefix")
+    compare.add_argument("--split", choices=("train", "val"), default="val")
+    compare.add_argument("--mode", choices=("min", "max"), default=None)
+    compare.add_argument("--output", type=Path, help="Export summary as .md, .csv, or .json")
+    compare.add_argument("--plot", type=Path, help="Save combined PNG/SVG plot (requires plots extra)")
+    compare.add_argument("--theme", default="docusaurus-dark",
+                         choices=("clean", "paper", "dark", "docusaurus-dark"))
+    compare.add_argument("--palette", default="turquoise-spectrum",
+                         choices=("turquoise-spectrum",))
     starter = sub.add_parser("new", help="Create a ready-to-edit Hy/Jupyter experiment")
     starter.add_argument("source", type=Path, help="Path for a new .hy file")
     report = sub.add_parser("report", help="Summarize a saved Lispyn experiment")
@@ -69,6 +80,23 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "doctor":
             report = inspect_environment()
             print(json.dumps(report, indent=2) if args.json else format_report(report))
+            return 0
+        if args.command == "compare":
+            from .comparison import compare_experiments, format_comparison, save_comparison
+            summary = compare_experiments(args.directories, metric=args.metric,
+                                          split=args.split, mode=args.mode)
+            print(format_comparison(summary))
+            if args.output is not None:
+                print(f"Summary saved: {save_comparison(summary, args.output)}")
+            if args.plot is not None:
+                from .plots import plot_comparison
+                import matplotlib.pyplot as plt
+                sources = {path.name: path / "history.json" for path in args.directories}
+                fig = plot_comparison(sources, metric=args.metric, split=args.split,
+                                      theme=args.theme, palette=args.palette,
+                                      save=args.plot)
+                plt.close(fig)
+                print(f"Plot saved: {args.plot.expanduser().resolve()}")
             return 0
         if args.command == "gallery":
             paths = generate_gallery(args.source_dir, args.output_dir)

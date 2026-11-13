@@ -105,3 +105,17 @@
   `(do
     (import lispyn.workflow [train])
     (train ~model ~data :patience ~patience ~@options)))
+
+(defmacro raw-cell [#* content]
+  "Emit a raw Jupyter cell from literal strings; no-op during Hy execution."
+  None)
+
+(defmacro cell-tags [#* tags]
+  "Attach literal Jupyter metadata tags to the next code cell."
+  None)
+
+(defmacro classification-report [actual predicted #* options]
+  "Compute precision, recall, F1 and support without scikit-learn."
+  `(do
+    (import lispyn.classification)
+    (lispyn.classification.classification_report ~actual ~predicted ~@options)))
