@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.20.0a1 — 2026-11-13 — Leakage-safe data splits and baseline comparisons
+
+- Add group-aware train/validation splits for DataFrames and arbitrary PyTorch datasets, keeping all records for a subject or session in one partition.
+- Add optional seeded, per-class stratification to tabular DataFrame splits without requiring scikit-learn.
+- Add `lispyn compare --baseline RUN` with direction-aware best/final gains, included in Markdown, CSV and JSON exports.
+- Add regression coverage for deterministic splits, non-overlapping groups, invalid inputs, baseline reporting and CLI output.
+- Retain legacy random split and comparison formats when the new options are not requested.
+
+
 ## 0.19.0a1 — 2026-11-13 — Advanced native PyTorch training controls
 
 - Add true gradient accumulation with correctly normalized incomplete final windows.
