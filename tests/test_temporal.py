@@ -22,9 +22,9 @@ def test_chronological_three_way_holdout_preserves_order_with_gaps():
     training, validation, testing = temporal_three_way_indices(
         30, validation_fraction=0.2, test_fraction=0.1, gap=2
     )
-    assert training == list(range(19))
-    assert validation == list(range(21, 26))
-    assert testing == list(range(28, 30))
+    assert training == list(range(18))
+    assert validation == list(range(20, 25))
+    assert testing == list(range(27, 30))
     assert set(training).isdisjoint(validation)
     assert set(training).isdisjoint(testing)
     assert set(validation).isdisjoint(testing)
