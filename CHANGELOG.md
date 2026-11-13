@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.21.0a1 — 2026-11-13 — Held-out test splits and k-fold cross-validation
+
+- Add reproducible train/validation/test splits for pandas and PyTorch, with optional stratification or leakage-safe group boundaries.
+- Add 2–N k-fold cross-validation on either tabular frames or indexable PyTorch datasets, including class-balanced and group-aware folds.
+- Add pure-Python cross-validation summaries (mean, population standard deviation, min/max) and a `lispyn cv-summary` JSON CLI exporter.
+- Add `train-val-test` and `cross-validation-folds` Hy macros and a synthetic, offline example.
+- Add regression coverage for disjoint partitions, exactly-once out-of-fold coverage, reproducible seeds and invalid configurations.
+- Keep existing two-way split APIs and defaults unchanged.
+
+
 ## 0.20.0a1 — 2026-11-13 — Leakage-safe data splits and baseline comparisons
 
 - Add group-aware train/validation splits for DataFrames and arbitrary PyTorch datasets, keeping all records for a subject or session in one partition.
