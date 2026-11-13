@@ -60,7 +60,7 @@ def test_compile_hy_invoked_without_running_program(tmp_path):
 
     source = tmp_path / "experiment.hy"
     source.write_text("(print 1)")
-    with patch("lispyn.compiler.shutil.which", return_value="/usr/bin/hy2py"), patch(
+    with patch("lispyn.compiler.find_hy_executable", return_value="/usr/bin/hy2py"), patch(
         "lispyn.compiler.subprocess.run"
     ) as invoke:
         invoke.return_value.returncode = 0
