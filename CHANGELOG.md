@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.19.0a1 — Advanced native PyTorch training controls
+## 0.19.0a1 — 2026-11-13 — Advanced native PyTorch training controls
 
 - Add true gradient accumulation with correctly normalized incomplete final windows.
 - Add optional global gradient-norm clipping before optimizer updates.
