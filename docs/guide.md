@@ -300,3 +300,44 @@ Copyright © 2026 **Eduardo J. Barrios**. Licensed under the **Apache License 2.
 
 
 For the new experiment manifest and report command, see the project [README](../README.md).
+
+
+## Reproducible stratified dataset splits (v0.8 alpha)
+
+Use native `torch.utils.data.Subset` objects. No dataset copying, no sklearn dependency.
+
+```clojure
+(import lispyn.data [split-dataset])
+(import lispyn.media [image-folder])
+
+(setv photos (image-folder "photos"))
+(setv halves (split-dataset photos :stratify True :seed 42))
+(setv training (get halves 0))
+(setv validation (get halves 1))
+```
+
+`ImageFolder`, labeled `audio_folder` and labeled `text_dataset` expose
+`.targets` for convenience. For a `TensorDataset`, pass
+`:labels labels` explicitly: `(split-dataset data :labels labels)`.
+Split is deterministic for the same label order and seed, and every class
+must contain at least two samples. The per-class rounding may change the
+overall validation percentage. **It is not group-aware**: avoid leakage between
+train and validation when samples share a person, recording, document,
+subject, session, or other correlated source.
+
+## Inference as a Lisp macro
+
+```clojure
+(require lispyn.macros [with-eval])
+(with-eval model
+  (setv outputs (model batch))
+  (print outputs.shape))
+```
+
+`with-eval` temporarily calls `model.eval()`, runs the body under
+`torch.inference_mode()`, and restores the previous `model.training`
+state even if the body raises an exception. This is a **real compile-time
+Hy macro**, not a Python wrapper. Use only for inference, not training.
+
+The runnable offline example is
+[`examples/stratified_inference.hy`](../examples/stratified_inference.hy).

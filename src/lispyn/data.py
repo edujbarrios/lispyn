@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Sequence
+import random
 
 
 def read_dataset(path: str | Path, **kwargs):
@@ -58,6 +59,70 @@ def train_validation_split(frame, *, validation_fraction: float = 0.2,
         shuffled.iloc[:-validation_rows].reset_index(drop=True),
         shuffled.iloc[-validation_rows:].reset_index(drop=True),
     )
+
+
+
+def split_dataset(dataset, *, validation_fraction: float = 0.2,
+                  seed: int = 42, stratify: bool = False, labels=None):
+    """Split any indexable PyTorch dataset into two non-overlapping Subsets.
+
+    Set stratify=True to read dataset.targets (ImageFolder, AudioFolder,
+    labeled Lispyn text datasets). Or pass labels explicitly, which also
+    enables stratification; e.g. labels=[0, 1, ...] for TensorDataset.
+
+    A class must contain >=2 samples so both partitions contain that class.
+    Splitting is sample-level, not group-, speaker- or subject-aware: choose
+    a grouped split when images/audio/text from one source can leak across
+    partitions. Per-class rounding can change the overall validation fraction.
+    """
+    from torch.utils.data import Subset
+
+    if isinstance(validation_fraction, bool) or not 0 < validation_fraction < 1:
+        raise ValueError("validation_fraction must be strictly between 0 and 1")
+    if isinstance(seed, bool) or not isinstance(seed, int):
+        raise ValueError("seed must be an integer")
+    count = len(dataset)
+    if count < 2:
+        raise ValueError("At least two samples are needed for a dataset split")
+    rng = random.Random(seed)
+
+    if stratify or labels is not None:
+        if labels is None:
+            labels = getattr(dataset, "targets", None)
+        if labels is None:
+            raise ValueError("Stratified split requires labels or dataset.targets")
+        labels = list(labels)
+        if len(labels) != count:
+            raise ValueError("Number of labels must match dataset length")
+        groups = {}
+        try:
+            for index, label in enumerate(labels):
+                if hasattr(label, "item"):
+                    label = label.item()
+                groups.setdefault(label, []).append(index)
+        except TypeError as exc:
+            raise ValueError("Class labels must be hashable scalars") from exc
+
+        train_indices, valid_indices = [], []
+        for group in groups.values():
+            if len(group) < 2:
+                raise ValueError(
+                    "Stratified split needs at least two samples per class"
+                )
+            rng.shuffle(group)
+            n_valid = max(1, min(len(group) - 1,
+                                 round(len(group) * validation_fraction)))
+            valid_indices.extend(group[:n_valid])
+            train_indices.extend(group[n_valid:])
+        rng.shuffle(train_indices)
+        rng.shuffle(valid_indices)
+    else:
+        indices = list(range(count))
+        rng.shuffle(indices)
+        n_valid = max(1, min(count - 1, round(count * validation_fraction)))
+        valid_indices = indices[:n_valid]
+        train_indices = indices[n_valid:]
+    return Subset(dataset, train_indices), Subset(dataset, valid_indices)
 
 
 def to_tensor(values, *, dtype=None, device=None):

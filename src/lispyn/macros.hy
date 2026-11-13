@@ -13,3 +13,18 @@
   `(do
      (import lispyn.training [fit])
      (fit ~model ~loader ~optimizer :loss-fn ~criterion :epochs ~epochs)))
+
+(defmacro with-eval [model #* body]
+  "Temporarily enable evaluation/inference mode and restore training state."
+  (setv model-symbol (hy.gensym "lispyn_model"))
+  (setv previous-mode (hy.gensym "lispyn_training"))
+  `(do
+    (import torch)
+    (setv ~model-symbol ~model)
+    (setv ~previous-mode ~model-symbol.training)
+    (.eval ~model-symbol)
+    (try
+      (with [(torch.inference_mode)]
+        ~@body)
+      (finally
+        (.train ~model-symbol ~previous-mode)))))

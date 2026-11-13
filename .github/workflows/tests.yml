@@ -85,13 +85,16 @@ jobs:
           lispyn build examples/one_call_training.hy
           lispyn build examples/one_call_lora.hy
           lispyn build examples/reproducible_run.hy
+      - name: Compile stratified split and with-eval macro
+        run: lispyn build examples/stratified_inference.hy
       - name: Train with accuracy and best checkpoint (Python 3.11)
         if: matrix.python-version == '3.11'
         run: |
           python -m pip install 'torch==2.10.0+cpu' --index-url https://download.pytorch.org/whl/cpu
-          pytest -q tests/test_tracking.py tests/test_workflow.py tests/test_reproducibility.py
+          pytest -q tests/test_tracking.py tests/test_workflow.py tests/test_reproducibility.py tests/test_split_dataset.py tests/test_macros.py
           lispyn execute examples/compact_training.hy --timeout 120
           lispyn execute examples/reproducible_run.hy --timeout 120
+          lispyn execute examples/stratified_inference.hy --timeout 120
           lispyn report examples/runs/smoke
           lispyn execute examples/one_call_training.hy --timeout 120
           python - <<'PY'

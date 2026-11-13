@@ -8,7 +8,7 @@ Lispyn is a small, open-source **Lisp-first toolkit for reproducible machine-lea
 
 Lisp's code-as-data design makes **macros** natural: repeated experiment patterns can become reusable language constructs rather than copied blocks of training code. Lispyn uses [Hy](https://hylang.org/), a Lisp that compiles to Python, so experiments retain direct access to `torch`, `torchvision`, `torchaudio` and the rest of Python.
 
-**What it is:** Hy syntax and macros, plus focused helpers for datasets, training and Jupyter. **What it isn't:** a new interpreter, a replacement for PyTorch, or a mature standalone language. The macros are still small; most current features are ordinary Python functions callable from Hy. We're building the abstractions incrementally.
+**What it is:** Hy syntax and macros, plus focused helpers for datasets, training and Jupyter. **What it isn't:** a new interpreter, a replacement for PyTorch, or a mature standalone language. The macros are still small (`with-seed`, `with-eval`, `train-for`); most current features are ordinary Python functions callable from Hy. We're building the abstractions incrementally.
 
 ## A short experiment
 
@@ -62,7 +62,7 @@ lispyn run examples/first_experiment.hy
 
 | Area | Current support |
 | --- | --- |
-| **Data** | CSV, JSON/JSONL, Parquet, PyTorch datasets and loaders |
+| **Data** | CSV/JSON/Parquet, reproducible and stratified PyTorch dataset splits |
 | **Images** | TorchVision image folders, transforms, pretrained-model recipes |
 | **Text** | Text files, tokenization collators, Transformers and PEFT LoRA |
 | **Audio** | TorchAudio decoding, labeled folders and spectrograms |
@@ -70,7 +70,7 @@ lispyn run examples/first_experiment.hy
 | **Reproducibility** | Seeds, recorded environment/configuration, run reports |
 | **Jupyter** | Generate, execute and save multi-cell Python notebooks |
 
-Examples: [`one_call_training.hy`](examples/one_call_training.hy), [`one_call_lora.hy`](examples/one_call_lora.hy), [`vision_finetune.hy`](examples/vision_finetune.hy), [`audio_features.hy`](examples/audio_features.hy). Optional integrations need their compatible libraries installed.
+Examples: [`stratified_inference.hy`](examples/stratified_inference.hy), [`one_call_training.hy`](examples/one_call_training.hy), [`one_call_lora.hy`](examples/one_call_lora.hy), [`vision_finetune.hy`](examples/vision_finetune.hy), [`audio_features.hy`](examples/audio_features.hy). Optional integrations need their compatible libraries installed.
 
 ## Direction
 
@@ -78,7 +78,7 @@ Examples: [`one_call_training.hy`](examples/one_call_training.hy), [`one_call_lo
 2. **Keep experiments inspectable:** generated Python notebooks and explicit outputs.
 3. **Keep the ecosystem open:** native Python functions, community macros, small tested releases.
 
-**Experimental v0.7.0-alpha:** APIs may change. Recording a seed and package versions helps repeat an experiment but does not guarantee deterministic GPU execution. Notebook compilation may execute Hy macros: **run only trusted `.hy` files**. The run manifest does not store dataset contents or secrets; using the same data and base weights remains your responsibility.
+**Experimental v0.8.0-alpha:** APIs may change. Recording a seed and package versions helps repeat an experiment but does not guarantee deterministic GPU execution. Notebook compilation may execute Hy macros: **run only trusted `.hy` files**. The run manifest does not store dataset contents or secrets; using the same data and base weights remains your responsibility.
 
 For API details, optional installation and advanced examples, see the [extended guide](docs/guide.md). Contributions and issues are welcome.
 

@@ -62,6 +62,10 @@ def text_dataset(path, *, text_key="text", label_key=None, label_cast=None, enco
         output.append(item)
 
     class TextDataset(Dataset):
+        def __init__(self):
+            self.targets = ([row["label"] for row in output]
+                            if label_key is not None else None)
+
         def __len__(self):
             return len(output)
 
@@ -147,6 +151,7 @@ def audio_folder(root, *, sample_rate=None, num_frames=None, mono=True, transfor
             self.classes = classes
             self.class_to_idx = {name: i for i, name in enumerate(classes)}
             self.samples = samples
+            self.targets = [label for _, label in samples]
 
         def __len__(self):
             return len(samples)
