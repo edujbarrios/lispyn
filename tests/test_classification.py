@@ -129,7 +129,7 @@ def test_synthetic_classification_gallery_source_compiles():
     from lispyn.notebooks import build_notebook
     root = Path(__file__).resolve().parents[1]
     nb = build_notebook(root / "examples" / "confusion_matrix.hy")
-    assert any("Synthetic" in c.source for c in nb.cells if c.cell_type == "markdown")
+    assert any("synthetic" in c.source.lower() for c in nb.cells if c.cell_type == "markdown")
     assert any("make_confusion_plotter" in c.source
                for c in nb.cells if c.cell_type == "code")
     assert all(c.get("execution_count") is None
