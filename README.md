@@ -1,5 +1,7 @@
 # Lispyn
 
+[![PyPI version](https://img.shields.io/pypi/v/lispyn.svg)](https://pypi.org/project/lispyn/) [![Python versions](https://img.shields.io/pypi/pyversions/lispyn.svg)](https://pypi.org/project/lispyn/) [![PyPI downloads](https://img.shields.io/pypi/dm/lispyn.svg)](https://pypi.org/project/lispyn/) [![CI](https://github.com/edujbarrios/lispyn/actions/workflows/tests.yml/badge.svg)](https://github.com/edujbarrios/lispyn/actions/workflows/tests.yml) [![License](https://img.shields.io/pypi/l/lispyn.svg)](https://github.com/edujbarrios/lispyn/blob/main/LICENSE)
+
 **Write complex experiments. Make them easy to understand, reuse, and share.**
 
 Great experiments deserve to be understood—not just executed. Whether you're exploring new AI models, fine-tuning neural networks, or running advanced training pipelines, you often need to **show others what you built, how it works, and what you learned**.
@@ -8,13 +10,66 @@ Great experiments deserve to be understood—not just executed. Whether you're e
 
 Spend less time rewriting boilerplate and more time experimenting. When your dataset, model, or training strategy changes, adapt the macro and reuse the workflow. **Lisp for expressive experiments. Python for the ecosystem. Jupyter for sharing results.**
 
-**Installation:** for development, clone the repository and use
-`python -m pip install -e ".[dev,notebook,plots]"`. For users, we are
-preparing a PyPI release; `pip install lispyn` is intended **after publication**,
-not a claim that a package is already available there. Check your local setup
-with `lispyn doctor` (or `lispyn doctor --json`). See
-[release instructions](https://github.com/edujbarrios/lispyn/blob/main/docs/releasing.md).
+## Quick installation
 
+Install Lispyn directly from [PyPI](https://pypi.org/project/lispyn/):
+
+```bash
+python -m pip install lispyn
+
+# Recommended for notebooks and Matplotlib plots
+python -m pip install "lispyn[notebook,plots]"
+
+# Check your current Python and available dependencies
+lispyn doctor
+```
+
+Lispyn needs **Python 3.10+**. Basic installation includes Hy, so you can
+import and use standard Python modules immediately. PyTorch, TorchVision,
+and GPU-specific libraries are optional; install compatible versions for
+your hardware before running AI training examples.
+
+## Your first Lispyn notebook
+
+Create a file named `hello.hy`:
+
+```hy
+(require lispyn.macros [md])
+(md "# My first Lispyn experiment"
+    "Synthetic training curves, generated with reusable Lisp macros.")
+
+(require lispyn.macros [defcurve])
+(setv history {"train_loss" [1.4 1.0 0.7 0.5]
+               "val_loss" [1.5 1.2 0.9 0.75]})
+(defcurve my-style :theme "docusaurus-dark"
+  :palette "turquoise-spectrum")
+(my-style history :metric "loss"
+  :title "Training curves" :save "training.png")
+```
+
+Then run:
+
+```bash
+# Translate Lispyn/Hy into ordinary Python Jupyter cells
+lispyn build hello.hy
+
+# Execute the notebook, keeping its real outputs
+lispyn execute hello.hy
+
+# Or run a Hy file directly (without creating a notebook)
+lispyn run hello.hy
+```
+
+`hello.ipynb` is a standard Jupyter notebook with real Markdown and Python
+cells. The synthetic graph is written to `training.png`. All plots are
+generated with Matplotlib; no new language interpreter or special kernel
+is needed. After a Markdown cell, repeat `(require lispyn.macros [...])`
+for any macros used in a later cell because Hy code cells compile independently.
+
+**Developing Lispyn itself?** Clone the repository and use
+`python -m pip install -e ".[dev,notebook,plots]"` instead.
+See the [technical guide](https://github.com/edujbarrios/lispyn/blob/main/docs/guide.md)
+and [release instructions](https://github.com/edujbarrios/lispyn/blob/main/docs/releasing.md).
 ## Matplotlib with reusable Lisp macros
 
 Define a design once and apply it to any recorded history. This short example
