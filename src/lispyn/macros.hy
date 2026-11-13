@@ -143,3 +143,48 @@
   `(do
     (import lispyn.data [k-fold-dataset])
     (k-fold-dataset ~dataset ~@options)))
+
+
+; Cross-validation workflows are intentionally authored through Hy macros.
+
+(defmacro tabular-train-val-test [frame #* options]
+  "Split a pandas DataFrame into seeded train/validation/test partitions."
+  `(do
+    (import lispyn.data [train-validation-test-split])
+    (train-validation-test-split ~frame ~@options)))
+
+(defmacro tabular-cross-validation-folds [frame #* options]
+  "Yield pandas (train, validation) folds with class/group isolation."
+  `(do
+    (import lispyn.data [k-fold-split])
+    (k-fold-split ~frame ~@options)))
+
+(defmacro repeated-cross-validation-folds [dataset #* options]
+  "Yield (repeat, fold, train_subset, val_subset) for repeated k-fold."
+  `(do
+    (import lispyn.cv_workflows [repeated-k-fold-dataset])
+    (repeated-k-fold-dataset ~dataset ~@options)))
+
+(defmacro repeated-tabular-folds [frame #* options]
+  "Yield (repeat, fold, train_frame, val_frame) for repeated k-fold."
+  `(do
+    (import lispyn.cv_workflows [repeated-k-fold-split])
+    (repeated-k-fold-split ~frame ~@options)))
+
+(defmacro cross-validate [dataset scorer #* options]
+  "Run a Hy fold-scoring callback on fresh PyTorch CV partitions."
+  `(do
+    (import lispyn.cv_workflows [run-dataset-cross-validation])
+    (run-dataset-cross-validation ~dataset ~scorer ~@options)))
+
+(defmacro cross-validate-table [frame scorer #* options]
+  "Run a Hy callback on fresh, optionally grouped pandas CV partitions."
+  `(do
+    (import lispyn.cv_workflows [run-frame-cross-validation])
+    (run-frame-cross-validation ~frame ~scorer ~@options)))
+
+(defmacro save-cross-validation [report path]
+  "Save a privacy-minimal fold-score summary to a JSON file."
+  `(do
+    (import lispyn.cv_workflows [save-cv-report])
+    (save-cv-report ~report ~path)))
