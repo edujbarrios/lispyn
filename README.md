@@ -174,61 +174,80 @@ accuracy. Existing comparison output stays unchanged without `--baseline`.
 
 ## Train/validation/test and k-fold cross-validation (0.21.0a1)
 
-Lispyn supports a **held-out test partition** alongside the training and
-validation sets, plus normal, stratified and group-safe k-fold cross-validation.
-All splits use a local seeded RNG and do not require scikit-learn.
+**Author experiments in Hy (Lisp), with Lispyn macros as the main interface.**
+Python/PyTorch implements the underlying data operations, and the resulting
+`.hy` source can be compiled into an ordinary Jupyter notebook.
 
-```python
-from lispyn.data import (
-    train_validation_test_split, split_dataset_three,
-    k_fold_split, k_fold_dataset,
-)
-from lispyn.cross_validation import summarize_cv_scores
+```hy
+(require lispyn.macros [train-val-test cross-validation-folds])
+(import torch)
 
-# pandas: a label in every split, or substitute group="subject_id"
-train_df, val_df, test_df = train_validation_test_split(
-    frame, stratify="label", validation_fraction=0.2, test_fraction=0.1, seed=42
-)
+; Small synthetic PyTorch dataset; no downloads.
+(setv labels (+ (* [0] 15) (* [1] 15)))
+(setv dataset (torch.utils.data.TensorDataset
+               (torch.arange 30) (torch.tensor labels)))
 
-# PyTorch: one subject/session ID per sample keeps groups separate
-train_set, val_set, test_set = split_dataset_three(
-    dataset, groups=subject_ids, validation_fraction=0.2, test_fraction=0.1
-)
+; Reserve an untouched test set before cross-validation.
+(setv splits (train-val-test dataset
+              :labels labels
+              :validation-fraction 0.2
+              :test-fraction 0.1
+              :seed 42))
+(setv training (get splits 0))
+(setv validation (get splits 1))
+(setv testing (get splits 2))
+(print "Train/val/test:" (len training) (len validation) (len testing))
 
-# Keep group boundaries even within the training-set CV folds
-train_group_ids = [subject_ids[i] for i in train_set.indices]
-folds = k_fold_dataset(train_set, n_splits=5, groups=train_group_ids, seed=42)
-scores = []
-for fold_train, fold_val in folds:
-    model = make_fresh_model()          # initialize a new model per fold
-    score = train_and_score(model, fold_train, fold_val)
-    scores.append(score)
-print(summarize_cv_scores(scores, metric="accuracy"))
-# Evaluate on test_set only after selecting your final model.
+; Labels must align with the training subset, not the original dataset.
+(setv train-labels
+  (lfor index (getattr training "indices") (get labels index)))
+(for [[fold-train fold-val]
+      (cross-validation-folds training
+        :n-splits 5 :labels train-labels :seed 42)]
+  ; Create a fresh model and optimizer for each fold here.
+  (print "Fold sizes:" (len fold-train) (len fold-val)))
+
+; Evaluate on testing only once, after model selection.
 ```
 
-For class-balanced cross-validation use `k_fold_split(frame, stratify="label")`
-or `k_fold_dataset(dataset, labels=labels)`. For groups that must never span
-folds use `group="subject_id"` with DataFrames or `groups=ids` with PyTorch.
-Stratified and grouped modes cannot be combined. Each class must have at least
-`n_splits` samples for stratified k-fold; grouped k-fold requires at least
-`n_splits` unique groups. Three-way splits require at least three records per
-class or three groups, respectively. Group sizes may make fractions approximate.
+`train-val-test` and `cross-validation-folds` are real macros from
+`lispyn.macros`, not new Python syntax. They expand to the PyTorch dataset
+splitters at compile time. Use `lispyn build examples/cross_validation.hy`
+to generate a notebook from the [Hy source](examples/cross_validation.hy).
 
-In **Hy**, the `train-val-test` and `cross-validation-folds` macros offer
-equivalent PyTorch entry points. See
-[the runnable synthetic source](examples/cross_validation.hy)
-and run `lispyn gallery` to compile it into a Jupyter notebook.
+**Leakage-safe groups:** supply `:groups subject-ids` to `train-val-test`.
+To run group-aware k-fold on its training subset, pass a matching sequence
+of training-group IDs to `cross-validation-folds` rather than `:labels`.
+Grouped and stratified modes are mutually exclusive. Each class needs at
+least `n_splits` examples for stratified k-fold, and grouped k-fold needs
+at least `n_splits` distinct groups. Three-way splitting requires at least
+three class samples or groups; group boundaries may make sizes approximate.
 
-For quick metric aggregation without storing predictions:
+**Tabular DataFrames** can also be used directly from Hy, without Python
+source files:
+
+```hy
+(import lispyn.data [train-validation-test-split k-fold-split])
+(setv splits (train-validation-test-split frame
+              :stratify "label" :test-fraction 0.1 :seed 42))
+(setv training-frame (get splits 0))
+(for [[fold-train fold-val]
+      (k-fold-split training-frame :n-splits 5 :stratify "label")]
+  (print (len fold-train) (len fold-val)))
+```
+
+This is ordinary Hy syntax calling interoperable pandas functionality;
+the PyTorch workflow above uses dedicated Lispyn macros.
+
+For a quick summary of numerical fold metrics:
 
 ```bash
 lispyn cv-summary 0.81 0.84 0.83 0.86 0.82 --metric accuracy --output folds.json
 ```
 
-The output includes fold count, mean, population standard deviation, minimum
-and maximum. These scores are supplied by you; this command does not train
-models or evaluate a held-out test set.
+The summary reports mean, population standard deviation and range of the
+*provided* fold scores. It does not train models or touch the held-out test set.
+
 
 ## Structure Jupyter cells from Lisp
 
