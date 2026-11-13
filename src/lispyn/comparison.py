@@ -75,13 +75,13 @@ def format_comparison(summary):
         header, divider,
     ]
     for row in summary['runs']:
-        name = row['run'].replace('|', '\\|').replace('\\n', ' ')
+        name = row['run'].replace('|', '\\|').replace('\n', ' ')
         line = (f'| {name} | {row["epochs"]} | {row["best_epoch"]} | '
                 f'{row["best"]:.6g} | {row["final"]:.6g} |')
         if baseline is not None:
             line += f' {row["best_gain"]:+.6g} | {row["final_gain"]:+.6g} |'
         lines.append(line)
-    return '\\n'.join(lines)
+    return '\n'.join(lines)
 
 def save_comparison(summary, output):
     """Export a comparison table to Markdown, JSON or CSV."""
