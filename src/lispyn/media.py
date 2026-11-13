@@ -104,7 +104,7 @@ def load_audio(path, *, sample_rate=None, mono=True):
         raise RuntimeError("Install compatible torch/torchaudio and torchcodec") from exc
     try:
         waveform, original_rate = torchaudio.load(str(path))
-    except (ImportError, RuntimeError) as exc:
+    except (ImportError, OSError, RuntimeError) as exc:
         raise RuntimeError(
             "Audio decoding failed. Recent torchaudio requires matching torchcodec/FFmpeg support"
         ) from exc
