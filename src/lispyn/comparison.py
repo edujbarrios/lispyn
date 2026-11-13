@@ -32,6 +32,8 @@ def compare_experiments(directories, *, metric='loss', split='val', mode=None,
     names = [path.name for path in paths]
     if len(set(names)) != len(names):
         raise ValueError('Run directories must have distinct names')
+    if baseline is not None and baseline not in names:
+        raise ValueError(f"Unknown baseline run: {baseline!r}")
     direction = mode or ('min' if 'loss' in metric.lower() else 'max')
     key = f'{split}_{metric}'
     rows = []
