@@ -29,6 +29,7 @@
 ; %% [markdown]
 ; ## Inference: no gradients and no manual state restoration
 ; %% [code]
+(require lispyn.macros [with-eval])
 (.train result.model)
 (with-eval result.model
   (assert (not result.model.training))
