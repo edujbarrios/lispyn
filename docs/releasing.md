@@ -3,6 +3,17 @@
 Lispyn uses [PyPI Trusted Publishing](https://docs.pypi.org/trusted-publishers/using-a-publisher/).
 No long-lived PyPI API token or password is stored in GitHub.
 
+## Release payload: 0.21.0a1
+
+This release adds train/validation/test partitions for pandas and native
+PyTorch datasets, plus seeded standard, stratified and group-aware k-fold
+cross-validation, out-of-fold score summaries, the `cv-summary` CLI and Hy
+macros. Compatibility with the original two-way splits is retained.
+The package, CLI, docs and distribution verification are aligned to
+`0.21.0a1`. The trusted-publishing workflow runs the release tests,
+builds the wheel and source archive, publishes to PyPI and only then
+creates the annotated version tag.
+
 ## Release payload: 0.20.0a1
 
 This release adds grouped train/validation splits, optional class-stratified
