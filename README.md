@@ -195,8 +195,9 @@ train_set, val_set, test_set = split_dataset_three(
     dataset, groups=subject_ids, validation_fraction=0.2, test_fraction=0.1
 )
 
-# Every sample is held out for validation exactly once across 5 folds
-folds = k_fold_dataset(train_set, n_splits=5, seed=42)
+# Keep group boundaries even within the training-set CV folds
+train_group_ids = [subject_ids[i] for i in train_set.indices]
+folds = k_fold_dataset(train_set, n_splits=5, groups=train_group_ids, seed=42)
 scores = []
 for fold_train, fold_val in folds:
     model = make_fresh_model()          # initialize a new model per fold
