@@ -10,6 +10,10 @@ deterministic repeated stratified/grouped folds, fold-level/weighted summaries,
 JSON exports, runnable Hy recipes and regression tests. Native PyTorch handles
 training and all previous split APIs remain available.
 
+For a post-install Hy macro smoke test, run the synthetic recipe:
+`lispyn run examples/repeated_cross_validation.hy` from the repository root
+after installing the package with a matching native PyTorch build.
+
 Package metadata, CLI version and distribution verification are aligned to
 `0.22.0a1`. The trusted-publishing workflow validates tests and distributions
 before publishing to PyPI and tagging the successful release.
