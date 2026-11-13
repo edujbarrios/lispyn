@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.18.0a1 — Richer notebooks, experiment comparisons and reports
+## 0.18.0a1 — 2026-11-13 — Richer notebooks, experiment comparisons and reports
 
 - Fix README package badges: official PyPI version/Python support, main-branch CI, explicit Apache-2.0 license.
 - Add `classification-report` Hy macro and precision/recall/F1/support calculations with Markdown/JSON export, no scikit-learn dependency.
