@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.23.0a1 — 2026-11-13 — Leakage-aware chronological experiments
+
+- Add Hy-first temporal train/validation/test macros and chronological expanding/rolling walk-forward CV for native PyTorch datasets and pandas.
+- Add configurable row-count embargo gaps, minimum/maximum training window lengths, and explicit validation-window sizes.
+- Validate optional table timestamps (sorted, unique, nonmissing), avoid mutating input frames and reject impossible temporal windows.
+- Add one-call `cross-validate-temporal` and `cross-validate-temporal-table` macros, reusing privacy-minimal fold reports and JSON export.
+- Add a runnable synthetic Hy/PyTorch temporal training example to the Jupyter notebook gallery.
+- Add temporal leak-prevention tests, invalid-argument tests and Hy macro compilation/execution tests; retain previous cross-validation APIs.
+
+
 ## 0.22.0a1 — 2026-11-13 — Hy-first repeated cross-validation
 
 - Add `cross-validate` and `cross-validate-table` Hy macros to run a fold-scoring callback directly from Lisp, with explicit fresh model initialization per fold.
