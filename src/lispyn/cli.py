@@ -199,7 +199,8 @@ def main(argv: list[str] | None = None) -> int:
             load_json_object(args.params_file) if args.params_file is not None else {},
             args.set_values,
         )
-        apply_overrides(notebook, overrides)
+        if overrides:
+            apply_overrides(notebook, overrides)
         if args.command == "build":
             print(f"Generated: {write_notebook(notebook, output)}")
             return 0
