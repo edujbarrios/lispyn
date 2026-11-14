@@ -71,6 +71,59 @@ for any macros used in a later cell because Hy code cells compile independently.
 See the [technical guide](https://github.com/edujbarrios/lispyn/blob/main/docs/guide.md)
 and [release instructions](https://github.com/edujbarrios/lispyn/blob/main/docs/releasing.md).
 
+## Tell the story of an experiment with Hy macros (0.24.0a1)
+
+Lispyn is designed to make complex experiments **understandable, reusable and
+shareable**, not just executable. Declare editable notebook parameters and
+generate a readable results report without dropping out of Hy:
+
+```hy
+(require lispyn.macros [md])
+(md "# A reproducible experiment"
+    "State your hypothesis, dataset and evaluation method here.")
+
+(require lispyn.macros [experiment-params])
+(experiment-params
+  (setv seed 42)
+  (setv epochs 10)
+  (setv learning-rate 0.001))
+
+; In the next notebook code cell, train a native PyTorch model and obtain run.
+(require lispyn.macros [report-run])
+(report-run run
+  :title "Baseline experiment"
+  :notes "What changed, what worked, and what remains uncertain."
+  :save "runs/baseline.md")
+```
+
+**`experiment-params`** compiles ordinary Hy `(setv name value)` forms into
+a standard Jupyter code cell tagged `parameters`. Compatible parameter-cell
+tools can override these defaults without editing the notebook source. The
+same source runs directly with `lispyn run`, where assignments execute
+normally. Put the form on its own lines at the top level; include one or more
+`setv` assignments. For reusable/overridable defaults, prefer simple
+Python-compatible literals (strings, numbers, booleans).
+
+**`report-run`** accepts a Lispyn training Run or a mapping of metric
+histories. It renders Markdown in Jupyter, prints Markdown when run from a
+terminal, and optionally exports a `.md` artifact. The report identifies
+best/final metric values, optimal epoch, train/validation metrics and early
+stopping where available. It includes **no training data, model weights or
+predictions**; if you add notes, review them before sharing. The default
+best-value direction is to minimize loss/error metrics and maximize other
+metrics; override with `:metric "val_loss" :mode "min"` when needed.
+
+Start a new narrative-style experiment with
+`lispyn new my_experiment.hy`. See the
+[illustrative Hy source](examples/experiment_story.hy) and regenerate a
+Jupyter notebook using `lispyn gallery` or
+`lispyn build examples/experiment_story.hy`. The example's metrics are
+**synthetic illustration**, not the outputs of model training.
+
+Each generated code cell compiles independently. Reuse `(require ...)` in
+a later Hy cell if it calls a macro; the parameter cell itself includes its
+own compiled macro import.
+
 ## Matplotlib with reusable Lisp macros
 
 Define a design once and apply it to any recorded history. This short example
