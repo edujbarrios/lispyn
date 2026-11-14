@@ -254,11 +254,11 @@
 (defmacro experiment-check [label condition #* options]
   "Show an explicit, testable evidence claim; optionally fail in strict mode."
   `(do
-    (import lispyn.evidence [experiment-check])
-    (experiment-check ~label ~condition ~@options)))
+    (import lispyn.evidence [evaluate-check])
+    (evaluate-check ~label ~condition ~@options)))
 
 (defmacro checklist-report [checks #* options]
   "Show a reproducible summary of explicit Hy experiment checks."
   `(do
-    (import lispyn.evidence [checklist-report])
-    (checklist-report ~checks ~@options)))
+    (import lispyn.evidence [summarize-evidence])
+    (summarize-evidence ~checks ~@options)))
