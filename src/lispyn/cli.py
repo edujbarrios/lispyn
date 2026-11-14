@@ -166,7 +166,7 @@ def main(argv: list[str] | None = None) -> int:
         source = check_source(args.source)
         if args.command == "run":
             return run_hy(source)
-        output = args.output or source.with_suffix(".ipynb")
+        output = getattr(args, "output", None) or source.with_suffix(".ipynb")
         notebook = build_notebook(source)
         if args.command in ("parameters", "sweep", "build", "execute"):
             from .parameterization import (
