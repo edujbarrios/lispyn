@@ -14,6 +14,16 @@ includes the Hy source SHA-256 and reproducible variant cell IDs; the sweep
 index records chosen values. Unknown parameters and executable payloads are
 rejected. The original Hy source remains untouched.
 
+Smoke-test the parameterized workflow using the synthetic Hy example:
+
+```bash
+lispyn parameters examples/parameter_variants.hy --json
+lispyn build examples/parameter_variants.hy --set epochs=7 \
+  -o example_generated_notebooks/parameter_variant_7.ipynb
+```
+
+No experiment training occurs when building that notebook.
+
 All metadata, CLI and distribution verification are aligned to `0.25.0a1`.
 Trusted Publishing runs tests, builds both distributions, publishes to PyPI
 and then creates the annotated release tag.
