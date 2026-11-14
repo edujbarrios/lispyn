@@ -15,6 +15,7 @@ from .notebooks import build_notebook, write_notebook
 EXAMPLE_SOURCES = (
     "markdown_cells.hy",
     "notebook_metadata.hy",
+    "experiment_story.hy",
     "synthetic_curves.hy",
     "confusion_matrix.hy",
     "early_stopping.hy",
