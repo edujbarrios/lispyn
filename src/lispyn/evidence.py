@@ -128,3 +128,10 @@ def checklist_report(checks, *, title="Experiment evidence", strict=False, save=
     if strict and passed != len(normalized):
         raise AssertionError(f"{len(normalized) - passed} experiment check(s) failed")
     return report
+
+
+# Hy macro-expansion targets intentionally differ from the public macro
+# names. Otherwise importing a same-named function while expanding a Hy
+# macro can recursively re-expand that very macro.
+evaluate_check = experiment_check
+summarize_evidence = checklist_report
