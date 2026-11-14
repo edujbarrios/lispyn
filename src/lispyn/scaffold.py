@@ -13,14 +13,24 @@ from .compiler import LispynError
 STARTER = """; Lispyn experiment — https://github.com/edujbarrios/lispyn
 ; Original toolkit by Eduardo J. Barrios.
 ; %% [markdown]
-; ## First experiment
-; Write Lisp here; Lispyn generates Python Jupyter notebook cells.
+; # Your reproducible experiment
+; Declare parameters and record why you chose them.
+; %% [code]
+(require lispyn.macros [experiment-params])
+(experiment-params
+  (setv seed 42)
+  (setv epochs 3)
+  (setv learning-rate 0.01))
+; %% [markdown]
+; ## Train a small PyTorch baseline
+; Synthetic data makes this template runnable without downloads.
 ; %% [code]
 (import torch)
 (import lispyn.workflow [train])
 (require lispyn.macros [with-seed])
+(require lispyn.macros [report-run])
 
-(with-seed 42
+(with-seed seed
   (setv model (torch.nn.Linear 2 2)))
 
 (setv x (torch.tensor [[0.0 0.0] [1.0 0.0] [0.0 1.0] [1.0 1.0]]))
@@ -29,15 +39,19 @@ STARTER = """; Lispyn experiment — https://github.com/edujbarrios/lispyn
 (setv result
   (train model data
     :loss-fn (torch.nn.CrossEntropyLoss)
-    :epochs 3
+    :epochs epochs
+    :seed seed
     :batch-size 2
-    :lr 0.01
+    :lr learning-rate
     :device "cpu"))
-(print "training loss:" (get result.history "train_loss"))
+(report-run result
+  :title "Baseline experiment"
+  :notes "Synthetic data — replace with a real task and held-out validation."
+  :save "experiment_report.md")
 ; %% [markdown]
 ; ## Next steps
-; Replace the toy data with your own images, text, audio or CSV dataset.
-; Add validation data and checkpoints when you're ready.
+; Add independent validation data, real-world context, and a conclusion.
+; Keep sensitive data out of saved reports and Markdown cells.
 """
 
 

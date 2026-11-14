@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.24.0a1 — 2026-11-14 — Hy experiment narratives and shareable reports
+
+- Add `experiment-params` macro: write ordinary `setv` declarations once in Lisp and compile them into a standard Jupyter `parameters`-tagged cell for reproducible notebook parameterization.
+- Add `report-run` macro: produce readable per-metric best/final epoch summaries, Markdown display in Jupyter or terminal output, and optional portable `.md` export.
+- Include a narrative-focused Hy example in the Jupyter gallery and update the starter from `lispyn new` to include parameters, hypotheses, training and results.
+- Extend regression coverage for compiled parameter cells, direct Hy execution, stable notebook IDs, report formatting, invalid inputs, and exports.
+- Keep previous Hy macros, PyTorch APIs and notebook formats backward compatible; no training data is included in exported metric summaries.
+
+
 ## 0.23.0a1 — 2026-11-13 — Leakage-aware chronological experiments
 
 - Add Hy-first temporal train/validation/test macros and chronological expanding/rolling walk-forward CV for native PyTorch datasets and pandas.

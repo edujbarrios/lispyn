@@ -15,6 +15,10 @@ def test_new_file_is_created_and_has_notebook_markers(tmp_path):
     assert "Eduardo J. Barrios" in content
     assert "; %% [markdown]" in content
     assert "; %% [code]" in content
+    assert "(experiment-params" in content
+    assert "(report-run result" in content
+    notebook = build_notebook(file)
+    assert any("parameters" in cell.metadata.get("tags", []) for cell in notebook.cells)
 
 
 def test_new_never_overwrites_existing_sources(tmp_path, capsys):
