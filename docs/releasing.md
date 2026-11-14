@@ -10,6 +10,10 @@ runs with no separate validation dataset, by omitting empty validation
 histories from the automatic `report-run` summary while preserving strict
 validation when a specific metric is requested.
 
+The corrected `report-run` behavior is covered by a regression test for
+training-only runs, and the full generated-starter notebook is exercised
+by the Python 3.11 integration workflow.
+
 Version metadata and package verification are aligned to `0.24.0a2`.
 The existing trusted-publishing workflow validates and tags this corrected
 version after publishing.
