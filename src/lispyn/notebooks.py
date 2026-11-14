@@ -25,7 +25,7 @@ ATTRIBUTION = (
 # Comment markers work in both ordinary Hy execution and notebook compilation.
 CELL_MARKER = re.compile(r"^\s*;\s*%%(?:\s*\[(code|markdown)\])?\s*$")
 # A literal top-level markdown macro is a first-class cell boundary.
-NOTEBOOK_FORM = re.compile(r"(?m)^\s*\((?:md|markdown|pip-install|raw-cell|cell-tags)(?:\s|\))")
+NOTEBOOK_FORM = re.compile(r"(?m)^\s*\((?:md|markdown|pip-install|raw-cell|cell-tags|experiment-params)(?:\s|\))")
 CELL_TAG = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
 
 
@@ -79,7 +79,7 @@ def split_markdown_macros(code: str) -> list[tuple[str, str]]:
     if not NOTEBOOK_FORM.search(code):
         return [("code", code)] if code.strip() else []
     import hy
-    from hy.models import Expression, String
+    from hy.models import Expression, String, Symbol
 
     try:
         forms = list(hy.read_many(code))
@@ -100,7 +100,7 @@ def split_markdown_macros(code: str) -> list[tuple[str, str]]:
     for index, form in enumerate(forms):
         if not (isinstance(form, Expression) and form and
                 str(form[0]) in ("md", "markdown", "pip-install",
-                                 "raw-cell", "cell-tags")):
+                                 "raw-cell", "cell-tags", "experiment-params")):
             continue
         name = str(form[0])
         start = form.start_line - 1
@@ -112,6 +112,21 @@ def split_markdown_macros(code: str) -> list[tuple[str, str]]:
             raise LispynError(
                 "Notebook cell macros must occupy their own lines"
             )
+        if name == "experiment-params":
+            if not form[1:] or not all(
+                isinstance(item, Expression) and len(item) == 3
+                and str(item[0]) == "setv" and isinstance(item[1], Symbol)
+                for item in form[1:]
+            ):
+                raise LispynError(
+                    "(experiment-params ...) requires one or more "
+                    "(setv name value) assignments"
+                )
+            append_code(start)
+            sections.append(("parameters", "".join(lines[start:end]).strip()))
+            cursor = end
+            found = True
+            continue
         if not form[1:] or not all(isinstance(item, String) for item in form[1:]):
             if name == "pip-install":
                 raise LispynError("(pip-install ...) accepts literal package strings only")
@@ -168,7 +183,8 @@ def compile_section(code: str, *, source: Path) -> str:
 def build_notebook(source: Path) -> nbformat.NotebookNode:
     """Generate notebook cells without executing Python.
 
-    Hy Markdown/pip-install/raw/tags forms and old '; %%' markers are supported.
+    Hy Markdown/pip-install/raw/tags/experiment-params forms and old
+    '; %%' markers are supported.
     Each code cell is compiled independently; repeat (require ...) for any
     macro you use in a later code cell.
     """
@@ -202,6 +218,17 @@ def build_notebook(source: Path) -> nbformat.NotebookNode:
                 cell = new_markdown_cell(content)
             elif kind == "raw":
                 cell = new_raw_cell(content)
+            elif kind == "parameters":
+                # Compile separately with its own macro import: every Hy cell
+                # is an independent compilation unit. Jupyter parameter
+                # override tooling recognizes the standard "parameters" tag.
+                compiled = compile_section(
+                    "(require lispyn.macros [experiment-params])\n" + content,
+                    source=source,
+                )
+                cell = new_code_cell(
+                    compiled, metadata={"tags": ["parameters"]}
+                )
             elif kind == "dependencies":
                 cell = new_code_cell(
                     content, metadata={"tags": ["lispyn-pip-install"]}
