@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lispyn"
-version = "0.23.0a1"
+version = "0.24.0a1"
 description = "Lisp-powered PyTorch experiments and Jupyter notebooks, built on Hy."
 readme = "README.md"
 requires-python = ">=3.10"
