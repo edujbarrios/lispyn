@@ -82,6 +82,7 @@ def test_parameters_and_report_macro_execute_in_hy(tmp_path):
         '(assert (= seed 42))\n'
         '(setv history {"train_loss" [1.2 0.8 0.5 0.4]\n'
         '               "val_loss" [1.4 0.9 0.6 0.7]})\n'
+        '(require lispyn.macros [report-run])\n'
         '(report-run history :title "My Hy experiment"\n'
         '  :notes "Synthetic metric histories" :save "report.md")\n'
         '(print "STORY OK" epochs)\n'
