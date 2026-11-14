@@ -247,3 +247,18 @@
   `(do
     (import lispyn.reporting [show-run-report])
     (show-run-report ~run ~@options)))
+
+
+; Evidence-backed experiment narratives in ordinary Hy.
+
+(defmacro experiment-check [label condition #* options]
+  "Show an explicit, testable evidence claim; optionally fail in strict mode."
+  `(do
+    (import lispyn.evidence [evaluate-check])
+    (evaluate-check ~label ~condition ~@options)))
+
+(defmacro checklist-report [checks #* options]
+  "Show a reproducible summary of explicit Hy experiment checks."
+  `(do
+    (import lispyn.evidence [summarize-evidence])
+    (summarize-evidence ~checks ~@options)))

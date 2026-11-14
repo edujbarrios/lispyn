@@ -6,7 +6,7 @@ Lispyn is an experimental, open-source project originally created by **Eduardo J
 
 Lispyn extends [Hy](https://hylang.org/) (a Lisp running on Python). It does **not** replace Python, hide PyTorch, or require developers to reimplement familiar ML APIs. Import Python modules and call their functions directly.
 
-> Status: **v0.25.0a1 (experimental)**. No stability guarantees; published as an experimental alpha on [PyPI](https://pypi.org/project/lispyn/).
+> Status: **v0.26.0a1 (experimental)**. No stability guarantees; published as an experimental alpha on [PyPI](https://pypi.org/project/lispyn/).
 
 ## Install from source
 
@@ -136,6 +136,63 @@ remains a direct Hy execution path without parameter-override flags.
 See [the full Hy experiment](../examples/parameter_variants.hy) and
 `lispyn gallery` for a compiled notebook. It uses *illustrative*
 metrics, not real model training.
+
+## Explain and publish experiment evidence in Hy (0.26.0a1)
+
+Lispyn now makes it easier to communicate **what an experiment claims and
+whether the observed metrics support it**, using Hy/Lisp as the source of
+truth. Native PyTorch remains the backend; Jupyter is still the shared output.
+
+```hy
+(require lispyn.macros [experiment-check checklist-report report-run])
+
+; These variables come from a real evaluation of your own model.
+(setv checks
+  [(experiment-check "Validation loss meets target"
+     (<= final-loss 0.75)
+     :observed final-loss :expected "at most 0.75")
+   (experiment-check "Accuracy meets target"
+     (>= final-accuracy 0.8)
+     :observed final-accuracy :expected "at least 0.8")])
+
+(checklist-report checks
+  :title "Evidence for this experiment"
+  :save "runs/evidence.json")
+
+(report-run run :title "Training summary" :save "runs/summary.md")
+```
+
+`experiment-check` returns an explicit `{"check", "passed", ...}` record
+and displays a **PASS/FAIL claim in Jupyter** (or prints Markdown from the Hy
+terminal). It accepts only a Boolean comparison—not a truthy number—and
+optional finite scalar observations. `:strict True` raises on failure
+*after* presenting/saving the result. `checklist-report` collects these
+records into a summary, optionally saves a compact JSON evidence report, and
+also supports `:strict True`. Checks never silently pass by default and
+never gather training samples or model weights.
+
+To share the **actual executed notebook**, not just the source:
+
+```bash
+lispyn execute examples/evidence_story.hy
+lispyn export examples/evidence_story.ipynb -o runs/evidence_story.md
+
+# For a shorter report focused on narratives and outputs:
+lispyn export examples/evidence_story.ipynb \
+  -o runs/evidence_summary.md --hide-code
+```
+
+`lispyn export` is **offline and nonexecuting**. It produces Markdown with
+notebook prose, Python code (unless hidden), stdout and text results, plus
+PNG/JPEG figures in a sibling `*_assets/` directory. The report preserves
+the Hy source name and SHA-256 provenance when present. It deliberately
+omits embedded HTML, JavaScript and SVG *outputs*, and refuses to overwrite
+existing Markdown or figure assets. Review authored Markdown, printed output,
+observations and images for sensitive data before publishing.
+
+The new [self-contained Hy example](../examples/evidence_story.hy) uses
+**synthetic metrics only**, not a trained model. It compiles into the gallery
+and demonstrates checking claims before producing an explanatory report.
 
 ## Run your first experiment
 

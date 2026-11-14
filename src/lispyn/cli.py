@@ -22,7 +22,7 @@ def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="lispyn", description="Hy experiments, Python notebooks, PyTorch freedom."
     )
-    p.add_argument("--version", action="version", version="lispyn 0.25.0a1")
+    p.add_argument("--version", action="version", version="lispyn 0.26.0a1")
     sub = p.add_subparsers(dest="command", required=True)
     health = sub.add_parser("doctor", help="Inspect installation and optional tools without modifying anything")
     health.add_argument("--json", action="store_true", help="Print machine-readable environment summary")
@@ -60,6 +60,15 @@ def parser() -> argparse.ArgumentParser:
     sweep.add_argument(
         "-o", "--output-dir", required=True, type=Path,
         help="New directory for variant notebooks and sweep.json",
+    )
+    export = sub.add_parser(
+        "export", help="Export a Jupyter notebook to shareable Markdown without execution"
+    )
+    export.add_argument("notebook", type=Path, help="Existing .ipynb (executed or unexecuted)")
+    export.add_argument("-o", "--output", type=Path, help="Markdown output; defaults to notebook.md")
+    export.add_argument(
+        "--hide-code", action="store_true",
+        help="Include Markdown and results without Python source cells",
     )
     gallery = sub.add_parser(
         "gallery", help="Compile examples into example_generated_notebooks/ without execution"
@@ -138,6 +147,12 @@ def main(argv: list[str] | None = None) -> int:
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text(report + "\n", encoding="utf-8")
                 print(f"Summary saved: {path}")
+            return 0
+        if args.command == "export":
+            from .notebook_export import export_markdown
+            output = args.output or args.notebook.with_suffix(".md")
+            path = export_markdown(args.notebook, output, include_code=not args.hide_code)
+            print(f"Exported notebook report: {path}")
             return 0
         if args.command == "gallery":
             paths = generate_gallery(args.source_dir, args.output_dir)

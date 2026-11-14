@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.26.0a1 — 2026-11-14 — Evidence-backed Hy experiments and notebook publishing
+
+- Add `experiment-check` and `checklist-report` Hy macros for explicit Boolean success criteria, visible PASS/FAIL notebook narratives, optional strict failures, and compact JSON evidence summaries.
+- Add `lispyn export NOTEBOOK.ipynb -o REPORT.md [--hide-code]` for offline, nonexecuting conversion of Jupyter Markdown, safe text outputs, and PNG/JPEG figures into a portable Markdown report plus assets.
+- Preserve Hy source-name/SHA-256 provenance in exported reports; omit notebook HTML/JavaScript/SVG outputs and refuse to overwrite prior exports or image assets.
+- Add a synthetic Hy evidence-story example to the generated notebook gallery and tests for executable macros, report aggregation, HTML output omission, image extraction and export safety.
+- Keep existing PyTorch training, cross-validation, parameters/sweep and notebook APIs unchanged.
+
+
 ## 0.25.0a1 — 2026-11-14 — Reusable and parameterized Hy experiments
 
 - Turn existing `experiment-params` macros into reusable notebook configurations through `lispyn build/execute --set NAME=JSON` and `--params FILE`.

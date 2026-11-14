@@ -3,6 +3,21 @@
 Lispyn uses [PyPI Trusted Publishing](https://docs.pypi.org/trusted-publishers/using-a-publisher/).
 No long-lived PyPI API token or password is stored in GitHub.
 
+## Release payload: 0.26.0a1
+
+This release advances Lispyn's original authoring-and-sharing goal with
+explicit, inspectable Hy/Lisp `experiment-check` and `checklist-report`
+macros for evidence-backed claims and optional JSON exports. A new
+`lispyn export` command converts existing Jupyter notebooks into shareable
+Markdown plus PNG/JPEG assets *without executing code*, omitting HTML,
+JavaScript and SVG notebook outputs. The synthetic evidence-story Hy example
+is also part of the generated notebook gallery.
+
+Check the release with `lispyn run examples/evidence_story.hy`,
+`lispyn build examples/evidence_story.hy`, and the full test suite.
+The package, CLI and distribution verification target `0.26.0a1`.
+Trusted Publishing verifies, builds, publishes and tags the release.
+
 ## Release payload: 0.25.0a1
 
 This release advances the central Hy -> Jupyter experimentation workflow:
@@ -140,8 +155,8 @@ environment name `pypi` exactly.
    `.github/workflows/package.yml`.
 2. Run both the Tests and Package verification workflows on `main`.
 3. Create a release commit on `main` with the **exact** subject
-   `release: publish v0.25.0a1 [pypi]` (replace the version each time).
-   Alternatively create/push an annotated tag `v0.25.0a1` from a tested
+   `release: publish v0.26.0a1 [pypi]` (replace the version each time).
+   Alternatively create/push an annotated tag `v0.26.0a1` from a tested
    commit. The release workflow verifies the name/version and then publishes
    using the same PyPI Trusted Publisher. For release commits, GitHub
    creates the annotated version tag **after** successful upload.
