@@ -6,7 +6,7 @@ Lispyn is an experimental, open-source project originally created by **Eduardo J
 
 Lispyn extends [Hy](https://hylang.org/) (a Lisp running on Python). It does **not** replace Python, hide PyTorch, or require developers to reimplement familiar ML APIs. Import Python modules and call their functions directly.
 
-> Status: **v0.24.0a2 (experimental)**. No stability guarantees; published as an experimental alpha on [PyPI](https://pypi.org/project/lispyn/).
+> Status: **v0.25.0a1 (experimental)**. No stability guarantees; published as an experimental alpha on [PyPI](https://pypi.org/project/lispyn/).
 
 ## Install from source
 
@@ -72,6 +72,70 @@ Jupyter notebook using `lispyn gallery` or
 Each generated code cell compiles independently. Reuse `(require ...)` in
 a later Hy cell if it calls a macro; the parameter cell itself includes its
 own compiled macro import.
+
+## Reuse a Hy experiment with parameter overrides (0.25.0a1)
+
+Lispyn now makes the `experiment-params` macro useful beyond editing notebook
+cells: **inspect parameters, build a configured notebook, execute a configured
+notebook, or generate a small grid of variants from one unchanged `.hy` file.**
+The authoring language stays Hy/Lisp; Python/Jupyter are output formats.
+
+```hy
+(require lispyn.macros [experiment-params])
+(experiment-params
+  (setv seed 42)
+  (setv epochs 5)
+  (setv learning-rate 0.001))
+
+; Write the rest of your experiment in Hy, using those variables.
+```
+
+```bash
+# Inspect declared defaults, without running any model:
+lispyn parameters examples/parameter_variants.hy --json
+
+# Generate a notebook using different experimental parameters:
+lispyn build examples/parameter_variants.hy \
+  --set epochs=12 --set learning-rate=0.01 -o runs/variant.ipynb
+
+# Or read a JSON object of overrides from disk and execute the notebook:
+lispyn execute examples/parameter_variants.hy \
+  --params overrides.json --set epochs=8 -o runs/executed.ipynb
+
+# Build (but do not execute) a reproducible parameter grid:
+lispyn sweep examples/parameter_variants.hy \
+  --grid grid.json -o runs/variants
+```
+
+Example `overrides.json`: `{"seed": 17, "epochs": 6}`. Example `grid.json`:
+`{"epochs": [3, 6], "learning-rate": [0.001, 0.01]}`. The grid produces four
+standard, **unexecuted** Jupyter notebooks and a `sweep.json` index of
+their chosen parameter values. At most 64 variants are allowed per sweep,
+and existing variants/indexes are never overwritten.
+
+Overrides are **strict JSON literals**, not executable expressions.
+Strings require JSON double quotes (e.g. `--set 'label="baseline"'`);
+objects and arrays are also accepted. Parameter names may use either
+Hy hyphens or compiled Python underscores (e.g. `learning-rate` and
+`learning_rate` refer to the same parameter). An unknown, duplicated,
+non-finite or malformed override is rejected. `--set` takes precedence
+over matching values in `--params`.
+
+Every notebook includes a SHA-256 hash of the original Hy source in
+`metadata.lispyn.source_sha256`. The source file is never modified;
+variant notebooks have deterministic cell IDs and record the **names**
+of overridden parameters in metadata. The sweep index contains the override
+**values** for reproducibility: review both notebooks and index before
+sharing, especially if you put sensitive information in parameters.
+
+Compilation can execute trusted Hy *compile-time macros*. Neither
+`lispyn parameters` nor `lispyn sweep` executes the notebook or trains
+a model. Only `lispyn execute` runs the generated notebook. `lispyn run`
+remains a direct Hy execution path without parameter-override flags.
+
+See [the full Hy experiment](../examples/parameter_variants.hy) and
+`lispyn gallery` for a compiled notebook. It uses *illustrative*
+metrics, not real model training.
 
 ## Run your first experiment
 
