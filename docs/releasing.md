@@ -3,6 +3,18 @@
 Lispyn uses [PyPI Trusted Publishing](https://docs.pypi.org/trusted-publishers/using-a-publisher/).
 No long-lived PyPI API token or password is stored in GitHub.
 
+## Release payload: 0.24.0a1
+
+This release advances Lispyn's original Hy-first mission by adding a
+`experiment-params` macro that emits Jupyter `parameters`-tagged code
+cells, a `report-run` macro for narrative Markdown results and exports,
+a documented Hy notebook gallery example and a new experiment scaffold
+centered on reproducibility, context and sharing.
+
+The package, CLI and distribution verification are aligned to `0.24.0a1`.
+The official Trusted Publishing workflow validates, builds and publishes
+to PyPI before creating the release tag.
+
 ## Release payload: 0.23.0a1
 
 This release adds Hy-first chronological train/validation/test splitting,
@@ -83,8 +95,8 @@ environment name `pypi` exactly.
    `.github/workflows/package.yml`.
 2. Run both the Tests and Package verification workflows on `main`.
 3. Create a release commit on `main` with the **exact** subject
-   `release: publish v0.23.0a1 [pypi]` (replace the version each time).
-   Alternatively create/push an annotated tag `v0.23.0a1` from a tested
+   `release: publish v0.24.0a1 [pypi]` (replace the version each time).
+   Alternatively create/push an annotated tag `v0.24.0a1` from a tested
    commit. The release workflow verifies the name/version and then publishes
    using the same PyPI Trusted Publisher. For release commits, GitHub
    creates the annotated version tag **after** successful upload.
