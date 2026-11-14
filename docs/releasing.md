@@ -11,6 +11,11 @@ cells, a `report-run` macro for narrative Markdown results and exports,
 a documented Hy notebook gallery example and a new experiment scaffold
 centered on reproducibility, context and sharing.
 
+To verify the Hy-first notebook story workflow, compile
+`lispyn build examples/experiment_story.hy` and inspect the standard
+`parameters`-tagged Jupyter code cell and Markdown metric report. The source
+uses synthetic histories, not trained model results.
+
 The package, CLI and distribution verification are aligned to `0.24.0a1`.
 The official Trusted Publishing workflow validates, builds and publishes
 to PyPI before creating the release tag.
