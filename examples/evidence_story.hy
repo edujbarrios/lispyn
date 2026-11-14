@@ -12,6 +12,8 @@
   (setv minimum-accuracy 0.8)
   (setv seed 42))
 
+; Each notebook code cell compiles independently, so require again.
+(require lispyn.macros [experiment-check checklist-report report-run])
 (setv history
   {"train_loss" [1.2 0.85 0.59]
    "val_loss" [1.3 0.86 0.68]
