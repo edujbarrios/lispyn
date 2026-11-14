@@ -15,6 +15,17 @@ is also part of the generated notebook gallery.
 
 Check the release with `lispyn run examples/evidence_story.hy`,
 `lispyn build examples/evidence_story.hy`, and the full test suite.
+Once an example notebook has been executed, its results can be exported
+without rerunning the Hy program:
+
+```bash
+lispyn export examples/evidence_story.ipynb \
+  -o runs/evidence_story.md
+```
+
+The report can contain explicit output values and images, so review all
+content before sharing.
+
 The package, CLI and distribution verification target `0.26.0a1`.
 Trusted Publishing verifies, builds, publishes and tags the release.
 
