@@ -258,7 +258,11 @@ def build_notebook(source: Path) -> nbformat.NotebookNode:
                 "name": "python3",
             },
             "language_info": {"name": "python"},
-            "lispyn": {"source": source.name, "author": "Eduardo J. Barrios"},
+            "lispyn": {
+                "source": source.name,
+                "source_sha256": sha256(text.encode("utf-8")).hexdigest(),
+                "author": "Eduardo J. Barrios",
+            },
         },
     )
 

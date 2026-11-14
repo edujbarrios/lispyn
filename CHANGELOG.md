@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.25.0a1 — 2026-11-14 — Reusable and parameterized Hy experiments
+
+- Turn existing `experiment-params` macros into reusable notebook configurations through `lispyn build/execute --set NAME=JSON` and `--params FILE`.
+- Add `lispyn parameters SOURCE --json` to inspect literal defaults and nonliteral expressions without executing notebook code.
+- Add `lispyn sweep SOURCE --grid FILE -o DIR` to build deterministic, bounded (64 max), unexecuted Jupyter variants with a JSON provenance index.
+- Apply validated JSON literals to the compiled Jupyter `parameters` cells without editing the Hy source, evaluating user expressions, or accepting undeclared names.
+- Stamp each notebook with a SHA-256 of its originating Hy source; keep cell identities reproducible across identical parameterized builds.
+- Add Hy example and gallery coverage plus end-to-end tests for execution, variants, validation and safety; preserve the old build/run flows.
+
+
 ## 0.24.0a2 — 2026-11-14 — Correct reports for training without validation
 
 - Fix `report-run` to omit empty, unavailable validation histories from multi-metric summaries, such as training without a validation loader.

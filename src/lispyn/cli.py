@@ -22,7 +22,7 @@ def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="lispyn", description="Hy experiments, Python notebooks, PyTorch freedom."
     )
-    p.add_argument("--version", action="version", version="lispyn 0.24.0a2")
+    p.add_argument("--version", action="version", version="lispyn 0.25.0a1")
     sub = p.add_subparsers(dest="command", required=True)
     health = sub.add_parser("doctor", help="Inspect installation and optional tools without modifying anything")
     health.add_argument("--json", action="store_true", help="Print machine-readable environment summary")
@@ -35,9 +35,32 @@ def parser() -> argparse.ArgumentParser:
         action.add_argument("source", type=Path, help="Trusted .hy source file")
         if name != "run":
             action.add_argument("-o", "--output", type=Path, default=None)
+            action.add_argument(
+                "--params", type=Path, dest="params_file",
+                help="JSON object of experiment-params overrides",
+            )
+            action.add_argument(
+                "--set", dest="set_values", action="append", default=[],
+                metavar="NAME=JSON",
+                help="Override a Hy parameter with a strict JSON literal (repeatable)",
+            )
         if name == "execute":
             action.add_argument("--timeout", type=int, default=900, help="Per-cell timeout in seconds")
             action.add_argument("--kernel", default="python3", help="Installed Jupyter kernel name")
+    parameters = sub.add_parser(
+        "parameters", help="List Hy experiment-params without running notebook code"
+    )
+    parameters.add_argument("source", type=Path, help="Trusted Hy source")
+    parameters.add_argument("--json", action="store_true", help="Machine-readable defaults")
+    sweep = sub.add_parser(
+        "sweep", help="Generate reproducible parameter-grid notebooks without executing them"
+    )
+    sweep.add_argument("source", type=Path, help="Trusted Hy experiment source")
+    sweep.add_argument("--grid", required=True, type=Path, help="JSON object of parameter arrays")
+    sweep.add_argument(
+        "-o", "--output-dir", required=True, type=Path,
+        help="New directory for variant notebooks and sweep.json",
+    )
     gallery = sub.add_parser(
         "gallery", help="Compile examples into example_generated_notebooks/ without execution"
     )
@@ -143,8 +166,41 @@ def main(argv: list[str] | None = None) -> int:
         source = check_source(args.source)
         if args.command == "run":
             return run_hy(source)
-        output = args.output or source.with_suffix(".ipynb")
+        output = getattr(args, "output", None) or source.with_suffix(".ipynb")
         notebook = build_notebook(source)
+        if args.command in ("parameters", "sweep", "build", "execute"):
+            from .parameterization import (
+                apply_overrides, build_sweep, list_parameters,
+                load_json_object, merge_overrides,
+            )
+        if args.command == "parameters":
+            parameters = list_parameters(notebook)
+            if args.json:
+                print(json.dumps({
+                    "source": source.name,
+                    "source_sha256": notebook.metadata.lispyn.source_sha256,
+                    "parameters": parameters,
+                }, indent=2))
+            elif not parameters:
+                print("No experiment parameters declared")
+            else:
+                for parameter in parameters:
+                    default = (repr(parameter["default"]) if parameter["literal"]
+                               else parameter["expression"] + " [expression]")
+                    print(f'{parameter["name"]} = {default}')
+            return 0
+        if args.command == "sweep":
+            manifest = build_sweep(
+                notebook, load_json_object(args.grid), args.output_dir
+            )
+            print(f"Generated parameter sweep: {manifest}")
+            return 0
+        overrides = merge_overrides(
+            load_json_object(args.params_file) if args.params_file is not None else {},
+            args.set_values,
+        )
+        if overrides:
+            apply_overrides(notebook, overrides)
         if args.command == "build":
             print(f"Generated: {write_notebook(notebook, output)}")
             return 0
