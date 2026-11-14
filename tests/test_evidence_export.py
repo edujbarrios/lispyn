@@ -84,9 +84,9 @@ def test_hy_evidence_macros_execute_and_compile(tmp_path):
     )
     notebook = build_notebook(source)
     nbformat.validate(notebook)
-    assert any("experiment_check" in cell.source
+    assert any("evaluate_check" in cell.source
                for cell in notebook.cells if cell.cell_type == "code")
-    assert any("checklist_report" in cell.source
+    assert any("summarize_evidence" in cell.source
                for cell in notebook.cells if cell.cell_type == "code")
     hy = shutil.which("hy")
     assert hy
