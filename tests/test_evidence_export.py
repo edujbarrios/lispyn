@@ -153,10 +153,10 @@ def test_export_markdown_preserves_provenance_outputs_and_image(tmp_path, capsys
     target = tmp_path / "report.md"
     assert main(["export", str(source), "-o", str(target)]) == 0
     text = target.read_text()
-    assert "**Hy source:** \`experiment.hy\`" in text
-    assert "**Hy source SHA-256:** \`123abc\`" in text
+    assert "**Hy source:** `experiment.hy`" in text
+    assert "**Hy source SHA-256:** `123abc`" in text
     assert "Hypothesis" in text and "validation loss" in text
-    assert "\`\`\`python" in text
+    assert "```python" in text
     assert "print('success')" in text
     assert "PASS: 0.82" in text
     assert "**Result:** validated" in text
@@ -227,8 +227,8 @@ def test_export_rejects_invalid_base64_and_existing_asset_dir(tmp_path):
 
 def test_export_handles_triple_fences_safely(tmp_path):
     source = tmp_path / "fences.ipynb"
-    nb = new_notebook(cells=[new_code_cell('print("a")\n# \`\`\` embedded')])
+    nb = new_notebook(cells=[new_code_cell('print("a")\n# ``` embedded')])
     nbformat.write(nb, source)
     target = tmp_path / "fences.md"
     export_markdown(source, target)
-    assert "\`\`\`\`python" in target.read_text()
+    assert "````python" in target.read_text()
