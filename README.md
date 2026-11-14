@@ -71,7 +71,7 @@ for any macros used in a later cell because Hy code cells compile independently.
 See the [technical guide](https://github.com/edujbarrios/lispyn/blob/main/docs/guide.md)
 and [release instructions](https://github.com/edujbarrios/lispyn/blob/main/docs/releasing.md).
 
-## Tell the story of an experiment with Hy macros (0.24.0a1)
+## Tell the story of an experiment with Hy macros (0.24.0a2)
 
 Lispyn is designed to make complex experiments **understandable, reusable and
 shareable**, not just executable. Declare editable notebook parameters and
