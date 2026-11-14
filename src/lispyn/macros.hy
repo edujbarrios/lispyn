@@ -226,3 +226,24 @@
   `(do
     (import lispyn.temporal [run-temporal-frame-cv])
     (run-temporal-frame-cv ~frame ~scorer ~@options)))
+
+
+; Experiment storytelling: declarative notebook parameters and rich reports.
+
+(defmacro experiment-params [#* assignments]
+  "Declare notebook parameters via (setv name value) forms.
+
+  Lispyn builds a tagged Jupyter parameters code cell. In ordinary Hy
+  execution, the forms simply assign their variables.
+  "
+  `(do ~@assignments))
+
+(defmacro report-run [run #* options]
+  "Render and optionally save an explanatory Markdown training summary.
+
+  In Jupyter this displays rich Markdown; in terminal Hy it prints text.
+  Supports a workflow.Run or a mapping of metric histories.
+  "
+  `(do
+    (import lispyn.reporting [show-run-report])
+    (show-run-report ~run ~@options)))
