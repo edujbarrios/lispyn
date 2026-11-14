@@ -6,7 +6,7 @@ Lispyn is an experimental, open-source project originally created by **Eduardo J
 
 Lispyn extends [Hy](https://hylang.org/) (a Lisp running on Python). It does **not** replace Python, hide PyTorch, or require developers to reimplement familiar ML APIs. Import Python modules and call their functions directly.
 
-> Status: **v0.24.0a1 (experimental)**. No stability guarantees; published as an experimental alpha on [PyPI](https://pypi.org/project/lispyn/).
+> Status: **v0.24.0a2 (experimental)**. No stability guarantees; published as an experimental alpha on [PyPI](https://pypi.org/project/lispyn/).
 
 ## Install from source
 
@@ -20,7 +20,7 @@ python -m pip install -e '.[notebook,data]'
 
 Install PyTorch separately with the [official CPU/GPU instructions](https://pytorch.org/get-started/locally/). For Parquet loading, install `pyarrow` as well.
 
-## Tell the story of an experiment with Hy macros (0.24.0a1)
+## Tell the story of an experiment with Hy macros (0.24.0a2)
 
 Lispyn is designed to make complex experiments **understandable, reusable and
 shareable**, not just executable. Declare editable notebook parameters and

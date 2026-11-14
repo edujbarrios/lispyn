@@ -140,7 +140,7 @@ def test_report_save_and_terminal_output(tmp_path, capsys):
 
 @pytest.mark.parametrize("history, error", [
     ({}, "No training"),
-    ({"val_loss": []}, "cannot be empty"),
+    ({"val_loss": []}, "No training"),
     ({"val_loss": ["wrong"]}, "finite real"),
     ({"train_loss": [float("nan")]}, "finite real"),
     ({"train_loss": [True]}, "finite real"),
@@ -162,3 +162,23 @@ def test_report_validates_title_mode_metric():
         render_run_report(history, notes=123)
     with pytest.raises(TypeError, match="mapping"):
         render_run_report("wrong")
+
+
+def test_reporting_valid_train_only_run_omits_unavailable_validation():
+    # The real training workflow initializes val_loss to [] when validation
+    # is not supplied. This must not break the generated Hy starter notebook.
+    run = SimpleNamespace(
+        history={
+            "train_loss": [1.4, 0.9, 0.6],
+            "val_loss": [],
+            "train_accuracy": [],
+            "val_accuracy": [],
+        },
+        stopped_early=False,
+    )
+    report = render_run_report(run, title="No held-out validation")
+    assert "| train_loss | min | 3 | 0.6 | 0.6 |" in report
+    assert "| val_loss |" not in report
+    assert "| val_accuracy |" not in report
+    with pytest.raises(ValueError, match="cannot be empty"):
+        render_run_report(run, metric="val_loss")

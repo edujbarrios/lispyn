@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.24.0a2 — 2026-11-14 — Correct reports for training without validation
+
+- Fix `report-run` to omit empty, unavailable validation histories from multi-metric summaries, such as training without a validation loader.
+- Keep explicit `:metric "val_loss"` strict: selecting an empty metric still reports a clear error.
+- Add regression coverage for the real `lispyn new` baseline workflow.
+- Supersedes 0.24.0a1 for experiments generated with the new narrative starter.
+
+
 ## 0.24.0a1 — 2026-11-14 — Hy experiment narratives and shareable reports
 
 - Add `experiment-params` macro: write ordinary `setv` declarations once in Lisp and compile them into a standard Jupyter `parameters`-tagged cell for reproducible notebook parameterization.

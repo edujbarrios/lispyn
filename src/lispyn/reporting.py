@@ -70,8 +70,17 @@ def render_run_report(run, *, title="Experiment results", notes=None,
             raise ValueError(f"Metric {metric!r} is absent from this run")
         keys = [metric]
     else:
-        keys = [key for key in history if isinstance(key, str)
-                and key.startswith(("train_", "val_", "test_"))]
+        # Training may not have a validation dataset; workflow.fit leaves
+        # unused history series (e.g. val_loss) as empty lists. Omit those
+        # from a multi-metric narrative instead of rejecting a valid run.
+        # Explicit metric=... still validates the chosen series strictly.
+        keys = [
+            key for key in history
+            if isinstance(key, str)
+            and key.startswith(("train_", "val_", "test_"))
+            and not (hasattr(history[key], "__len__")
+                     and len(history[key]) == 0)
+        ]
     if not keys:
         raise ValueError("No training/validation metric histories found")
 
