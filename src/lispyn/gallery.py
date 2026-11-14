@@ -16,6 +16,7 @@ EXAMPLE_SOURCES = (
     "markdown_cells.hy",
     "notebook_metadata.hy",
     "experiment_story.hy",
+    "parameter_variants.hy",
     "synthetic_curves.hy",
     "confusion_matrix.hy",
     "early_stopping.hy",
