@@ -151,16 +151,16 @@ jobs:
           from pathlib import Path
           from PIL import Image
           import nbformat
-          image = Path('docs/images/synthetic_training_curves.png')
+          image = Path('example_generated_notebooks/assets/synthetic_training_curves.png')
           assert image.is_file() and image.stat().st_size > 5000
           from PIL import ImageColor
           with Image.open(image).convert("RGB") as img:
               assert img.getpixel((0, 0)) == ImageColor.getrgb("#1B1B1D")
-          comparison = Path('docs/images/synthetic_comparison_curves.png')
+          comparison = Path('example_generated_notebooks/assets/synthetic_comparison_curves.png')
           assert comparison.is_file() and comparison.stat().st_size > 5000
-          confusion = Path('docs/images/synthetic_confusion_matrix.png')
+          confusion = Path('example_generated_notebooks/assets/synthetic_confusion_matrix.png')
           assert confusion.is_file() and confusion.stat().st_size > 5000
-          classification = Path('docs/reports/synthetic_classification_report.md')
+          classification = Path('example_generated_notebooks/reports/synthetic_classification_report.md')
           assert classification.is_file()
           report_text = classification.read_text()
           assert 'Precision' in report_text and 'Macro average' in report_text
@@ -208,6 +208,8 @@ jobs:
           PY
           lispyn execute examples/stratified_inference.hy --timeout 120
           lispyn execute examples/generated_starter.hy --timeout 120
+          lispyn execute examples/quickstart.hy --timeout 120
+          lispyn audit examples/quickstart.ipynb --source examples/quickstart.hy
           lispyn execute examples/plot_experiment.hy --timeout 120
           lispyn execute examples/curve_designs.hy --timeout 120
           lispyn report examples/runs/curve-designs --plot examples/runs/curve-designs/report.png --theme dark --title 'Training curves' --train-color '#22D3EE' --val-color '#FBBF24'
@@ -282,10 +284,10 @@ jobs:
       - run: lispyn gallery
       - run: lispyn run examples/synthetic_curves.hy
       - run: lispyn run examples/confusion_matrix.hy
-      - run: test -s docs/images/synthetic_training_curves.png
-      - run: test -s docs/images/synthetic_comparison_curves.png
-      - run: test -s docs/images/synthetic_confusion_matrix.png
-      - run: test -s docs/reports/synthetic_classification_report.md
+      - run: test -s example_generated_notebooks/assets/synthetic_training_curves.png
+      - run: test -s example_generated_notebooks/assets/synthetic_comparison_curves.png
+      - run: test -s example_generated_notebooks/assets/synthetic_confusion_matrix.png
+      - run: test -s example_generated_notebooks/reports/synthetic_classification_report.md
       - name: Commit verified compiled notebooks
         run: |
           # Do not publish artifacts built from an obsolete commit: a newer
@@ -297,7 +299,7 @@ jobs:
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add example_generated_notebooks/*.ipynb docs/images/synthetic_training_curves.png docs/images/synthetic_comparison_curves.png docs/images/synthetic_confusion_matrix.png docs/reports/synthetic_classification_report.md
+          git add example_generated_notebooks/*.ipynb example_generated_notebooks/assets/synthetic_training_curves.png example_generated_notebooks/assets/synthetic_comparison_curves.png example_generated_notebooks/assets/synthetic_confusion_matrix.png example_generated_notebooks/reports/synthetic_classification_report.md
           if ! git diff --cached --quiet; then
             git commit -m 'docs: refresh compiled notebooks [gallery]'
             git push

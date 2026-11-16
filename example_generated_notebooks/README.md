@@ -21,14 +21,14 @@ The generated notebooks retain Markdown, Python code, and attribution to **Eduar
 
 The ResNet18 recipe now includes runtime `ensure-package` / `use-package` macros for standard-library and third-party Python imports. Merely generating notebooks never calls pip.
 
-The gallery also includes `synthetic_curves.ipynb`, a complete no-model-training Matplotlib example. Its generated PNG is committed at `docs/images/synthetic_training_curves.png` and embedded in the main README.
+The gallery also includes `synthetic_curves.ipynb`, a complete no-model-training Matplotlib example. Its generated PNG is committed at `example_generated_notebooks/assets/synthetic_training_curves.png` and available alongside the generated notebooks.
 
 Synthetic demo: `synthetic_curves.ipynb` generates two committed PNG figures with the `docusaurus-dark` theme and `turquoise-spectrum` palette, one showing train/validation curves and the other comparing three synthetic runs. Both are generated, not fabricated model results.
 
-The gallery also includes `confusion_matrix.ipynb`: a synthetic classification example with a reusable `defconfusion` macro and a turquoise-on-dark matrix figure at `docs/images/synthetic_confusion_matrix.png`. It is compiled without execution or fabricated model predictions.
+The gallery also includes `confusion_matrix.ipynb`: a synthetic classification example with a reusable `defconfusion` macro and a turquoise-on-dark matrix figure at `example_generated_notebooks/assets/synthetic_confusion_matrix.png`. It is compiled without execution or fabricated model predictions.
 
 `early_stopping.ipynb` demonstrates the `train-until` macro with a small CPU PyTorch model, Markdown narration, best/last checkpoint tracking, a run manifest and Docusaurus-dark loss curves. Gallery creation never executes the training loop.
 
-The new `notebook_metadata.ipynb` shows first-class raw Jupyter cells and parameter/hide-input tags. The `confusion_matrix.ipynb` also computes per-class classification scores; its synthetic Markdown report is generated at `docs/reports/synthetic_classification_report.md`.
+The new `notebook_metadata.ipynb` shows first-class raw Jupyter cells and parameter/hide-input tags. The `confusion_matrix.ipynb` also computes per-class classification scores; its synthetic Markdown report is generated at `example_generated_notebooks/reports/synthetic_classification_report.md`.
 
 `advanced_training.ipynb` demonstrates gradient accumulation, clipping, a cosine learning-rate scheduler, and Lisp macros for turquoise Matplotlib training/LR plots. The generated notebook is stored unexecuted, while CI validates actual CPU execution separately.
