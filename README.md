@@ -14,6 +14,32 @@ pip install lispyn
 
 **Jupyter and Matplotlib are included.** PyTorch is installed separately to match your CPU/GPU setup ([official instructions](https://pytorch.org/get-started/locally/)). From a source checkout, `pip install -r requirements.txt` provides an optional full research environment.
 
+## Hello Lispyn: three ways to run the same Hy file
+
+Start with [`examples/hello.hy`](examples/hello.hy), which uses Hy syntax, a Lispyn timing macro, and a numeric check. It needs **no PyTorch or dataset**, so you can verify your installation immediately:
+
+```hy
+(require lispyn.macros [md assert-close with-timing])
+(md "# Hello Lispyn" "A tiny, checkable Hy experiment.")
+(print "Hello from Lispyn!")
+(with-timing "Summing a few numbers"
+  (setv numbers [2 3 5])
+  (setv answer (sum numbers)))
+(assert-close answer 10)
+(print "2 + 3 + 5 =" answer)
+(print "Lispyn checks passed!")
+```
+
+Run **the same file** in three ways after `pip install lispyn` (use the `examples/hello.hy` path from the repository root):
+
+| What you want | Command | What happens |
+| --- | --- | --- |
+| **1. Direct Hy execution** | `lispyn run examples/hello.hy` | Prints the result directly to the terminal; does **not** create a notebook. |
+| **2. Build a Jupyter notebook** | `lispyn build examples/hello.hy` | Creates `examples/hello.ipynb` without running the code. |
+| **3. Build and execute the notebook** | `lispyn execute examples/hello.hy` | Creates/overwrites `examples/hello.ipynb` with executed cells and captured outputs. |
+
+Expected direct output includes `Hello from Lispyn!`, `2 + 3 + 5 = 10`, and `Lispyn checks passed!`. The `with-timing` line also reports elapsed seconds (which vary). During notebook execution, the `md` form becomes a real Markdown cell. **Building alone does not execute any code.** To choose a different notebook path, add `-o hello.ipynb` to `build` or `execute`. All three commands execute or compile **trusted Hy only**; macros are not sandboxed.
+
 ## See Lispyn in action
 
 <!-- QUICKSTART_EXECUTED:START -->
@@ -59,7 +85,7 @@ Lispyn builds and executes standard Python notebook cells. For compilation witho
 
 ## More than training
 
-Use **45 documented Hy macros** for experiment parameters, PyTorch training, evaluation splits, cross-validation, comparisons, reports and figures. [Explore every macro and its syntax](supported_macros/README.md).
+Use **47 documented Hy macros** for experiment parameters, PyTorch training, evaluation splits, cross-validation, comparisons, reports and figures. [Explore every macro and its syntax](supported_macros/README.md).
 
 Need an additional library inside the notebook? Lispyn can create a dedicated dependency cell:
 
