@@ -45,7 +45,10 @@ def test_root_readme_is_researcher_first_and_links_to_macro_registry():
     assert "supported_macros/README.md" in readme
     assert "examples/quickstart.hy" in readme
     assert 'pip install --upgrade "lispyn[notebook,plots]"' in readme
-    assert "lispyn execute study.hy" in readme
+    assert "lispyn execute examples/quickstart.hy" in readme
+    assert "QUICKSTART_EXECUTED:START" in readme
+    assert "QUICKSTART_EXECUTED:END" in readme
+    assert "Why would a researcher use this?" not in readme
     assert "Held-out" in readme or "held-out" in readme
     project = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     assert "blob/main/supported_macros/README.md" in project
