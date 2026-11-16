@@ -32,6 +32,12 @@ Researchers need more than a script that trains a model: they need to **iterate 
 
 **The difference is in the workflow:** the experiment definition becomes the source of truth, while the resulting notebook remains a familiar artifact for collaborators, supervisors and reviewers.
 
+**A glimpse of the output — publication-style figures from Hy macros**
+
+![Lispyn synthetic training and validation curves, Docusaurus-dark theme](example_generated_notebooks/assets/synthetic_training_curves.png)
+
+*Illustrative training curves generated from **synthetic values** to demonstrate Lispyn's reusable plotting styles; these are **not results from a trained model**.*
+
 ## Install in two steps
 
 Python **3.10+** is supported. A virtual environment is recommended.
