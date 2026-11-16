@@ -262,3 +262,20 @@
   `(do
     (import lispyn.evidence [summarize-evidence])
     (summarize-evidence ~checks ~@options)))
+
+; Live, human-readable experiment results written entirely in Hy.
+
+(defmacro narrate [template #* options]
+  "Render metric-aware Markdown with explicit scalar values at runtime.
+
+  Example: (narrate "Accuracy: {accuracy:.1%}" :accuracy val-accuracy)
+  "
+  `(do
+    (import lispyn.narrative [show-narrative])
+    (show-narrative ~template ~@options)))
+
+(defmacro metric-table [metrics #* options]
+  "Display an explicit table of finite scalar metrics in Jupyter or CLI."
+  `(do
+    (import lispyn.narrative [show-metric-summary])
+    (show-metric-summary ~metrics ~@options)))
