@@ -276,3 +276,11 @@
   `(do
     (import lispyn.narrative [show-metric-summary])
     (show-metric-summary ~metrics ~@options)))
+
+; Turn saved native PyTorch runs into a readable, ranked research notebook.
+
+(defmacro experiment-leaderboard [directory #* options]
+  "Rank recorded experiment histories as Jupyter Markdown or terminal text."
+  `(do
+    (import lispyn.leaderboard [show-leaderboard])
+    (show-leaderboard ~directory ~@options)))
