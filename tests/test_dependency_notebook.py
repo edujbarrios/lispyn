@@ -43,6 +43,6 @@ def test_readme_links_runnable_quickstart_instead_of_embedding_large_resnet_reci
     assert catalog.is_file()
     assert "examples/quickstart.hy" in readme
     assert "supported_macros/README.md" in readme
-    assert "lispyn execute study.hy" in readme
+    assert "lispyn execute examples/quickstart.hy" in readme
     # Full multi-hundred-line ResNet recipes belong in examples/, not the landing page.
     assert (root / "examples" / "resnet_finetune_300.hy").is_file()
