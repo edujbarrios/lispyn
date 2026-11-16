@@ -266,10 +266,7 @@
 ; Live, human-readable experiment results written entirely in Hy.
 
 (defmacro narrate [template #* options]
-  "Render metric-aware Markdown with explicit scalar values at runtime.
-
-  Example: (narrate "Accuracy: {accuracy:.1%}" :accuracy val-accuracy)
-  "
+  "Render metric-aware Markdown with explicit named scalars at runtime."
   `(do
     (import lispyn.narrative [show-narrative])
     (show-narrative ~template ~@options)))
