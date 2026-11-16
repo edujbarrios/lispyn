@@ -22,7 +22,7 @@ def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="lispyn", description="Hy experiments, Python notebooks, PyTorch freedom."
     )
-    p.add_argument("--version", action="version", version="lispyn 0.27.0a1")
+    p.add_argument("--version", action="version", version="lispyn 0.28.0a1")
     sub = p.add_subparsers(dest="command", required=True)
     health = sub.add_parser("doctor", help="Inspect installation and optional tools without modifying anything")
     health.add_argument("--json", action="store_true", help="Print machine-readable environment summary")
@@ -81,6 +81,18 @@ def parser() -> argparse.ArgumentParser:
     )
     gallery.add_argument("--source-dir", type=Path, default=Path("examples"))
     gallery.add_argument("--output-dir", type=Path, default=Path("example_generated_notebooks"))
+    leaderboard = sub.add_parser(
+        "leaderboard", help="Rank saved Lispyn experiments automatically (no training)"
+    )
+    leaderboard.add_argument("directory", type=Path, help="Parent directory of saved run histories")
+    leaderboard.add_argument("--metric", default="loss", help="Unprefixed metric (loss, accuracy)")
+    leaderboard.add_argument("--split", choices=("train", "val"), default="val")
+    leaderboard.add_argument("--mode", choices=("min", "max"), default=None)
+    leaderboard.add_argument("--rank-by", choices=("best", "final"), default="best")
+    leaderboard.add_argument("--top", type=int, default=10, help="Show the top 1–100 runs")
+    leaderboard.add_argument("--strict", action="store_true", help="Fail on invalid/incomplete runs")
+    leaderboard.add_argument("--json", action="store_true", help="Print machine-readable summary")
+    leaderboard.add_argument("-o", "--output", type=Path, help="Save .md, .csv, or .json report")
     compare = sub.add_parser("compare", help="Compare two or more saved Lispyn runs")
     compare.add_argument("directories", nargs="+", type=Path, help="Run directories with history.json")
     compare.add_argument("--metric", default="loss", help="Metric name without train_/val_ prefix")
@@ -123,6 +135,19 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "doctor":
             report = inspect_environment()
             print(json.dumps(report, indent=2) if args.json else format_report(report))
+            return 0
+        if args.command == "leaderboard":
+            from .leaderboard import (
+                discover_leaderboard, format_leaderboard, save_leaderboard
+            )
+            summary = discover_leaderboard(
+                args.directory, metric=args.metric, split=args.split, mode=args.mode,
+                rank_by=args.rank_by, top=args.top, strict=args.strict,
+            )
+            print(json.dumps(summary, indent=2) if args.json else format_leaderboard(summary))
+            if args.output is not None:
+                print(f"Leaderboard saved: {save_leaderboard(summary, args.output)}",
+                      file=sys.stderr if args.json else sys.stdout)
             return 0
         if args.command == "compare":
             from .comparison import compare_experiments, format_comparison, save_comparison

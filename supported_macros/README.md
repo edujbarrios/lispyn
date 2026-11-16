@@ -1,6 +1,6 @@
 # Supported Lispyn macros
 
-**The complete Hy/Lisp macro reference — 42 macros, with usage examples.**
+**The complete Hy/Lisp macro reference — 43 macros, with usage examples.**
 
 Lispyn's API is **Hy macros**. They compose ordinary Python, pandas, PyTorch, Matplotlib and Jupyter; they do not replace those libraries. This file is the **single source of truth for supported macros**, grouped by research workflow. The implementations live in [`src/lispyn/macros.hy`](../src/lispyn/macros.hy).
 
@@ -30,7 +30,7 @@ The examples below show the public **Hy syntax**, not direct Python implementati
 | [Visualization & classification](#visualization--classification) | `curve`, `defcurve`, `compare-curves`, `learning-rate-curve`, `confusion-matrix`, `defconfusion`, `classification-report` |
 | [Dataset splits & cross-validation](#dataset-splits--cross-validation) | `train-val-test`, `cross-validation-folds`, `tabular-train-val-test`, `tabular-cross-validation-folds`, `repeated-cross-validation-folds`, `repeated-tabular-folds`, `cross-validate`, `cross-validate-table`, `save-cross-validation` |
 | [Time-series experiments](#time-series-experiments) | `temporal-train-val-test`, `temporal-folds`, `temporal-table-split`, `temporal-table-folds`, `cross-validate-temporal`, `cross-validate-temporal-table` |
-| [Reports, evidence & narratives](#reports-evidence--narratives) | `report-run`, `experiment-check`, `checklist-report`, `narrate`, `metric-table` |
+| [Reports, evidence & narratives](#reports-evidence--narratives) | `report-run`, `experiment-check`, `checklist-report`, `narrate`, `metric-table`, `experiment-leaderboard` |
 
 ## Notebook structure & parameters
 
@@ -520,6 +520,20 @@ Placeholders accept simple named fields and restricted numeric format specs. Exp
 
 Accepts a nonempty metric-to-real-number mapping (not entire datasets, tensors or prediction arrays). `:precision` is 1–12.
 
+### `experiment-leaderboard`
+**Purpose:** Discover saved training histories recursively and display a ranked Markdown leaderboard directly from Hy, without manually collecting run directories.
+
+```hy
+(require lispyn.macros [experiment-leaderboard])
+(setv board
+  (experiment-leaderboard "runs"
+    :metric "accuracy" :split "val" :mode "max"
+    :rank-by "best" :top 10 :save "runs/leaderboard.md"))
+```
+
+Returns a JSON-compatible summary with ranked `runs`, `total` and `skipped` entries. `:save` supports Markdown, CSV and JSON. `:rank-by "final"` ranks each run by the last epoch instead of its best epoch. Nonfinite or missing metrics and unfinished/failed manifests are skipped by default; `:strict True` raises instead. Legacy `history.json` files with no manifest are labeled `history-only`, **not independently verified**. Only scalar histories and completion status are read: no model weights or dataset rows. Compare runs with equivalent splits/protocols before drawing conclusions. See [the runnable Hy demonstration](../examples/experiment_leaderboard.hy).
+
+
 ---
 
 ## Other useful Lispyn commands (not macros)
@@ -539,6 +553,7 @@ These are **CLI commands**, not entries from `macros.hy`:
 | `lispyn export study.ipynb -o report.md` | Export notebook prose/results/figures to Markdown |
 | `lispyn gallery` | Compile supported example notebooks |
 | `lispyn compare run-a/ run-b/` | Compare saved experiment histories |
+| `lispyn leaderboard runs/ --metric loss -o ranking.md` | Discover and rank saved experiment histories |
 | `lispyn report runs/study/` | Summarize a saved run |
 | `lispyn doctor` | Inspect environment and optional dependencies |
 
