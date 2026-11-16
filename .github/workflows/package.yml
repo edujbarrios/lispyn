@@ -85,11 +85,11 @@ jobs:
           HY
           /tmp/lispyn-wheel-env/bin/lispyn build installed.hy
           /tmp/lispyn-wheel-env/bin/python - <<'PY'
-          import json, nbformat, tomllib
+          import json, nbformat, tomllib, os
           from pathlib import Path
           report = json.loads(Path('/tmp/wheel-doctor.json').read_text())
           assert report['can_build']
-          version = tomllib.loads(Path('/home/runner/work/lispyn/lispyn/pyproject.toml').read_text())['project']['version']
+          version = tomllib.loads((Path(os.environ['GITHUB_WORKSPACE']) / 'pyproject.toml').read_text())['project']['version']
           assert report['lispyn'] == version
           nb = nbformat.read('/tmp/installed.ipynb', as_version=4)
           assert any('lispyn-pip-install' in c.metadata.get('tags', [])
