@@ -25,6 +25,8 @@ jobs:
         run: |
           python - <<'PY'
           from glob import glob
+          from pathlib import Path
+          import tomllib
           from zipfile import ZipFile
           from tarfile import open as taropen
           from email.parser import Parser
@@ -40,7 +42,8 @@ jobs:
               assert any(n.endswith('/NOTICE') for n in names)
               assert any(n.endswith('/entry_points.txt') for n in names)
               assert 'Name: lispyn' in metadata
-              assert 'Version: 0.30.0a1' in metadata
+              project_version = tomllib.loads(Path('pyproject.toml').read_text())['project']['version']
+              assert f'Version: {project_version}' in metadata
               assert 'License-Expression: Apache-2.0' in metadata
               required = {
                   Requirement(item).name.lower()
@@ -82,11 +85,12 @@ jobs:
           HY
           /tmp/lispyn-wheel-env/bin/lispyn build installed.hy
           /tmp/lispyn-wheel-env/bin/python - <<'PY'
-          import json, nbformat
+          import json, nbformat, tomllib
           from pathlib import Path
           report = json.loads(Path('/tmp/wheel-doctor.json').read_text())
           assert report['can_build']
-          assert report['lispyn'] == '0.30.0a1'
+          version = tomllib.loads(Path('/home/runner/work/lispyn/lispyn/pyproject.toml').read_text())['project']['version']
+          assert report['lispyn'] == version
           nb = nbformat.read('/tmp/installed.ipynb', as_version=4)
           assert any('lispyn-pip-install' in c.metadata.get('tags', [])
                      for c in nb.cells if c.cell_type == 'code')
