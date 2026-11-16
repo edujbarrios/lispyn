@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lispyn"
-version = "0.27.0a1"
-description = "Lisp-powered PyTorch experiments and Jupyter notebooks, built on Hy."
+version = "0.28.0a1"
+description = "A new way to write and run machine-learning experiments with Hy, PyTorch and Jupyter."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"
