@@ -57,6 +57,8 @@ Check for `2 + 3 + 5 = 10` and `Lispyn checks passed!` in the terminal or execut
 
 The catalog explains the available **PyTorch** training and evaluation, **Matplotlib** charts, **pandas** table operations, **NumPy** array checks, notebook generation, reports and experiment comparisons. New: [data-quality profiles](examples/data_profiles.hy). See also the [PyTorch quickstart](examples/quickstart.hy) and [executed notebook gallery](example_generated_notebooks/).
 
+For native PyTorch, try `lispyn execute examples/quickstart.hy` after installing PyTorch.
+
 From a source checkout, `pip install -r requirements.txt` installs an optional full research environment.
 
 *Created by Eduardo J. Barrios · [Apache-2.0](LICENSE) · [Citation](CITATION.cff) · Experimental alpha software.*
