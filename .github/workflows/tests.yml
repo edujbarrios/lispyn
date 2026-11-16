@@ -208,6 +208,8 @@ jobs:
           PY
           lispyn execute examples/stratified_inference.hy --timeout 120
           lispyn execute examples/generated_starter.hy --timeout 120
+          lispyn execute examples/quickstart.hy --timeout 120
+          lispyn audit examples/quickstart.ipynb --source examples/quickstart.hy
           lispyn execute examples/plot_experiment.hy --timeout 120
           lispyn execute examples/curve_designs.hy --timeout 120
           lispyn report examples/runs/curve-designs --plot examples/runs/curve-designs/report.png --theme dark --title 'Training curves' --train-color '#22D3EE' --val-color '#FBBF24'
