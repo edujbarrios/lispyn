@@ -70,6 +70,12 @@ def parser() -> argparse.ArgumentParser:
         "--hide-code", action="store_true",
         help="Include Markdown and results without Python source cells",
     )
+    audit = sub.add_parser(
+        "audit", help="Check notebook execution, errors and Hy source provenance without execution"
+    )
+    audit.add_argument("notebook", type=Path, help="Existing Jupyter .ipynb file")
+    audit.add_argument("--source", type=Path, help="Original .hy source for SHA-256 verification")
+    audit.add_argument("--json", action="store_true", help="Output machine-readable audit summary")
     gallery = sub.add_parser(
         "gallery", help="Compile examples into example_generated_notebooks/ without execution"
     )
@@ -148,6 +154,27 @@ def main(argv: list[str] | None = None) -> int:
                 path.write_text(report + "\n", encoding="utf-8")
                 print(f"Summary saved: {path}")
             return 0
+        if args.command == "audit":
+            from .notebook_audit import audit_notebook
+            audit = audit_notebook(args.notebook, source=args.source)
+            if args.json:
+                print(json.dumps(audit, indent=2))
+            else:
+                verdict = "READY" if audit["ready_to_share"] else "NOT READY"
+                print(f"Notebook audit: {verdict} ({audit['notebook']})")
+                print(
+                    f"Code executed: {audit['executed_code_cells']}/{audit['code_cells']}; "
+                    f"error cells: {audit['error_cells']}"
+                )
+                if audit["source_verified"] is True:
+                    print("Hy source hash: verified")
+                elif audit["source_verified"] is None:
+                    print("Hy source hash: not independently verified (use --source)")
+                else:
+                    print("Hy source hash: mismatch")
+                if audit["issues"]:
+                    print("Issues: " + ", ".join(audit["issues"]))
+            return 0 if audit["ready_to_share"] else 1
         if args.command == "export":
             from .notebook_export import export_markdown
             output = args.output or args.notebook.with_suffix(".md")
