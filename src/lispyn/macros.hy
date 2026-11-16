@@ -284,3 +284,17 @@
   `(do
     (import lispyn.leaderboard [show-leaderboard])
     (show-leaderboard ~directory ~@options)))
+
+; Compare saved PyTorch research runs directly within a Hy/Jupyter experiment.
+
+(defmacro compare-runs [runs #* options]
+  "Show a shareable baseline-vs-candidate Markdown table from saved histories."
+  `(do
+    (import lispyn.research_comparison [show-run-comparison])
+    (show-run-comparison ~runs ~@options)))
+
+(defmacro plot-runs [runs #* options]
+  "Visualize a selected recorded metric across saved runs as a Matplotlib plot."
+  `(do
+    (import lispyn.research_comparison [plot-run-comparison])
+    (plot-run-comparison ~runs ~@options)))
