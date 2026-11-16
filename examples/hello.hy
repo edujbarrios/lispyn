@@ -1,9 +1,10 @@
-; Hello Lispyn: no torch, datasets or external files required.
-(require lispyn.macros [md assert-close with-timing])
-
+; Hello Lispyn: runs without PyTorch or datasets.
+(require lispyn.macros [md])
 (md "# Hello Lispyn"
-    "One tiny Hy program, three ways to run it: direct, build, execute.")
+    "A tiny Hy program you can run directly or as a Jupyter notebook.")
 
+; Lispyn compiles notebook cells independently: require macros in each code cell.
+(require lispyn.macros [assert-close with-timing])
 (print "Hello from Lispyn!")
 (with-timing "Summing a few numbers"
   (setv numbers [2 3 5])
