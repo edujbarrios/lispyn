@@ -99,6 +99,9 @@ jobs:
 
   publish:
     name: Publish to PyPI (Trusted Publishing)
+    # Tags are created only after the main-branch publish succeeds.
+    # A tag push must not attempt to upload the same PyPI files again.
+    if: github.ref == 'refs/heads/main'
     concurrency:
       group: lispyn-pypi-publish
       cancel-in-progress: false

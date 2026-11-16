@@ -47,7 +47,9 @@ def test_hello_hy_direct_and_notebook_build(tmp_path):
     assert notebook.cells[0].cell_type == "markdown"
     code = "\n".join(c.source for c in notebook.cells if c.cell_type == "code")
     assert "assert_close" in code
-    assert "timing" in code
+    assert "lispyn.utilities.timing" in code
+    assert "lispyn.utilities.assert_close" in code
+    assert "with_timing(" not in code
     assert "Hello from Lispyn!" in code
 
     result = subprocess.run(
@@ -65,6 +67,10 @@ def test_hello_hy_direct_and_notebook_build(tmp_path):
     )
     assert result.returncode == 0, result.stderr
     assert output.exists()
+    import nbformat
+    built = nbformat.read(output, as_version=4)
+    assert all(c.get("execution_count") is None and not c.get("outputs")
+               for c in built.cells if c.cell_type == "code")
 
 
 def test_hello_hy_notebook_execute(tmp_path):

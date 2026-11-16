@@ -304,12 +304,12 @@
 (defmacro assert-close [actual expected #* options]
   "Assert that two finite numeric scalars match within explicit tolerances."
   `(do
-    (import lispyn.utilities [assert-close])
-    (assert-close ~actual ~expected ~@options)))
+    (import lispyn.utilities)
+    (lispyn.utilities.assert-close ~actual ~expected ~@options)))
 
 (defmacro with-timing [label #* body]
   "Time a Hy body and print elapsed seconds, including on errors."
   `(do
-    (import lispyn.utilities [timing])
-    (with [(timing ~label)]
+    (import lispyn.utilities)
+    (with [(lispyn.utilities.timing ~label)]
       ~@body)))
