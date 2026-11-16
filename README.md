@@ -1,12 +1,12 @@
-# Lispyn
+# Lispyn — Realización de notebooks de IA
 
-**Write research experiments in Hy (Lisp for Python) and run them directly or as standard Jupyter notebooks.**
+**Create AI notebooks with Hy (Lisp for Python): run scripts, generate Jupyter notebooks or save executed results.**
 
 Lispyn provides macros for **PyTorch, NumPy, pandas and Matplotlib** while keeping your Python libraries and models.
 
 [![PyPI version](https://img.shields.io/pypi/v/lispyn?label=PyPI%20version)](https://pypi.org/project/lispyn/) [![CI on main](https://github.com/edujbarrios/lispyn/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/edujbarrios/lispyn/actions/workflows/tests.yml?query=branch%3Amain) [![Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
-## Why use it for research?
+## Why use Lispyn for AI notebooks?
 
 **Less boilerplate.** For example, [the real PyTorch quickstart](examples/quickstart.hy) uses a macro to create separate train, validation and held-out test subsets:
 
@@ -28,9 +28,17 @@ Lispyn provides macros for **PyTorch, NumPy, pandas and Matplotlib** while keepi
 (assert-finite features :name "features")
 ```
 
+**Check class imbalance before training.** The [runnable label balance example](examples/label_balance.hy) summarizes a classification dataset and plots its class counts:
+
+```hy
+(require lispyn.macros [label-balance plot-label-balance])
+(setv labels ["cat" "cat" "cat" "dog" "dog" "bird"])
+(setv report (label-balance labels :title "Training label distribution"))
+```
+
 **One source, three modes.** The same [hello.hy](examples/hello.hy) can run in a terminal, become an unexecuted notebook, or produce a notebook with saved outputs. See the three commands below.
 
-**Inspectable research artifacts.** The [quickstart](examples/quickstart.hy) renders a report from actual PyTorch training results, which can be reviewed in the [executed notebook](example_generated_notebooks/quickstart_executed.ipynb):
+**Inspectable AI notebook outputs.** The [quickstart](examples/quickstart.hy) renders a report from actual PyTorch training results, which can be reviewed in the [executed notebook](example_generated_notebooks/quickstart_executed.ipynb):
 
 ```hy
 (require lispyn.macros [report-run narrate metric-table])
@@ -38,7 +46,7 @@ Lispyn provides macros for **PyTorch, NumPy, pandas and Matplotlib** while keepi
 (report-run run :title "PyTorch baseline · recorded metrics")
 ```
 
-These examples help organize research; Lispyn cannot guarantee reproducibility or scientific validity.
+These examples simplify AI notebook development; Lispyn does not guarantee model quality, reproducibility or valid evaluations.
 
 ## Install
 
@@ -79,8 +87,8 @@ Check for `2 + 3 + 5 = 10` and `Lispyn checks passed!`. Building compiles Hy int
 
 ## All macros and examples
 
-**[Full reference: 51 macros, arguments, dependencies and Hy examples](supported_macros/README.md)** — grouped by PyTorch, Matplotlib, pandas, NumPy, notebook authoring and research reporting.
+**[Full reference: 53 macros, arguments, dependencies and Hy examples](supported_macros/README.md)** — grouped by PyTorch, Matplotlib, pandas, NumPy, notebook authoring, classification and AI experiment reporting.
 
-More runnable sources: [PyTorch quickstart](examples/quickstart.hy) (try `lispyn execute examples/quickstart.hy`), [data profiles](examples/data_profiles.hy) and [input assertions](examples/validate_inputs.hy). A cloned repository also offers `pip install -r requirements.txt` for an optional full research environment.
+More runnable sources: [PyTorch quickstart](examples/quickstart.hy) (try `lispyn execute examples/quickstart.hy`), [data profiles](examples/data_profiles.hy) and [input assertions](examples/validate_inputs.hy) and [label balance](examples/label_balance.hy). A cloned repository also offers `pip install -r requirements.txt` for an optional full AI development environment.
 
 *Created by Eduardo J. Barrios · [Apache-2.0](LICENSE) · [Citation](CITATION.cff) · Experimental alpha software.*

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.34.0a1 — 2026-11-16 — Realización de notebooks de IA and class balance
+
+- Reposition Lispyn as a general AI notebook authoring and execution tool, not exclusively a research experiment framework; update README, package metadata, CLI description and citations.
+- Add `label-balance`: inspect class counts, proportions and imbalance ratios for sequences, NumPy arrays, pandas Series and optional PyTorch tensors, with Markdown/JSON exports.
+- Add `plot-label-balance`: create Matplotlib class-count figures with existing Lispyn themes and optional PNG/SVG exports.
+- Include a runnable `examples/label_balance.hy` covering source execution, notebook compilation and notebook execution, plus edge-case and documentation tests.
+- Preserve the three modes (`run`, `build`, `execute`), dynamic release/CI badges, and actual source-backed README examples. Document all 53 macros in the full catalog.
+
+
 ## 0.33.0a1 — 2026-11-16 — Real README evidence and input validation
 
 - Add `assert-finite` for NumPy numerical arrays and optional PyTorch dense tensors, rejecting NaN/inf before training without printing raw values.

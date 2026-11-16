@@ -1,14 +1,14 @@
 cff-version: 1.2.0
 message: "If you use Lispyn in a publication, please cite this software."
 type: software
-title: "Lispyn: A new way to write and run machine-learning experiments"
+title: "Lispyn: AI notebook creation with Hy and Python"
 authors:
   - family-names: Barrios
     given-names: Eduardo J.
 repository-code: "https://github.com/edujbarrios/lispyn"
 url: "https://github.com/edujbarrios/lispyn"
 license: Apache-2.0
-version: 0.33.0a1
+version: 0.34.0a1
 keywords:
   - Hy
   - Lisp

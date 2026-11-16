@@ -1,8 +1,8 @@
 # Supported Lispyn macros
 
-**The complete Hy/Lisp macro reference — 51 macros, with usage examples.**
+**The complete Hy/Lisp macro reference — 53 macros, with usage examples.**
 
-Lispyn's API is **Hy macros**. They compose ordinary Python, pandas, PyTorch, Matplotlib and Jupyter; they do not replace those libraries. This file is the **single source of truth for supported macros**, grouped by research workflow. The implementations live in [`src/lispyn/macros.hy`](../src/lispyn/macros.hy).
+Lispyn's API is **Hy macros**. They compose ordinary Python, pandas, PyTorch, Matplotlib and Jupyter; they do not replace those libraries. This file is the **single source of truth for supported macros**, grouped by AI notebook task (including research and production prototyping). The implementations live in [`src/lispyn/macros.hy`](../src/lispyn/macros.hy).
 
 > Looking for a first experiment? Start with the [main README](../README.md) and the runnable [quickstart](../examples/quickstart.hy).
 
@@ -22,12 +22,13 @@ The examples below show the public **Hy syntax**, not direct Python implementati
 
 ## Index
 
-| Research activity | Macros |
+| AI notebook task | Macros |
 | --- | --- |
 | [Notebook structure & parameters](#notebook-structure--parameters) | `md`, `markdown`, `raw-cell`, `cell-tags`, `pip-install`, `experiment-params` |
 | [NumPy and pandas data profiling](#numpy-and-pandas-data-profiling) | `array-profile`, `table-profile` |
 | [PyTorch training & inference](#pytorch-training--inference) | `with-seed`, `train-for`, `train-until`, `train-accumulating`, `with-eval`, `head-tune`, `full-tune` |
 | [Runtime dependencies](#runtime-dependencies) | `ensure-package`, `use-package` |
+| [AI dataset class balance](#ai-dataset-class-balance) | `label-balance`, `plot-label-balance` |
 | [Visualization & classification](#visualization--classification) | `curve`, `defcurve`, `compare-curves`, `learning-rate-curve`, `confusion-matrix`, `defconfusion`, `classification-report` |
 | [Dataset splits & cross-validation](#dataset-splits--cross-validation) | `train-val-test`, `cross-validation-folds`, `tabular-train-val-test`, `tabular-cross-validation-folds`, `repeated-cross-validation-folds`, `repeated-tabular-folds`, `cross-validate`, `cross-validate-table`, `save-cross-validation` |
 | [Time-series experiments](#time-series-experiments) | `temporal-train-val-test`, `temporal-folds`, `temporal-table-split`, `temporal-table-folds`, `cross-validate-temporal`, `cross-validate-temporal-table` |
@@ -294,6 +295,35 @@ Arguments: `model data` plus normal `train` options. Often follows `head-tune` i
 ```
 
 Also accepts `:import-name` and `:install False`. Like `ensure-package`, performs dependency checks only at runtime.
+
+## AI dataset class balance
+
+These macros help **inspect classification datasets before training**, whether you use plain Python lists, NumPy 1-D arrays, pandas Series, or optional PyTorch 1-D tensors. They count only labels; no model training or data downloads occur. Labels themselves appear in summaries and plots, so check them before sharing notebooks.
+
+### `label-balance`
+**Purpose:** Count examples in each observed class, display a Markdown table with percentages and an imbalance ratio, and return a JSON-compatible summary.
+
+```hy
+(require lispyn.macros [label-balance])
+(setv labels ["cat" "cat" "cat" "dog" "bird"])
+(setv summary (label-balance labels
+  :title "Training classes" :save "reports/classes.json"))
+(print (get summary "majority_share"))
+```
+
+Returns `title`, `total`, `num_classes`, `majority_share`, `imbalance_ratio`, and `classes` entries (`label`, `count`, `share`). First-seen order is preserved. `:save` supports `.json` and `.md`. `:max-classes` defaults to 30, maximum 50. Rejects empty, non-1D or ambiguous labels and NaNs/infinities rather than silently removing observations. This is descriptive, **not** a statistical balance test or a substitute for proper train/test splitting.
+
+### `plot-label-balance`
+**Purpose:** Generate a labeled Matplotlib bar chart of observed class counts without writing a plotting loop.
+
+```hy
+(require lispyn.macros [plot-label-balance])
+(plot-label-balance ["cat" "cat" "dog" "bird"]
+  :title "AI training labels" :theme "paper"
+  :save "figures/labels.png")
+```
+
+Returns a Matplotlib `Figure` (for further customization or notebook display). Supports `:title`, `:theme` (`paper`, `clean`, `dark`, `docusaurus-dark`), `:max-classes`, `:figsize`, `:dpi` and `:save` (`.png` or `.svg`). Default Lispyn installations include Matplotlib. [Run the end-to-end Hy demonstration](../examples/label_balance.hy).
 
 ## Visualization & classification
 
