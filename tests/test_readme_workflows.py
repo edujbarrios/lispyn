@@ -20,7 +20,6 @@ def test_readme_research_examples_are_verbatim_real_source_fragments():
     training = (ROOT / "examples/quickstart.hy").read_text(encoding="utf-8")
     validation = (ROOT / "examples/validate_inputs.hy").read_text(encoding="utf-8")
     snippets = [
-        "(require lispyn.macros [train-val-test])\n"
         "(setv [training validation held-out]\n"
         "  (train-val-test dataset :validation-fraction 0.25\n"
         "    :test-fraction 0.25 :seed seed))",
