@@ -8,6 +8,8 @@
 - Add a runnable **synthetic** Hy example, gallery notebook and tests covering baseline gains, metric direction, validation, exports, real Hy execution and live Jupyter Markdown/image output.
 - Expand `supported_macros/README.md` to **45/45 documented macros**, preserving the concise README, publication-ready notebooks and native PyTorch interoperability.
 
+Comparison gains are descriptive evidence, not statistical significance tests: use consistent datasets, evaluation protocols and seeds before comparing runs.
+
 
 ## 0.29.0a1 — 2026-11-16 — Cite, package and verify experiments
 
