@@ -11,7 +11,6 @@ Lispyn provides macros for **PyTorch, NumPy, pandas and Matplotlib** while keepi
 **Less boilerplate.** For example, [the real PyTorch quickstart](examples/quickstart.hy) uses a macro to create separate train, validation and held-out test subsets:
 
 ```hy
-(require lispyn.macros [train-val-test])
 (setv [training validation held-out]
   (train-val-test dataset :validation-fraction 0.25
     :test-fraction 0.25 :seed seed))
