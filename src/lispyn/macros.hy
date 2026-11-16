@@ -341,3 +341,17 @@
   `(do
     (import lispyn.validation)
     (lispyn.validation.assert_shape ~values ~expected ~@options)))
+
+; Quickly inspect AI classification dataset balance before training.
+
+(defmacro label-balance [labels #* options]
+  "Display aggregate per-class counts and shares in Jupyter or terminal Hy."
+  `(do
+    (import lispyn.label_balance)
+    (lispyn.label_balance.label_balance ~labels ~@options)))
+
+(defmacro plot-label-balance [labels #* options]
+  "Plot per-class sample counts with Matplotlib, without a sklearn dependency."
+  `(do
+    (import lispyn.label_balance)
+    (lispyn.label_balance.plot_label_balance ~labels ~@options)))

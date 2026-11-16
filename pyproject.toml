@@ -4,14 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lispyn"
-version = "0.33.0a1"
-description = "A new way to write and run machine-learning experiments with Hy, PyTorch and Jupyter."
+version = "0.34.0a1"
+description = "Create and execute AI notebooks in Hy with Python, PyTorch and Jupyter."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE"]
 authors = [{name = "Eduardo J. Barrios"}]
-keywords = ["lisp", "hy", "jupyter", "pytorch", "notebooks", "machine-learning"]
+keywords = ["lisp", "hy", "jupyter", "pytorch", "notebooks", "machine-learning", "artificial-intelligence"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Science/Research",

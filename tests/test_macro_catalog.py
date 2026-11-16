@@ -28,7 +28,7 @@ def test_every_hy_macro_is_documented_once():
         f"Macros missing from catalog: {sorted(set(defined) - set(entries))}; "
         f"undocumented catalog entries: {sorted(set(entries) - set(defined))}"
     )
-    assert len(defined) >= 51, "The supported API must not silently shrink"
+    assert len(defined) >= 53, "The supported API must not silently shrink"
     for name in defined:
         section = re.search(
             rf"(?ms)^### `{re.escape(name)}`\s*\n(.+?)(?=^### |^## |\Z)",
@@ -40,14 +40,15 @@ def test_every_hy_macro_is_documented_once():
         assert name in section.group(1), f"{name} not used in its example"
 
 
-def test_root_readme_is_researcher_first_and_links_to_macro_registry():
+def test_root_readme_is_ai_notebook_first_and_links_to_macro_registry():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "supported_macros/README.md" in readme
     assert "examples/quickstart.hy" in readme
     assert "pip install lispyn" in readme
     assert "pip install -r requirements.txt" in readme
     assert "lispyn execute examples/hello.hy" in readme
-    assert "Why would a researcher use this?" not in readme
+    assert "Realización de notebooks de IA" in readme
+    assert "Why use it for research?" not in readme
     assert len(readme) < 5600
     assert all(name in readme for name in ("PyTorch", "Matplotlib", "pandas", "NumPy"))
     project = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
