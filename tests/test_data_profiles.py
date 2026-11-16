@@ -53,7 +53,7 @@ def test_pandas_profile_is_aggregated_and_does_not_mutate(tmp_path):
     assert result["duplicate_rows"] == 1
     assert "PRIVATE1" not in dest.read_text()
     assert "PRIVATE2" not in json.dumps(result)
-    assert "measure\|x" in dest.read_text()
+    assert r"measure\|x" in dest.read_text()
     with pytest.raises(ValueError, match="columns"):
         profile_table(frame, max_columns=2)
     with pytest.raises(ValueError, match="column names"):
