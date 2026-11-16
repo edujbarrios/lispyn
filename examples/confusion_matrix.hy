@@ -29,7 +29,7 @@
   :normalize "true"
   :title "Classification overview"
   :subtitle "Synthetic labels  ·  Docusaurus-dark  ·  Turquoise"
-  :save "../docs/images/synthetic_confusion_matrix.png")
+  :save "../example_generated_notebooks/assets/synthetic_confusion_matrix.png")
 
 (print "Saved synthetic confusion-matrix figure.")
 
@@ -38,5 +38,5 @@
 (setv scores
   (classification-report actual predicted
     :classes labels
-    :save "../docs/reports/synthetic_classification_report.md"))
+    :save "../example_generated_notebooks/reports/synthetic_classification_report.md"))
 (print "Classification accuracy:" (get scores "accuracy"))
