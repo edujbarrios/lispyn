@@ -51,13 +51,13 @@ Run these commands **from the repository root**:
 lispyn run examples/hello.hy
 ```
 
-**2. Generate a Jupyter notebook (not executed)** — writes `hello.ipynb` with Markdown and Python code cells, but no outputs.
+**2. Generate a Jupyter notebook (not executed)** — writes `hello.ipynb` with Markdown and Python code cells. **Nothing is executed**; no outputs are saved.
 
 ```bash
 lispyn build examples/hello.hy -o hello.ipynb
 ```
 
-**3. Generate and execute a Jupyter notebook** — writes `hello-executed.ipynb` with executed cells and saved outputs.
+**3. Generate and execute a Jupyter notebook** — writes `hello-executed.ipynb` and **saves the executed cells** with their outputs.
 
 ```bash
 lispyn execute examples/hello.hy -o hello-executed.ipynb
