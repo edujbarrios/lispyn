@@ -7,6 +7,8 @@
 - Simplify the main README onboarding and document the `pip-install` Hy macro for an explicitly requested optional dependency cell. The macro installs only when an experiment notebook is executed; compiling a notebook never installs anything.
 - Verify default wheel metadata, isolated wheel imports, research requirements, and the nonexecuting notebook dependency macro with new tests; keep the existing 43-macro public API and PyTorch/Jupyter workflow unchanged.
 
+This release is intentionally **not** a one-size-fits-all PyTorch installer: use the official platform-matched build for accelerators and `requirements.txt` only for an optional full research environment from a clone.
+
 
 ## 0.28.0a1 — 2026-11-16 — A new way to write and compare experiments
 
