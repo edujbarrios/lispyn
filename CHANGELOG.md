@@ -9,6 +9,8 @@
 - Add a Hy example, notebook gallery entry, full macro catalog entry and end-to-end tests for ranking, deterministic ties, output formats, failures and Jupyter Markdown.
 - Keep existing PyTorch native training, notebook generation and source provenance APIs compatible.
 
+This pre-release keeps ranking reports descriptive: scientific comparisons still require consistent evaluation datasets, protocols and seeds.
+
 
 ## 0.27.0a1 — 2026-11-16 — Dynamic Hy experiment stories and notebook audit
 
