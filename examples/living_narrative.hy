@@ -16,7 +16,7 @@
 (setv observed-loss 0.245)
 
 (narrate
-  "## Result\nWith seed {seed}, accuracy was **{accuracy:.1%}**, "
+  "## Result\nWith seed {seed}, accuracy was **{accuracy:.1%}**."
   :seed seed :accuracy observed-accuracy)
 
 (narrate "The final loss was {loss:.3f}."
