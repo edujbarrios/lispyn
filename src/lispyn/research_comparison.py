@@ -8,6 +8,7 @@ training occurs and no run source code is executed.
 from __future__ import annotations
 
 from pathlib import Path
+import json
 
 from .comparison import compare_experiments, format_comparison, save_comparison
 from .plots import plot_comparison
@@ -26,10 +27,20 @@ def _run_paths(directories):
         if not isinstance(directory, (str, Path)):
             raise TypeError("each run must be a path string or Path")
         path = Path(directory).expanduser()
-        if not path.is_dir():
-            raise ValueError(f"Run directory does not exist: {path}")
+        if path.is_symlink() or not path.is_dir():
+            raise ValueError(f"Run directory does not exist or is symlinked: {path}")
         if (path / "history.json").is_symlink():
             raise ValueError(f"Refusing a symlinked history.json: {path}")
+        manifest_file = path / "manifest.json"
+        if manifest_file.is_symlink():
+            raise ValueError(f"Refusing a symlinked manifest.json: {path}")
+        if manifest_file.exists():
+            try:
+                manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
+            except (ValueError, UnicodeError, OSError) as exc:
+                raise ValueError(f"Invalid manifest.json in {path}: {exc}") from exc
+            if not isinstance(manifest, dict) or manifest.get("status") != "completed":
+                raise ValueError(f"Run is not completed: {path}")
         paths.append(path)
     names = [path.name for path in paths]
     if any(not name or name in (".", "..") for name in names) or len(set(names)) != len(names):
