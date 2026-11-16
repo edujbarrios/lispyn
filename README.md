@@ -71,6 +71,65 @@ for any macros used in a later cell because Hy code cells compile independently.
 See the [technical guide](https://github.com/edujbarrios/lispyn/blob/main/docs/guide.md)
 and [release instructions](https://github.com/edujbarrios/lispyn/blob/main/docs/releasing.md).
 
+## Live Hy experiment narratives and notebook audits (0.27.0a1)
+
+Lispyn turns Lisp experiments into **understandable, repeatable Jupyter
+stories**. Use Hy macros to display *actual runtime scalar results* as
+Markdown without composing Python display code:
+
+```hy
+(require lispyn.macros [narrate metric-table])
+
+; `accuracy` and `loss` come from your own model evaluation.
+(narrate "Validation accuracy: **{accuracy:.1%}**"
+  :accuracy accuracy)
+
+(metric-table {"val_accuracy" accuracy "val_loss" loss}
+  :title "Evaluation results"
+  :precision 4
+  :save "runs/metrics.md")
+```
+
+The `narrate` macro accepts named scalar values and restricted format
+specifiers such as `{accuracy:.1%}` and `{loss:.3f}`. It rejects unknown
+fields, nonfinite numbers, objects and attribute/index expressions instead
+of evaluating user-provided Python. Use `:save "runs/finding.md"` to export
+the resulting Markdown. `metric-table` renders a small summary table
+from explicit, finite numeric metrics, also with optional Markdown export.
+Both display rich Markdown inside Jupyter and print plain Markdown during
+direct Hy execution. These features do **not** gather datasets, model
+weights or predictions automatically. Review any inserted strings before
+sharing them.
+
+Before sharing an executed experiment, inspect it **without rerunning**:
+
+```bash
+lispyn execute examples/living_narrative.hy
+lispyn audit examples/living_narrative.ipynb \
+  --source examples/living_narrative.hy --json
+lispyn export examples/living_narrative.ipynb \
+  -o runs/living_narrative.md
+```
+
+`lispyn audit NOTEBOOK.ipynb` counts code cells that were executed,
+identifies stored error outputs, and checks the notebook's recorded Hy
+SHA-256 provenance. With `--source SOURCE.hy`, it independently hashes
+the supplied original source and detects modified or mismatched source.
+A fully executed, error-free notebook with valid provenance returns exit
+code 0; incomplete, error-containing, or hash-mismatched notebooks return 1.
+Without `--source`, the hash is **not independently verified**. The audit
+never executes notebook code and its JSON/text report does not include
+cell source code, metrics or output content.
+
+An audit does not prove scientific correctness, eliminate data leakage, or
+validate that metrics are truthful. It checks the notebook artifact's
+execution record and source provenance, so combine it with the existing
+`experiment-check` evidence macros and proper held-out evaluation.
+
+The new [Hy-first illustrative recipe](examples/living_narrative.hy)
+joins dynamic narratives, metric tables and explicit evidence. It uses
+**synthetic values**, not genuine model training.
+
 ## Explain and publish experiment evidence in Hy (0.26.0a1)
 
 Lispyn now makes it easier to communicate **what an experiment claims and

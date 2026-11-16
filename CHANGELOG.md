@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.27.0a1 — 2026-11-16 — Dynamic Hy experiment stories and notebook audit
+
+- Add `narrate` Hy macro to interpolate finite, explicit runtime scalar values into Jupyter Markdown with restricted named placeholders and numeric formatting, and optionally save the result to a Markdown file.
+- Add `metric-table` Hy macro to display and export compact Markdown metric summaries from explicit finite numeric values.
+- Add `lispyn audit NOTEBOOK.ipynb [--source ORIGINAL.hy] [--json]`: nonexecuting readiness check for executed code cells, stored error outputs, Hy source hashes and verified provenance; return failure status for incomplete or mismatched artifacts.
+- Include the synthetic `examples/living_narrative.hy` in the notebook gallery, plus tests for direct Hy compilation/execution, live Jupyter evaluation, safe narrative templates, and offline provenance auditing.
+- Retain existing PyTorch, parameterization, evidence, Markdown export and notebook workflows without breaking changes.
+
+
 ## 0.26.0a1 — 2026-11-14 — Evidence-backed Hy experiments and notebook publishing
 
 - Add `experiment-check` and `checklist-report` Hy macros for explicit Boolean success criteria, visible PASS/FAIL notebook narratives, optional strict failures, and compact JSON evidence summaries.

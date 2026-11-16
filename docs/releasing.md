@@ -3,6 +3,26 @@
 Lispyn uses [PyPI Trusted Publishing](https://docs.pypi.org/trusted-publishers/using-a-publisher/).
 No long-lived PyPI API token or password is stored in GitHub.
 
+## Release payload: 0.27.0a1
+
+This release advances Lispyn's Hy-first storytelling and sharing goal with
+live `narrate` and `metric-table` macros, allowing runtime scalar metrics
+to be displayed as Markdown in Jupyter and exported as small `.md` reports.
+Simple named formatting is supported; attribute/index expressions are
+rejected. A new `lispyn audit` CLI checks code execution, stored error
+outputs and original Hy source SHA-256 provenance without running notebook
+code. The gallery includes `examples/living_narrative.hy`.
+
+Verify the source-to-notebook workflow with:
+```bash
+lispyn execute examples/living_narrative.hy
+lispyn audit examples/living_narrative.ipynb \
+  --source examples/living_narrative.hy --json
+```
+
+Package/CLI/verification versions are aligned to `0.27.0a1`. PyPI
+Trusted Publishing tests, builds and uploads before tagging the version.
+
 ## Release payload: 0.26.0a1
 
 This release advances Lispyn's original authoring-and-sharing goal with
@@ -166,8 +186,8 @@ environment name `pypi` exactly.
    `.github/workflows/package.yml`.
 2. Run both the Tests and Package verification workflows on `main`.
 3. Create a release commit on `main` with the **exact** subject
-   `release: publish v0.26.0a1 [pypi]` (replace the version each time).
-   Alternatively create/push an annotated tag `v0.26.0a1` from a tested
+   `release: publish v0.27.0a1 [pypi]` (replace the version each time).
+   Alternatively create/push an annotated tag `v0.27.0a1` from a tested
    commit. The release workflow verifies the name/version and then publishes
    using the same PyPI Trusted Publisher. For release commits, GitHub
    creates the annotated version tag **after** successful upload.
