@@ -44,7 +44,9 @@ def test_root_readme_is_researcher_first_and_links_to_macro_registry():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "supported_macros/README.md" in readme
     assert "examples/quickstart.hy" in readme
-    assert 'pip install --upgrade "lispyn[notebook,plots]"' in readme
+    assert "pip install lispyn" in readme
+    assert "pip install -r requirements.txt" in readme
+    assert "(pip-install \"scikit-learn>=1.5\")" in readme
     assert "lispyn execute examples/quickstart.hy" in readme
     assert "QUICKSTART_EXECUTED:START" in readme
     assert "QUICKSTART_EXECUTED:END" in readme
