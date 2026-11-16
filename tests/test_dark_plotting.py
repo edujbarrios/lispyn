@@ -125,7 +125,7 @@ def test_hy_example_produces_two_dark_pngs(tmp_path):
     if hy is None:
         pytest.skip("Hy executable unavailable")
     # Execute in the checked-in examples directory: the example's paths are
-    # deliberately relative to examples/, where CI publishes docs/images/.
+    # deliberately relative to examples/, where CI publishes example_generated_notebooks/assets/.
     root = Path(__file__).resolve().parents[1]
     source = root / "examples" / "synthetic_curves.hy"
     from lispyn.notebooks import build_notebook
