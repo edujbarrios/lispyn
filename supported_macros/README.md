@@ -1,6 +1,6 @@
 # Supported Lispyn macros
 
-**The complete Hy/Lisp macro reference — 47 macros, with usage examples.**
+**The complete Hy/Lisp macro reference — 49 macros, with usage examples.**
 
 Lispyn's API is **Hy macros**. They compose ordinary Python, pandas, PyTorch, Matplotlib and Jupyter; they do not replace those libraries. This file is the **single source of truth for supported macros**, grouped by research workflow. The implementations live in [`src/lispyn/macros.hy`](../src/lispyn/macros.hy).
 
@@ -25,6 +25,7 @@ The examples below show the public **Hy syntax**, not direct Python implementati
 | Research activity | Macros |
 | --- | --- |
 | [Notebook structure & parameters](#notebook-structure--parameters) | `md`, `markdown`, `raw-cell`, `cell-tags`, `pip-install`, `experiment-params` |
+| [NumPy and pandas data profiling](#numpy-and-pandas-data-profiling) | `array-profile`, `table-profile` |
 | [PyTorch training & inference](#pytorch-training--inference) | `with-seed`, `train-for`, `train-until`, `train-accumulating`, `with-eval`, `head-tune`, `full-tune` |
 | [Runtime dependencies](#runtime-dependencies) | `ensure-package`, `use-package` |
 | [Visualization & classification](#visualization--classification) | `curve`, `defcurve`, `compare-curves`, `learning-rate-curve`, `confusion-matrix`, `defconfusion`, `classification-report` |
@@ -123,6 +124,41 @@ Optional `:rel-tol` (default `1e-9`) and `:abs-tol` (default `0.0`) are nonnegat
 ```
 
 The label must be a nonempty string. Timing includes runtime overhead and is not a rigorous benchmark.
+
+## NumPy and pandas data profiling
+
+Use these macros to check data quality **before training**. They display aggregate Markdown in Jupyter (or print it in direct Hy), and return JSON-compatible summaries. They never include individual rows or original array values. Save summaries with `:save "report.md"` or `:save "report.json"`. NumPy is included through Matplotlib; pandas requires `pip install "lispyn[data]"`.
+
+### `array-profile`
+**Purpose:** Summarize a 1-D or 2-D real numeric NumPy array: shape, dtype, finite values, NaNs/infinities and finite-only min/max/mean.
+
+```hy
+(require lispyn.macros [array-profile])
+(import numpy :as np)
+(setv summary
+  (array-profile (np.array [1.0 2.0 (float "nan")])
+    :name "Sensor values" :save "reports/array.json"))
+(print (get summary "nan"))
+```
+
+Options: `:name` (label) and `:save` (`.md` or `.json`). Returns `kind`, `name`, `shape`, `dtype`, `total`, `finite`, `nan`, `infinite`, `minimum`, `maximum`, and `mean`. Excludes NaNs/infinities from statistics; reports `None` when no finite values exist. Rejects empty, complex, string/object, and higher-dimensional arrays. Does not mutate the array.
+
+### `table-profile`
+**Purpose:** Summarize pandas DataFrame rows, columns, missing cells, numeric infinities, duplicate rows, and per-column dtypes/missingness without printing data.
+
+```hy
+(require lispyn.macros [table-profile])
+(import pandas :as pd)
+(setv frame (pd.DataFrame {"site" ["a" "b"] "score" [1.0 None]}))
+(setv summary
+  (table-profile frame :name "Measurements"
+    :max-columns 100 :save "reports/table.md"))
+(print (get summary "missing_cells"))
+```
+
+Options: `:name`, `:save` (`.md` or `.json`), and `:max-columns` (default 100; max 500). Returns `kind`, `name`, `rows`, `columns`, `missing_cells`, `infinite_cells`, `duplicate_rows`, and `fields` (column label, dtype, missing count, infinity count). Requires unique column labels and does not mutate the DataFrame. **Column names can be sensitive**, so review exported reports before sharing.
+
+[Try both macros in a runnable Hy example](../examples/data_profiles.hy).
 
 ## PyTorch training & inference
 

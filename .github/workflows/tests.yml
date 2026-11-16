@@ -321,11 +321,10 @@ jobs:
         with:
           name: verified-quickstart
           path: example_generated_notebooks
-      - name: Render all executed notebook cells and real training plot into README
+      - name: Verify executed notebook provenance and real training plot
         run: |
           test -s example_generated_notebooks/quickstart_executed.ipynb
           test -s example_generated_notebooks/assets/quickstart_training_curves.png
-          python scripts/render_readme_quickstart.py
           python scripts/render_readme_quickstart.py --check
       - name: Commit verified compiled notebooks
         run: |
@@ -338,7 +337,7 @@ jobs:
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add README.md example_generated_notebooks/*.ipynb example_generated_notebooks/assets/quickstart_training_curves.png example_generated_notebooks/assets/synthetic_training_curves.png example_generated_notebooks/assets/synthetic_comparison_curves.png example_generated_notebooks/assets/synthetic_confusion_matrix.png example_generated_notebooks/reports/synthetic_classification_report.md
+          git add example_generated_notebooks/*.ipynb example_generated_notebooks/assets/quickstart_training_curves.png example_generated_notebooks/assets/synthetic_training_curves.png example_generated_notebooks/assets/synthetic_comparison_curves.png example_generated_notebooks/assets/synthetic_confusion_matrix.png example_generated_notebooks/reports/synthetic_classification_report.md
           if ! git diff --cached --quiet; then
             git commit -m 'docs: refresh compiled notebooks [gallery]'
             git push

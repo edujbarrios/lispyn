@@ -8,7 +8,7 @@ authors:
 repository-code: "https://github.com/edujbarrios/lispyn"
 url: "https://github.com/edujbarrios/lispyn"
 license: Apache-2.0
-version: 0.31.0a2
+version: 0.32.0a1
 keywords:
   - Hy
   - Lisp

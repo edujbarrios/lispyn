@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.32.0a1 — 2026-11-16 — Data profiling and concise research onboarding
+
+- Add `array-profile` for NumPy shape, dtype, NaN/infinity counts and finite-only summary statistics.
+- Add `table-profile` for pandas missingness, numeric infinities, duplicate rows and per-column dtypes.
+- Support terminal Markdown, Jupyter Markdown and aggregate .md/.json exports without including dataset rows or array elements.
+- Add a complete runnable Hy example and regression coverage for direct execution, unexecuted notebook builds and executed notebook output.
+- Make the root README concise: purpose, research benefits, installation and all three execution commands; send macro usage to the 49-entry reference.
+- Keep verifying genuine executed PyTorch notebooks in CI without inserting large rendered examples into the landing README.
+
+
 ## 0.31.0a2 — 2026-11-16 — Clearer research onboarding and reliable release checks
 
 - Rewrite the README for researchers: what Lispyn offers, when to use it, and three separately runnable commands against one small `hello.hy` script.

@@ -313,3 +313,17 @@
     (import lispyn.utilities)
     (with [(lispyn.utilities.timing ~label)]
       ~@body)))
+
+; Aggregate data-quality diagnostics for NumPy arrays and pandas tables.
+
+(defmacro array-profile [values #* options]
+  "Display NumPy shape, NaNs, infinities and finite-only summary statistics."
+  `(do
+    (import lispyn.data_profiles)
+    (lispyn.data_profiles.profile_array ~values ~@options)))
+
+(defmacro table-profile [frame #* options]
+  "Display pandas missingness, duplicate rows, dtypes and numeric infinities."
+  `(do
+    (import lispyn.data_profiles)
+    (lispyn.data_profiles.profile_table ~frame ~@options)))
