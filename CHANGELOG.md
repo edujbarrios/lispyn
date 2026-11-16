@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.29.0a1 — 2026-11-16 — Cite, package and verify experiments
+
+- Add root `CITATION.cff` (Citation File Format 1.2.0) so GitHub can offer **Cite this repository** for the original software author and version.
+- Add `lispyn capsule SOURCE.hy NOTEBOOK.ipynb -o capsule.zip [--run RUN_DIR]`: package a verified, fully executed notebook with the original Hy source into a deterministic, portable ZIP with a SHA-256 file manifest. Optional completed runs contribute history and manifest JSON only, not model weights or datasets.
+- Add `lispyn verify-capsule capsule.zip [--json]`: recheck all member hashes, provenance, notebook execution state and safe archive structure offline, without extracting or executing anything. SHA-256 integrity is not a cryptographic signature and does not prove scientific validity.
+- Reduce the README to a concise, researcher-facing overview while retaining a real Hy code excerpt, **recorded** notebook outputs and the actual training chart. Keep full reference material in `supported_macros/README.md`.
+- Add regression coverage for reproducible ZIPs, successful and rejected capsules, tampering, unsafe paths, CLI output, CFF metadata and README result provenance.
+
+
 ## 0.28.0a2 — 2026-11-16 — One-command notebook and plotting installation
 
 - Make `pip install lispyn` install Jupyter notebook execution (`nbclient`, `ipykernel`) and Matplotlib (`matplotlib`) without extra selectors. Keep `[notebook]` and `[plots]` extras compatible with existing installs.

@@ -223,6 +223,8 @@ jobs:
           lispyn execute examples/quickstart.hy --timeout 120 \
             -o example_generated_notebooks/quickstart_executed.ipynb
           lispyn audit example_generated_notebooks/quickstart_executed.ipynb --source examples/quickstart.hy
+          lispyn capsule examples/quickstart.hy example_generated_notebooks/quickstart_executed.ipynb -o example_generated_notebooks/quickstart_capsule.zip
+          lispyn verify-capsule example_generated_notebooks/quickstart_capsule.zip --json
           python scripts/render_readme_quickstart.py
           python scripts/render_readme_quickstart.py --check
           test -s example_generated_notebooks/assets/quickstart_training_curves.png
