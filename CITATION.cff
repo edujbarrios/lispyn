@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use Lispyn in a publication, please cite this software."
+type: software
+title: "Lispyn: A new way to write and run machine-learning experiments"
+authors:
+  - family-names: Barrios
+    given-names: Eduardo J.
+repository-code: "https://github.com/edujbarrios/lispyn"
+url: "https://github.com/edujbarrios/lispyn"
+license: Apache-2.0
+version: 0.29.0a1
+keywords:
+  - Hy
+  - Lisp
+  - PyTorch
+  - Jupyter
+  - reproducible research
+  - machine learning
