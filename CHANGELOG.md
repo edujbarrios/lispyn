@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.31.0a1 — 2026-11-16 — Hello Lispyn and lightweight diagnostics
+
+- Add `assert-close` for finite scalar checks with configurable numeric tolerances, with clear failures for invalid or unequal values.
+- Add `with-timing` to record labeled wall-clock step duration in ordinary Hy execution and Jupyter, including exceptional exits.
+- Introduce `examples/hello.hy`, a tiny PyTorch-free script using both new macros and an authored Markdown cell.
+- Document **all three** execution workflows with the **same hello.hy**: `lispyn run` (direct Hy), `lispyn build` (compile notebook only), and `lispyn execute` (compile and execute notebook).
+- Expand the supported macro reference to 47 macros and add smoke and validation tests for helpers and the three CLI pathways.
+- Keep the native PyTorch research workflows and existing public API compatible; the new macros require no additional third-party packages.
+
+
 ## 0.30.0a1 — 2026-11-16 — Compare experiments without leaving Hy
 
 - New Hy `compare-runs` macro: compare 2–20 explicitly selected saved PyTorch run directories, report best/final epoch scores and direction-aware improvements against a named baseline directly as rich Jupyter Markdown (or terminal output).
