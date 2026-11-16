@@ -129,3 +129,8 @@ def test_renderer_refuses_mismatched_hy_source(tmp_path):
     source.write_text('(print "modified after notebook was executed")\n')
     with pytest.raises(ValueError, match="provenance"):
         renderer.render(source, notebook, _figure())
+
+
+def test_committed_readme_matches_genuine_executed_quickstart():
+    """Fail CI if the public README drifts away from its real notebook."""
+    renderer.rewrite(renderer.README, renderer.render(), check=True)
