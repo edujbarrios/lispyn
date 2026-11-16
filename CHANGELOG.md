@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.33.0a1 — 2026-11-16 — Real README evidence and input validation
+
+- Add `assert-finite` for NumPy numerical arrays and optional PyTorch dense tensors, rejecting NaN/inf before training without printing raw values.
+- Add `assert-shape` for NumPy arrays, pandas DataFrames and PyTorch tensors, including wildcard batch dimensions.
+- Validate the new macros with Python unit tests and a runnable Hy example covering `run`, `build` and `execute`.
+- Back every research benefit in the root README with code excerpts taken verbatim from `examples/quickstart.hy` and `examples/validate_inputs.hy`; add regression tests preventing drift.
+- Preserve the three clear execution commands, dynamic badges, and a prominent link to the complete 51-macro catalog.
+
+
 ## 0.32.0a1 — 2026-11-16 — Data profiling and concise research onboarding
 
 - Add `array-profile` for NumPy shape, dtype, NaN/infinity counts and finite-only summary statistics.

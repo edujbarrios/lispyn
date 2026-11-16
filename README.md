@@ -1,18 +1,45 @@
 # Lispyn
 
-**Write research experiments in Hy (Lisp for Python), then run them directly or turn them into standard Jupyter notebooks.**
+**Write research experiments in Hy (Lisp for Python) and run them directly or as standard Jupyter notebooks.**
 
-Lispyn adds reusable macros to existing **PyTorch, Matplotlib, pandas and NumPy** workflows. It does not replace those libraries or lock you into a training framework.
+Lispyn provides macros for **PyTorch, NumPy, pandas and Matplotlib** while keeping your Python libraries and models.
 
 [![PyPI version](https://img.shields.io/pypi/v/lispyn?label=PyPI%20version)](https://pypi.org/project/lispyn/) [![CI on main](https://github.com/edujbarrios/lispyn/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/edujbarrios/lispyn/actions/workflows/tests.yml?query=branch%3Amain) [![Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
 ## Why use it for research?
 
-- **Less boilerplate:** repeatable experiment parameters, training, data checks, splits, cross-validation, metrics and plotting.
-- **One source, three modes:** execute Hy directly; compile notebook cells without running them; or run and save the notebook with outputs.
-- **Inspectable research artifacts:** ordinary Python cells, provenance, reports and optional integrity-checked experiment archives.
+**Less boilerplate.** For example, [the real PyTorch quickstart](examples/quickstart.hy) uses a macro to create separate train, validation and held-out test subsets:
 
-These tools help organize research; they do not guarantee reproducibility or scientifically valid results.
+```hy
+(require lispyn.macros [train-val-test])
+(setv [training validation held-out]
+  (train-val-test dataset :validation-fraction 0.25
+    :test-fraction 0.25 :seed seed))
+```
+
+**Catch invalid data early.** [The runnable NumPy/pandas example](examples/validate_inputs.hy) checks shape and finite values without writing a manual validation loop:
+
+```hy
+(require lispyn.macros [assert-finite assert-shape])
+(import numpy :as np)
+(import pandas :as pd)
+
+(setv features (np.array [[1.0 2.0] [3.0 4.0]]))
+(assert-shape features [2 2] :name "features")
+(assert-finite features :name "features")
+```
+
+**One source, three modes.** The same [hello.hy](examples/hello.hy) can run in a terminal, become an unexecuted notebook, or produce a notebook with saved outputs. See the three commands below.
+
+**Inspectable research artifacts.** The [quickstart](examples/quickstart.hy) renders a report from actual PyTorch training results, which can be reviewed in the [executed notebook](example_generated_notebooks/quickstart_executed.ipynb):
+
+```hy
+(require lispyn.macros [report-run narrate metric-table])
+(import lispyn.training [evaluate-metrics])
+(report-run run :title "PyTorch baseline · recorded metrics")
+```
+
+These examples help organize research; Lispyn cannot guarantee reproducibility or scientific validity.
 
 ## Install
 
@@ -20,45 +47,41 @@ These tools help organize research; they do not guarantee reproducibility or sci
 pip install lispyn
 ```
 
-Hy, notebook execution and Matplotlib are included. NumPy comes with Matplotlib; for pandas use `pip install "lispyn[data]"`. **PyTorch is installed separately** for the appropriate [CPU/GPU build](https://pytorch.org/get-started/locally/).
+Hy, Jupyter execution and Matplotlib are included. NumPy is available through Matplotlib; for pandas install `pip install "lispyn[data]"`. **PyTorch is installed separately** for your [CPU/GPU setup](https://pytorch.org/get-started/locally/).
 
 ## How it works: three ways to run Hy
 
-All three commands use the same [runnable `examples/hello.hy`](examples/hello.hy). Clone the examples first:
+Get the [hello.hy example](examples/hello.hy) (no dataset, no PyTorch):
 
 ```bash
 git clone https://github.com/edujbarrios/lispyn.git
 cd lispyn
 ```
 
-**1. Run Hy directly** — prints to the terminal, no notebook:
+**1. Run the Hy file** — terminal output, no notebook:
 
 ```bash
 lispyn run examples/hello.hy
 ```
 
-**2. Build a Jupyter notebook** — creates `hello.ipynb` with Python/Markdown cells. **Nothing is executed**:
+**2. Generate a Jupyter notebook** — `hello.ipynb`, **Nothing is executed**:
 
 ```bash
 lispyn build examples/hello.hy -o hello.ipynb
 ```
 
-**3. Build and execute a Jupyter notebook** — creates `hello-executed.ipynb` and **saves the executed cells** and their outputs:
+**3. Generate and execute the notebook** — `hello-executed.ipynb` **saves the executed cells** and outputs:
 
 ```bash
 lispyn execute examples/hello.hy -o hello-executed.ipynb
 ```
 
-Check for `2 + 3 + 5 = 10` and `Lispyn checks passed!` in the terminal or executed notebook. Hy macros compile into regular Python notebook cells. Only run or compile **trusted Hy source**; macros are not sandboxed.
+Check for `2 + 3 + 5 = 10` and `Lispyn checks passed!`. Building compiles Hy into ordinary Python/Markdown notebook cells without executing it. **Only compile trusted Hy:** macros are not sandboxed.
 
-## Complete macro catalog
+## All macros and examples
 
-**[All 49 macros: syntax, arguments, dependencies and Hy examples](supported_macros/README.md)**
+**[Full reference: 51 macros, arguments, dependencies and Hy examples](supported_macros/README.md)** — grouped by PyTorch, Matplotlib, pandas, NumPy, notebook authoring and research reporting.
 
-The catalog explains the available **PyTorch** training and evaluation, **Matplotlib** charts, **pandas** table operations, **NumPy** array checks, notebook generation, reports and experiment comparisons. New: [data-quality profiles](examples/data_profiles.hy). See also the [PyTorch quickstart](examples/quickstart.hy) and [executed notebook gallery](example_generated_notebooks/).
-
-For native PyTorch, try `lispyn execute examples/quickstart.hy` after installing PyTorch.
-
-From a source checkout, `pip install -r requirements.txt` installs an optional full research environment.
+More runnable sources: [PyTorch quickstart](examples/quickstart.hy) (try `lispyn execute examples/quickstart.hy`), [data profiles](examples/data_profiles.hy) and [input assertions](examples/validate_inputs.hy). A cloned repository also offers `pip install -r requirements.txt` for an optional full research environment.
 
 *Created by Eduardo J. Barrios · [Apache-2.0](LICENSE) · [Citation](CITATION.cff) · Experimental alpha software.*
