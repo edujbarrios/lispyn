@@ -208,8 +208,12 @@ jobs:
           PY
           lispyn execute examples/stratified_inference.hy --timeout 120
           lispyn execute examples/generated_starter.hy --timeout 120
-          lispyn execute examples/quickstart.hy --timeout 120
-          lispyn audit examples/quickstart.ipynb --source examples/quickstart.hy
+          lispyn execute examples/quickstart.hy --timeout 120 \
+            -o example_generated_notebooks/quickstart_executed.ipynb
+          lispyn audit example_generated_notebooks/quickstart_executed.ipynb --source examples/quickstart.hy
+          python scripts/render_readme_quickstart.py
+          python scripts/render_readme_quickstart.py --check
+          test -s example_generated_notebooks/assets/quickstart_training_curves.png
           lispyn execute examples/plot_experiment.hy --timeout 120
           lispyn execute examples/curve_designs.hy --timeout 120
           lispyn report examples/runs/curve-designs --plot examples/runs/curve-designs/report.png --theme dark --title 'Training curves' --train-color '#22D3EE' --val-color '#FBBF24'
@@ -237,6 +241,16 @@ jobs:
           assert any('restored best checkpoint' in str(output.get('text', ''))
                      for output in notebook.cells[-1].outputs)
           PY
+      - name: Upload real executed quickstart and training plot
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: verified-quickstart
+          path: |
+            example_generated_notebooks/quickstart_executed.ipynb
+            example_generated_notebooks/assets/quickstart_training_curves.png
+          if-no-files-found: error
+          retention-days: 30
       - name: Real PyTorch dataset experiment (Python 3.11)
         if: matrix.python-version == '3.11'
         run: |
@@ -288,6 +302,17 @@ jobs:
       - run: test -s example_generated_notebooks/assets/synthetic_comparison_curves.png
       - run: test -s example_generated_notebooks/assets/synthetic_confusion_matrix.png
       - run: test -s example_generated_notebooks/reports/synthetic_classification_report.md
+      - name: Download genuine executed quickstart from PyTorch CI
+        uses: actions/download-artifact@v4
+        with:
+          name: verified-quickstart
+          path: example_generated_notebooks
+      - name: Render all executed notebook cells and real training plot into README
+        run: |
+          test -s example_generated_notebooks/quickstart_executed.ipynb
+          test -s example_generated_notebooks/assets/quickstart_training_curves.png
+          python scripts/render_readme_quickstart.py
+          python scripts/render_readme_quickstart.py --check
       - name: Commit verified compiled notebooks
         run: |
           # Do not publish artifacts built from an obsolete commit: a newer
@@ -299,7 +324,7 @@ jobs:
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add example_generated_notebooks/*.ipynb example_generated_notebooks/assets/synthetic_training_curves.png example_generated_notebooks/assets/synthetic_comparison_curves.png example_generated_notebooks/assets/synthetic_confusion_matrix.png example_generated_notebooks/reports/synthetic_classification_report.md
+          git add README.md example_generated_notebooks/*.ipynb example_generated_notebooks/assets/quickstart_training_curves.png example_generated_notebooks/assets/synthetic_training_curves.png example_generated_notebooks/assets/synthetic_comparison_curves.png example_generated_notebooks/assets/synthetic_confusion_matrix.png example_generated_notebooks/reports/synthetic_classification_report.md
           if ! git diff --cached --quiet; then
             git commit -m 'docs: refresh compiled notebooks [gallery]'
             git push
