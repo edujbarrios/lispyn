@@ -1,6 +1,6 @@
 # Lispyn
 
-**Write experiments in Lisp. Train with PyTorch. Share real, executable Jupyter notebooks.**
+**A new way to write and run machine-learning experiments.**
 
 *Lisp for expressive experiments · Python for the ecosystem · Jupyter for sharing results.*
 
@@ -9,11 +9,11 @@
 [![Python](https://img.shields.io/pypi/pyversions/lispyn)](https://pypi.org/project/lispyn/)
 [![Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-2563eb.svg)](LICENSE)
 
-Lispyn gives you **Hy/Lisp macros** for reproducible, native PyTorch experiments. Instead of maintaining a script *and* manually copying results into a notebook, you write one `.hy` experiment and compile or execute it as a **standard Python/Jupyter notebook**—with parameter cells, explanations, training histories and plots.
+**Go from experiment idea to reproducible results in one Hy/Lisp file.** Write expressive experiments using Lispyn macros, run your existing PyTorch models, and publish the result as an ordinary, executable Jupyter notebook—complete with parameters, explanations, training curves and metrics. **Keep the Python ecosystem you already know.**
 
-**No replacement machine-learning framework.** Your PyTorch models, data loaders, tensors and optimizers are still PyTorch.
+Lispyn adds a new **way to author experiments**, not a new training framework. Your data, models and optimizers stay native PyTorch.
 
-[**Explore all 42 supported macros**](supported_macros/README.md) · [Hy source](examples/quickstart.hy) · [Executed notebook](example_generated_notebooks/quickstart_executed.ipynb) · [Example gallery](example_generated_notebooks/)
+[**Explore all 43 supported macros**](supported_macros/README.md) · [Hy source](examples/quickstart.hy) · [Executed notebook](example_generated_notebooks/quickstart_executed.ipynb) · [Example gallery](example_generated_notebooks/)
 
 ## Install
 
@@ -190,9 +190,29 @@ lispyn export example_generated_notebooks/quickstart_executed.ipynb \
 
 The plot is written to `example_generated_notebooks/assets/quickstart_training_curves.png` by the `curve` **Hy macro**, from the actual training history. To change an experiment parameter without editing the source, use `lispyn build examples/quickstart.hy --set epochs=20`.
 
+## Discover your best experiments automatically
+
+Save runs with `:experiment-dir "runs/baseline"` from the native `train-until` macro, then compare all saved histories **without manually listing each run**:
+
+```bash
+lispyn leaderboard runs/ --metric loss --rank-by best -o leaderboard.md
+```
+
+Or write the comparison directly inside your Hy notebook:
+
+```hy
+(require lispyn.macros [experiment-leaderboard])
+(experiment-leaderboard "runs" :metric "accuracy" :mode "max"
+  :save "runs/leaderboard.md")
+```
+
+Lispyn discovers completed run histories, ranks their **best or final** scores and shows a shareable Markdown table. It skips incomplete or incompatible runs by default (`--strict` turns that into an error), and supports CSV/JSON export. It reads **only saved aggregate metrics**, not checkpoints or training data. Rankings are descriptive, not proof of statistical significance.
+
+Explore the [synthetic Hy leaderboard example](examples/experiment_leaderboard.hy) or see the [macro catalog](supported_macros/README.md).
+
 ## Keep experimenting in Hy
 
-You can use the same approach with early stopping, grouped and temporal cross-validation, parameter sweeps, model-head fine-tuning, confusion matrices, evidence checks and reusable chart styles. The [**complete macro reference**](supported_macros/README.md) documents all **42** public macros with Hy examples.
+You can use the same approach with early stopping, grouped and temporal cross-validation, parameter sweeps, model-head fine-tuning, confusion matrices, evidence checks and reusable chart styles. The [**complete macro reference**](supported_macros/README.md) documents all **43** public macros with Hy examples.
 
 Explore additional examples in [`examples/`](examples/) and their compiled [Jupyter notebooks](example_generated_notebooks/). Lispyn is an **alpha** project; interfaces may change as it evolves.
 
