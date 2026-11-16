@@ -40,7 +40,7 @@ def test_requirements_txt_is_a_documented_optional_research_environment():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "pip install lispyn" in readme
     assert "pip install -r requirements.txt" in readme
-    assert "PyTorch is deliberately separate" in readme
+    assert "PyTorch is installed separately" in readme
 
 
 def test_pip_install_macro_creates_a_cell_but_never_installs_on_build(tmp_path):
