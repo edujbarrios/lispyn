@@ -27,6 +27,8 @@ jobs:
           from glob import glob
           from zipfile import ZipFile
           from tarfile import open as taropen
+          from email.parser import Parser
+          from packaging.requirements import Requirement
           wheel, = glob('dist/*.whl')
           sdist, = glob('dist/*.tar.gz')
           with ZipFile(wheel) as z:
@@ -40,12 +42,21 @@ jobs:
               assert 'Name: lispyn' in metadata
               assert 'Version: 0.28.0a2' in metadata
               assert 'License-Expression: Apache-2.0' in metadata
+              required = {
+                  Requirement(item).name.lower()
+                  for item in Parser().parsestr(metadata).get_all('Requires-Dist', [])
+                  if Requirement(item).marker is None
+              }
+              assert {'hy', 'nbformat', 'packaging', 'nbclient',
+                      'ipykernel', 'matplotlib'} <= required, required
+              assert 'torch' not in required, 'PyTorch should remain platform-selectable'
           with taropen(sdist) as archive:
               names = archive.getnames()
               assert any(n.endswith('/src/lispyn/macros.hy') for n in names)
               assert any(n.endswith('/LICENSE') for n in names)
               assert any(n.endswith('/NOTICE') for n in names)
               assert any(n.endswith('/README.md') for n in names)
+              assert any(n.endswith('/requirements.txt') for n in names)
           print('Release content verified in wheel and source distribution')
           PY
       - name: Install wheel in an isolated environment and compile a Hy macro
@@ -55,6 +66,13 @@ jobs:
           cd /tmp
           /tmp/lispyn-wheel-env/bin/lispyn --version
           /tmp/lispyn-wheel-env/bin/lispyn doctor --json > wheel-doctor.json
+          /tmp/lispyn-wheel-env/bin/python -m pip check
+          /tmp/lispyn-wheel-env/bin/python - <<'PY'
+          from importlib import util
+          for name in ('hy', 'nbformat', 'nbclient', 'ipykernel', 'matplotlib'):
+              assert util.find_spec(name) is not None, name
+          print('Plain pip install lispyn provides notebooks and plotting')
+          PY
           cat > installed.hy <<'HY'
           (require lispyn.macros [md pip-install])
           (md "# Installed wheel" "This Markdown is compiled, not executed.")
