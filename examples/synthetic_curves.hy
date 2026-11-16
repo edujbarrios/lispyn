@@ -55,7 +55,7 @@
   :metric "loss"
   :title "Training dynamics"
   :subtitle "48 synthetic epochs  ·  Docusaurus dark  ·  Turquoise spectrum"
-  :save "../docs/images/synthetic_training_curves.png")
+  :save "../example_generated_notebooks/assets/synthetic_training_curves.png")
 
 (md "## Compare multiple experiments"
     "The **compare-curves** macro plots multiple named runs together using the same seven-color turquoise palette. These are also entirely synthetic.")
@@ -90,6 +90,6 @@
   :figsize [10 5.2]
   :linewidth 2.9
   :dpi 180
-  :save "../docs/images/synthetic_comparison_curves.png")
+  :save "../example_generated_notebooks/assets/synthetic_comparison_curves.png")
 
 (print "Created two turquoise-on-dark synthetic Matplotlib figures.")
