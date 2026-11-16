@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.31.0a2 — 2026-11-16 — Clearer research onboarding and reliable release checks
+
+- Rewrite the README for researchers: what Lispyn offers, when to use it, and three separately runnable commands against one small `hello.hy` script.
+- Explain the difference between running Hy directly, building an unexecuted Jupyter notebook, and executing/saving notebook outputs.
+- Fix the previous `assert-close` recursion and ensure `with-timing` expands in independent notebook cells.
+- Make package CI assert the declared version instead of hard-coding `0.30.0a1`, and cover all three hello workflows with regression tests.
+- Retain the real executed PyTorch quickstart and provenance-backed notebook example. No new training dependencies.
+
+
 ## 0.31.0a1 — 2026-11-16 — Hello Lispyn and lightweight diagnostics
 
 - Add `assert-close` for finite scalar checks with configurable numeric tolerances, with clear failures for invalid or unequal values.
