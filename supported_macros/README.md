@@ -1,6 +1,6 @@
 # Supported Lispyn macros
 
-**The complete Hy/Lisp macro reference — 45 macros, with usage examples.**
+**The complete Hy/Lisp macro reference — 47 macros, with usage examples.**
 
 Lispyn's API is **Hy macros**. They compose ordinary Python, pandas, PyTorch, Matplotlib and Jupyter; they do not replace those libraries. This file is the **single source of truth for supported macros**, grouped by research workflow. The implementations live in [`src/lispyn/macros.hy`](../src/lispyn/macros.hy).
 
@@ -30,6 +30,7 @@ The examples below show the public **Hy syntax**, not direct Python implementati
 | [Visualization & classification](#visualization--classification) | `curve`, `defcurve`, `compare-curves`, `learning-rate-curve`, `confusion-matrix`, `defconfusion`, `classification-report` |
 | [Dataset splits & cross-validation](#dataset-splits--cross-validation) | `train-val-test`, `cross-validation-folds`, `tabular-train-val-test`, `tabular-cross-validation-folds`, `repeated-cross-validation-folds`, `repeated-tabular-folds`, `cross-validate`, `cross-validate-table`, `save-cross-validation` |
 | [Time-series experiments](#time-series-experiments) | `temporal-train-val-test`, `temporal-folds`, `temporal-table-split`, `temporal-table-folds`, `cross-validate-temporal`, `cross-validate-temporal-table` |
+| [Lightweight diagnostics](#lightweight-diagnostics) | `assert-close`, `with-timing` |
 | [Reports, evidence & narratives](#reports-evidence--narratives) | `report-run`, `experiment-check`, `checklist-report`, `narrate`, `metric-table`, `experiment-leaderboard`, `compare-runs`, `plot-runs` |
 
 ## Notebook structure & parameters
@@ -95,6 +96,33 @@ Literal pip requirement strings only; no arbitrary shell commands or package URL
 ```
 
 Every child must be `(setv name value)`. Variables also work during direct Hy execution. Inspect with `lispyn parameters study.hy`; override with `lispyn build study.hy --set epochs=20` or `--params config.json`; create notebook grids with `lispyn sweep`.
+
+## Lightweight diagnostics
+
+These macros require only the default Lispyn installation and are useful in ordinary Hy scripts and generated notebooks. See [`examples/hello.hy`](../examples/hello.hy) for both in one runnable example.
+
+### `assert-close`
+**Purpose:** Assert that two finite numeric scalars are approximately equal; return `True` on success and raise a descriptive `AssertionError` on mismatch. Useful for smoke-testing calculations, expected metrics, and reproducibility checks.
+
+```hy
+(require lispyn.macros [assert-close])
+(assert-close (+ 0.1 0.2) 0.3)
+(assert-close 9.9 10 :abs-tol 0.2)
+```
+
+Optional `:rel-tol` (default `1e-9`) and `:abs-tol` (default `0.0`) are nonnegative. Booleans, NaNs, infinities and unsupported scalar types are rejected. This is for Python `int`/`float` scalars, not PyTorch tensors or vector comparisons.
+
+### `with-timing`
+**Purpose:** Measure wall-clock seconds for a Hy body, printing a labeled duration even if the body raises. Useful for comparing small steps without introducing a profiling dependency.
+
+```hy
+(require lispyn.macros [with-timing])
+(with-timing "Build features"
+  (setv features [(* x x) (for x (range 1000))])
+  (print "Feature count:" (len features)))
+```
+
+The label must be a nonempty string. Timing includes runtime overhead and is not a rigorous benchmark.
 
 ## PyTorch training & inference
 
