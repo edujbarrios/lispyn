@@ -23,7 +23,10 @@ jobs:
           from pathlib import Path
           import nbformat
           folder = Path('example_generated_notebooks')
-          notebooks = sorted(folder.glob('*.ipynb'))
+          notebooks = sorted(
+              p for p in folder.glob('*.ipynb')
+              if not p.stem.endswith('_executed')
+          )
           assert len(notebooks) >= 12
           assert (folder / 'synthetic_curves.ipynb').is_file()
           assert (folder / 'confusion_matrix.ipynb').is_file()
@@ -35,6 +38,15 @@ jobs:
               nbformat.validate(notebook)
               assert all(not cell.get('outputs') and cell.get('execution_count') is None
                          for cell in notebook.cells if cell.cell_type == 'code')
+          # Published, executed showcase notebooks are separate from
+          # unexecuted gallery templates. Validate them accordingly.
+          executed = nbformat.read(folder / 'quickstart_executed.ipynb', as_version=4)
+          nbformat.validate(executed)
+          assert any(cell.cell_type == 'code' for cell in executed.cells)
+          assert all(cell.get('execution_count') is not None
+                     and not any(o.get('output_type') == 'error'
+                                 for o in cell.get('outputs', []))
+                     for cell in executed.cells if cell.cell_type == 'code')
           resnet = nbformat.read(folder / 'resnet_finetune_300.ipynb', as_version=4)
           assert sum(cell.cell_type == 'markdown' for cell in resnet.cells) >= 5
           assert any('300' in cell.source for cell in resnet.cells if cell.cell_type == 'code')
