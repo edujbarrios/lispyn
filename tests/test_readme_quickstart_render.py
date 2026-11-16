@@ -123,8 +123,8 @@ def test_renderer_refuses_missing_execution_or_errors(tmp_path, executed, error)
 
 
 @pytest.mark.parametrize("image,scores,match", [
-    (False, True, "PNG output"),
-    (True, False, "metric summary table"),
+    (False, True, "recorded training plot"),
+    (True, False, "metric table"),
 ])
 def test_renderer_refuses_missing_figure_or_real_metrics(tmp_path, image, scores, match):
     source, notebook = _sample(tmp_path, image=image, scores=scores)
