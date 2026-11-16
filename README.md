@@ -1,33 +1,32 @@
 # Lispyn
 
-**Write machine-learning experiments in Hy, run native Python/PyTorch, and share executable Jupyter notebooks.**
+**Write experiments in Hy (Lisp for Python). Run them directly or turn them into Jupyter notebooks—with or without executed outputs.**
 
-Lispyn is an experimental tool for **Hy (Lisp for Python)**. Its macros simplify common research workflows without replacing PyTorch, pandas, Matplotlib or Jupyter.
+Lispyn adds concise research macros to **native Python, PyTorch and Jupyter**; it does not replace those tools.
 
-[![PyPI](https://img.shields.io/pypi/v/lispyn)](https://pypi.org/project/lispyn/) [![Tests](https://github.com/edujbarrios/lispyn/actions/workflows/tests.yml/badge.svg)](https://github.com/edujbarrios/lispyn/actions/workflows/tests.yml) [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+[![PyPI version](https://img.shields.io/pypi/v/lispyn?label=PyPI%20version)](https://pypi.org/project/lispyn/) [![CI on main](https://github.com/edujbarrios/lispyn/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/edujbarrios/lispyn/actions/workflows/tests.yml?query=branch%3Amain) [![Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
-## Why use Lispyn for research?
+## Why Lispyn for research?
 
-- **One experiment, multiple outputs.** Keep an experiment in one readable `.hy` source; run it in a terminal, compile a Jupyter notebook, or execute a notebook with saved outputs.
-- **Less repetitive code.** Hy macros help with parameters, train/validation/test splits, cross-validation, PyTorch training, figures, and experiment comparisons.
-- **Keep your existing tools.** Models, optimizers and data pipelines remain native Python/PyTorch, not a proprietary training engine.
-- **Make work easier to review.** Generated notebooks preserve source provenance; reports, recorded metrics and optional integrity-checked experiment capsules help collaborators inspect and compare results.
+- **Write once, choose how to run:** terminal script, unexecuted notebook or notebook with saved outputs.
+- **Reduce boilerplate:** macros for experiment parameters, PyTorch training, dataset splits, cross-validation, plots and comparisons.
+- **Share inspectable results:** standard Python notebook cells, source provenance, metric reports and optional integrity-checked experiment archives.
 
-Lispyn supports research workflows; it does **not** guarantee reproducibility or scientifically valid results. You still choose suitable datasets, splits, seeds and evaluation methods.
+You still control your models, datasets and evaluation methods. Lispyn cannot guarantee reproducibility or scientific validity.
 
-## Install and get the example
+## Install
 
 ```bash
-python -m pip install lispyn
+pip install lispyn
 git clone https://github.com/edujbarrios/lispyn.git
 cd lispyn
 ```
 
-The first command installs Lispyn, Hy, Jupyter execution support and Matplotlib. **PyTorch is installed separately** for training, with the right CPU/GPU build ([PyTorch installation guide](https://pytorch.org/get-started/locally/)). If working from a source checkout, `pip install -r requirements.txt` installs an optional research environment.
+Hy, Jupyter execution and Matplotlib are included. **PyTorch is installed separately** for your CPU/GPU setup ([official instructions](https://pytorch.org/get-started/locally/)). From a clone, `pip install -r requirements.txt` provides an optional research environment.
 
-## Try it: one `hello.hy`, three ways to run it
+## Quick start: the same `hello.hy` in three modes
 
-The runnable file [`examples/hello.hy`](examples/hello.hy) needs **no PyTorch, dataset or GPU**:
+[`examples/hello.hy`](examples/hello.hy) runs without PyTorch or a dataset:
 
 ```hy
 (require lispyn.macros [md])
@@ -44,37 +43,31 @@ The runnable file [`examples/hello.hy`](examples/hello.hy) needs **no PyTorch, d
 (print "Lispyn checks passed!")
 ```
 
-Use the following commands **from the repository root**. Each runs or builds the **same source file**, but produces a different result.
+Run these commands **from the repository root**:
 
-**1. Run Hy directly — terminal output, no notebook**
+**1. Run Hy directly** — prints to the terminal; creates no notebook.
 
 ```bash
 lispyn run examples/hello.hy
 ```
 
-Runs the Hy file immediately. Expect `Hello from Lispyn!`, `2 + 3 + 5 = 10`, `Lispyn checks passed!` and a timing line.
-
-**2. Generate a Jupyter notebook — cells not executed**
+**2. Generate a Jupyter notebook (not executed)** — writes `hello.ipynb` with Markdown and Python code cells, but no outputs.
 
 ```bash
 lispyn build examples/hello.hy -o hello.ipynb
 ```
 
-Creates `hello.ipynb` with Python code and a Markdown cell. **Nothing is executed**: there are no cell outputs.
-
-**3. Generate and execute a Jupyter notebook — outputs included**
+**3. Generate and execute a Jupyter notebook** — writes `hello-executed.ipynb` with executed cells and saved outputs.
 
 ```bash
 lispyn execute examples/hello.hy -o hello-executed.ipynb
 ```
 
-Creates `hello-executed.ipynb`, runs its code in a Python Jupyter kernel, and **saves the executed cells and printed results**. Open that file in your preferred Jupyter interface to inspect the output.
+Check for `2 + 3 + 5 = 10` and `Lispyn checks passed!` in terminal output (mode 1) or notebook outputs (mode 3). The timing value varies. The `md` macro produces a real Markdown cell in notebooks. Macros are not sandboxed: **use trusted Hy sources**.
 
-> **In short:** `run` = terminal; `build` = unexecuted notebook; `execute` = executed notebook. The `md` form becomes a notebook Markdown cell (and does nothing in direct Hy execution). Notebook code cells compile separately, so `require` a macro again in each cell that uses it. Only run or compile trusted Hy code: macros are not sandboxed.
+## Real research workflow: native PyTorch
 
-## A real PyTorch experiment
-
-The [full quickstart](examples/quickstart.hy) trains on tiny synthetic data, records metrics and makes a real loss plot. It is an illustration of the workflow, **not** a scientific benchmark.
+The [runnable quickstart](examples/quickstart.hy) trains on a small synthetic dataset, records metrics and generates an actual training plot. It is a workflow example, not a benchmark.
 
 <!-- QUICKSTART_EXECUTED:START -->
 **Hy syntax** — an excerpt from the [full runnable experiment](examples/quickstart.hy) (native PyTorch; tiny synthetic dataset):
@@ -109,38 +102,32 @@ Held-out test accuracy: **50.0%**
 _Toy data for workflow demonstration only; not a scientific benchmark._
 <!-- QUICKSTART_EXECUTED:END -->
 
-Try the full example after installing a suitable PyTorch build:
+To run the example yourself (after installing PyTorch):
 
 ```bash
 lispyn execute examples/quickstart.hy
 ```
 
-To generate the same notebook **without training**, use `lispyn build examples/quickstart.hy`.
+Use `lispyn build examples/quickstart.hy` to generate the notebook without training.
 
-## What else can you do?
+## More tools and sharing
 
-Lispyn has **47 documented Hy macros** covering experiment parameters, dataset splits, cross-validation, training, comparisons, diagnostics, reports and plotting. See the [complete macro reference](supported_macros/README.md) and [examples](examples/).
+Lispyn includes **47 documented Hy macros**. Browse the [macro reference](supported_macros/README.md), [Hy examples](examples/) and [notebook gallery](example_generated_notebooks/).
 
-For optional libraries, add an explicitly requested dependency cell:
+Optional dependencies can be declared as an execution-time notebook cell, never installed during `build`:
 
 ```hy
 (require lispyn.macros [pip-install])
 (pip-install "scikit-learn>=1.5")
 ```
 
-The package is checked or installed when the notebook **executes**, never during `build`.
-
-## Share results with collaborators
-
-For a **completed** experiment notebook, make an integrity-checked ZIP:
+Package and verify a **completed** experiment without rerunning it:
 
 ```bash
 lispyn capsule examples/quickstart.hy example_generated_notebooks/quickstart_executed.ipynb -o study.zip
 lispyn verify-capsule study.zip
 ```
 
-Capsules include your Hy source and executed notebook, not raw datasets or model weights by default. **Review notebook outputs before sharing**; hashes check integrity, not authorship or research validity.
+Capsules omit raw datasets and weights by default; review saved notebook outputs before sharing. Checksums verify integrity, not authorship.
 
-[Notebook gallery](example_generated_notebooks/) · [Macro reference](supported_macros/README.md) · [Citation](CITATION.cff)
-
-*Created by Eduardo J. Barrios · [Apache-2.0](LICENSE) · Experimental alpha software.*
+[How to cite Lispyn](CITATION.cff) · [Apache-2.0](LICENSE) · *Created by Eduardo J. Barrios; experimental alpha software.*
