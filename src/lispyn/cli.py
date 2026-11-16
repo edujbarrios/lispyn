@@ -22,7 +22,7 @@ def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="lispyn", description="Hy experiments, Python notebooks, PyTorch freedom."
     )
-    p.add_argument("--version", action="version", version="lispyn 0.28.0a2")
+    p.add_argument("--version", action="version", version="lispyn 0.29.0a1")
     sub = p.add_subparsers(dest="command", required=True)
     health = sub.add_parser("doctor", help="Inspect installation and optional tools without modifying anything")
     health.add_argument("--json", action="store_true", help="Print machine-readable environment summary")
@@ -76,6 +76,18 @@ def parser() -> argparse.ArgumentParser:
     audit.add_argument("notebook", type=Path, help="Existing Jupyter .ipynb file")
     audit.add_argument("--source", type=Path, help="Original .hy source for SHA-256 verification")
     audit.add_argument("--json", action="store_true", help="Output machine-readable audit summary")
+    capsule = sub.add_parser(
+        "capsule", help="Package a completed Hy experiment and Jupyter notebook into a verified ZIP"
+    )
+    capsule.add_argument("source", type=Path, help="Original Hy source .hy")
+    capsule.add_argument("notebook", type=Path, help="Fully executed Jupyter .ipynb")
+    capsule.add_argument("-o", "--output", required=True, type=Path, help="New .zip output")
+    capsule.add_argument("--run", type=Path, help="Optional completed run directory (JSON metrics only)")
+    verify = sub.add_parser(
+        "verify-capsule", help="Verify an experiment ZIP offline without extraction or execution"
+    )
+    verify.add_argument("archive", type=Path, help="Previously created Lispyn capsule .zip")
+    verify.add_argument("--json", action="store_true", help="Print machine-readable integrity findings")
     gallery = sub.add_parser(
         "gallery", help="Compile examples into example_generated_notebooks/ without execution"
     )
@@ -178,6 +190,27 @@ def main(argv: list[str] | None = None) -> int:
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text(report + "\n", encoding="utf-8")
                 print(f"Summary saved: {path}")
+            return 0
+        if args.command == "capsule":
+            from .capsule import create_capsule
+            output = create_capsule(
+                args.source, args.notebook, args.output, run=args.run,
+            )
+            print(f"Created verified-source experiment capsule: {output}")
+            print("Review notebook cells and outputs for sensitive data before sharing.")
+            return 0
+        if args.command == "verify-capsule":
+            from .capsule import verify_capsule
+            report = verify_capsule(args.archive)
+            if args.json:
+                print(json.dumps(report, indent=2))
+            else:
+                print(
+                    f"Capsule verified: {report['files_verified']} files; "
+                    f"{report['executed_code_cells']} executed cells; "
+                    f"source SHA-256 {report['source_sha256']}"
+                )
+                print("SHA-256 is an integrity check, not proof of authorship or research accuracy.")
             return 0
         if args.command == "audit":
             from .notebook_audit import audit_notebook
