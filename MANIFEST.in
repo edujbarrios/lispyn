@@ -2,5 +2,5 @@ include README.md LICENSE NOTICE
 recursive-include src/lispyn *.hy
 prune example_generated_notebooks
 prune examples
-prune docs
+recursive-include supported_macros README.md
 prune .github
