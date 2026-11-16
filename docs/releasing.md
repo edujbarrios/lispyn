@@ -20,6 +20,11 @@ lispyn audit examples/living_narrative.ipynb \
   --source examples/living_narrative.hy --json
 ```
 
+The full Python 3.10/3.11/3.12 matrix verifies Hy macro compilation
+and execution, actual Jupyter Markdown display, and offline audit behavior.
+The notebook audit does not certify that model conclusions are scientifically
+sound; authors still need appropriate held-out evaluation.
+
 Package/CLI/verification versions are aligned to `0.27.0a1`. PyPI
 Trusted Publishing tests, builds and uploads before tagging the version.
 
