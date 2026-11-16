@@ -233,3 +233,32 @@ def test_cli_audit_completed_real_hy_experiment(tmp_path, capsys):
     assert report["executed_code_cells"] == 1
     assert report["error_cells"] == 0
     assert report["ready_to_share"] is True
+
+
+def test_hy_runtime_narrative_renders_in_jupyter_and_audits(tmp_path, capsys):
+    pytest.importorskip("nbclient")
+    source = tmp_path / "story.hy"
+    source.write_text(
+        '(require lispyn.macros [md])\n'
+        '(md "# Measured outcome")\n'
+        '(require lispyn.macros [narrate metric-table])\n'
+        '(setv score 0.875)\n'
+        '(narrate "The observed score was {score:.1%}."\n'
+        '  :score score)\n'
+        '(metric-table {"observed_score" score} :title "Measured metrics")\n',
+        encoding="utf-8",
+    )
+    output = tmp_path / "story.ipynb"
+    assert main(["execute", str(source), "-o", str(output), "--timeout", "60"]) == 0
+    capsys.readouterr()
+    notebook = nbformat.read(output, as_version=4)
+    rich_outputs = [
+        str(item.get("data", {}).get("text/markdown", ""))
+        for cell in notebook.cells if cell.cell_type == "code"
+        for item in cell.get("outputs", [])
+    ]
+    assert any("87.5%" in item for item in rich_outputs)
+    assert any("observed_score" in item for item in rich_outputs)
+    audit = audit_notebook(output, source=source)
+    assert audit["ready_to_share"] is True
+    assert audit["source_verified"] is True
