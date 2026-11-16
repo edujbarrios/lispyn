@@ -9,7 +9,7 @@ def test_readme_hello_snippet_is_the_runnable_source():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     source = (ROOT / "examples/hello.hy").read_text(encoding="utf-8")
     match = re.search(
-        r"## Try it: one `hello.hy`, three ways to run it.*?```hy\n(.*?)\n```",
+        r"## Quick start: the same `hello.hy` in three modes.*?```hy\n(.*?)\n```",
         readme, re.S,
     )
     assert match is not None
@@ -23,7 +23,7 @@ def test_readme_hello_snippet_is_the_runnable_source():
 
 def test_readme_explains_three_distinct_execution_artifacts():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    assert "Why use Lispyn for research?" in readme
+    assert "Why Lispyn for research?" in readme
     assert "git clone https://github.com/edujbarrios/lispyn.git" in readme
     assert "`lispyn run examples/hello.hy`" not in readme  # show copyable shell blocks
     assert "lispyn run examples/hello.hy\n" in readme
