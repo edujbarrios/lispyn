@@ -19,6 +19,7 @@ EXAMPLE_SOURCES = (
     "experiment_story.hy",
     "evidence_story.hy",
     "living_narrative.hy",
+    "experiment_leaderboard.hy",
     "parameter_variants.hy",
     "synthetic_curves.hy",
     "confusion_matrix.hy",
