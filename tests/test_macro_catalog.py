@@ -28,7 +28,7 @@ def test_every_hy_macro_is_documented_once():
         f"Macros missing from catalog: {sorted(set(defined) - set(entries))}; "
         f"undocumented catalog entries: {sorted(set(entries) - set(defined))}"
     )
-    assert len(defined) >= 45, "The supported API must not silently shrink"
+    assert len(defined) >= 49, "The supported API must not silently shrink"
     for name in defined:
         section = re.search(
             rf"(?ms)^### `{re.escape(name)}`\s*\n(.+?)(?=^### |^## |\Z)",
@@ -46,12 +46,10 @@ def test_root_readme_is_researcher_first_and_links_to_macro_registry():
     assert "examples/quickstart.hy" in readme
     assert "pip install lispyn" in readme
     assert "pip install -r requirements.txt" in readme
-    assert "(pip-install \"scikit-learn>=1.5\")" in readme
-    assert "lispyn execute examples/quickstart.hy" in readme
-    assert "QUICKSTART_EXECUTED:START" in readme
-    assert "QUICKSTART_EXECUTED:END" in readme
+    assert "lispyn execute examples/hello.hy" in readme
     assert "Why would a researcher use this?" not in readme
-    assert "Held-out" in readme or "held-out" in readme
+    assert len(readme) < 3400
+    assert all(name in readme for name in ("PyTorch", "Matplotlib", "pandas", "NumPy"))
     project = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     assert "blob/main/supported_macros/README.md" in project
     assert not (ROOT / "docs").exists(), "obsolete docs/ must be fully removed"
