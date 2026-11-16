@@ -17,15 +17,35 @@ Lispyn adds a new **way to author experiments**, not a new training framework. Y
 
 ## Install
 
-Requires Python 3.10+. Use a virtual environment if possible.
+Python 3.10+ is supported. **One command gives you Lispyn, Jupyter notebook execution and Matplotlib plotting:**
 
 ```bash
-python -m pip install --upgrade "lispyn[notebook,plots]"
-python -m pip install torch
+pip install lispyn
+```
+
+No `[notebook,plots]` extras needed. Run `lispyn doctor` to check your environment. **PyTorch is deliberately separate**: it is large and its CPU/CUDA/ROCm build depends on your system. For PyTorch experiments, install the [appropriate official build](https://pytorch.org/get-started/locally/) (on a compatible CPU environment, `pip install torch` is a convenient starting point).
+
+**Full research environment from a clone** (Lispyn, PyTorch, Matplotlib, Jupyter, NumPy and pandas):
+
+```bash
+git clone https://github.com/edujbarrios/lispyn.git
+cd lispyn
+pip install -r requirements.txt
 lispyn doctor
 ```
 
-For a CUDA/ROCm or platform-specific PyTorch build, follow [the official installation guide](https://pytorch.org/get-started/locally/). Lispyn supports optional extras for pandas, vision, audio and PEFT; the example below needs only PyTorch, Jupyter and Matplotlib.
+The root [`requirements.txt`](requirements.txt) is an optional research setup, not a lockfile. The `notebook` and `plots` extras remain available for compatibility but their libraries now install by default; `data`, `vision`, `audio` and `peft` cover additional specialized workflows.
+
+### Need another library inside a notebook?
+
+Use Lispyn's **`pip-install` macro** directly in your Hy experiment:
+
+```hy
+(require lispyn.macros [pip-install])
+(pip-install "scikit-learn>=1.5")
+```
+
+When Lispyn compiles the `.hy` source, this becomes a dedicated dependency cell in the standard Jupyter notebook. **`lispyn build` does not install anything; `lispyn execute` checks and installs the named package only if needed**, using the notebook's Python environment. It accepts ordinary named requirements, not arbitrary pip shell commands or package URLs. Execute only trusted notebooks; a kernel restart may be needed after adding native libraries. For GPU-specific PyTorch versions, use the official installation instructions rather than this macro.
 
 ## From a Lisp experiment to the finished notebook
 

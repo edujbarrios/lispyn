@@ -1,4 +1,4 @@
-include README.md LICENSE NOTICE
+include README.md LICENSE NOTICE requirements.txt
 recursive-include src/lispyn *.hy
 prune example_generated_notebooks
 prune examples

@@ -18,7 +18,7 @@ The examples below show the public **Hy syntax**, not direct Python implementati
 
 **Important Jupyter rule:** Lispyn compiles notebook code cells **independently**. Use `(require lispyn.macros [...])` again in a new cell when that cell needs a macro. Top-level `md`, `pip-install`, `raw-cell`, `cell-tags` and `experiment-params` have special notebook-generation behavior and must occupy their own lines. `lispyn build` compiles trusted Hy without executing training; `lispyn execute` executes the generated Python notebook. Hy compile-time macros are not sandboxed, so only compile trusted source.
 
-**Extras:** `pip install "lispyn[notebook,plots,data]"` supplies Jupyter, Matplotlib and pandas. Install a compatible **PyTorch** build separately for training, PyTorch dataset utilities and inference. Packages for audio, vision and PEFT workflows are optional.
+**Install:** `pip install lispyn` already includes Jupyter execution (`nbclient`, `ipykernel`) and Matplotlib plots. Install a compatible **PyTorch** build separately for training; the optional root [`requirements.txt`](../requirements.txt) provides an entire research environment from a cloned repository. Pandas (`lispyn[data]`), audio, vision and PEFT workflows are additional options. The older `[notebook,plots]` extras remain valid for compatibility but are no longer necessary.
 
 ## Index
 
@@ -81,7 +81,7 @@ Valid literal tag names only; must immediately precede a code/parameters cell. T
 (pip-install "matplotlib>=3.8" "pandas>=2")
 ```
 
-Literal pip requirement strings only; no arbitrary shell commands or package URLs. Use only in trusted notebooks.
+Literal pip requirement strings only; no arbitrary shell commands or package URLs. Use only in trusted notebooks. **This macro does not install packages during `lispyn build`:** it emits a dedicated dependency cell that checks/installs the named library when executed with `lispyn execute`. For example, `(pip-install "scikit-learn>=1.5")` enables an optional library. A kernel restart may be required for compiled dependencies. For PyTorch CUDA/ROCm builds, prefer the official platform-specific installation.
 
 ### `experiment-params`
 **Purpose:** Declare Hy variables once and compile a Jupyter code cell tagged `parameters`. Useful for repeatable variants.

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lispyn"
-version = "0.28.0a1"
+version = "0.28.0a2"
 description = "A new way to write and run machine-learning experiments with Hy, PyTorch and Jupyter."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -22,7 +22,15 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
-dependencies = ["hy>=1.0,<2.0", "nbformat>=5.8,<6", "packaging>=23"]
+dependencies = [
+  "hy>=1.0,<2.0",
+  "nbformat>=5.8,<6",
+  "packaging>=23",
+  # A default Lispyn install should compile, execute and visualize notebooks.
+  "nbclient>=0.9,<1",
+  "ipykernel>=6",
+  "matplotlib>=3.8",
+]
 
 [project.optional-dependencies]
 notebook = ["nbclient>=0.9,<1", "ipykernel>=6"]

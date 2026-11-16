@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.28.0a2 — 2026-11-16 — One-command notebook and plotting installation
+
+- Make `pip install lispyn` install Jupyter notebook execution (`nbclient`, `ipykernel`) and Matplotlib (`matplotlib`) without extra selectors. Keep `[notebook]` and `[plots]` extras compatible with existing installs.
+- Introduce an optional root `requirements.txt` for a cloned research environment with the Lispyn source, PyTorch, NumPy, pandas, Jupyter and Matplotlib. PyTorch deliberately stays outside the base package because suitable CPU/CUDA/ROCm wheels vary by platform.
+- Simplify the main README onboarding and document the `pip-install` Hy macro for an explicitly requested optional dependency cell. The macro installs only when an experiment notebook is executed; compiling a notebook never installs anything.
+- Verify default wheel metadata, isolated wheel imports, research requirements, and the nonexecuting notebook dependency macro with new tests; keep the existing 43-macro public API and PyTorch/Jupyter workflow unchanged.
+
+
 ## 0.28.0a1 — 2026-11-16 — A new way to write and compare experiments
 
 - Present Lispyn as **a new way to write and run machine-learning experiments**, with a concise researcher-first README and PyPI description.
