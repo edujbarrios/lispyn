@@ -10,9 +10,32 @@ def test_readme_links_to_real_example_and_complete_catalog():
     catalog = (ROOT / "supported_macros" / "README.md").read_text(encoding="utf-8")
     assert "examples/hello.hy" in readme
     assert "supported_macros/README.md" in readme
-    assert "All 49 macros" in readme and "49 macros" in catalog
+    assert "51 macros" in readme and "51 macros" in catalog
     assert '(print "Lispyn checks passed!")' in source
-    assert len(readme) < 3400
+    assert len(readme) < 5600
+
+
+def test_readme_research_examples_are_verbatim_real_source_fragments():
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    training = (ROOT / "examples/quickstart.hy").read_text(encoding="utf-8")
+    validation = (ROOT / "examples/validate_inputs.hy").read_text(encoding="utf-8")
+    snippets = [
+        "(setv [training validation held-out]\n"
+        "  (train-val-test dataset :validation-fraction 0.25\n"
+        "    :test-fraction 0.25 :seed seed))",
+        "(require lispyn.macros [assert-finite assert-shape])\n"
+        "(import numpy :as np)\n"
+        "(import pandas :as pd)\n\n"
+        "(setv features (np.array [[1.0 2.0] [3.0 4.0]]))\n"
+        "(assert-shape features [2 2] :name \"features\")\n"
+        "(assert-finite features :name \"features\")",
+        "(require lispyn.macros [report-run narrate metric-table])\n"
+        "(import lispyn.training [evaluate-metrics])\n"
+        "(report-run run :title \"PyTorch baseline · recorded metrics\")",
+    ]
+    assert snippets[0] in readme and snippets[0] in training
+    assert snippets[1] in readme and snippets[1] in validation
+    assert snippets[2] in readme and snippets[2] in training
 
 
 def test_readme_explains_three_distinct_artifacts():

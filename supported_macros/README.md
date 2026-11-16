@@ -1,6 +1,6 @@
 # Supported Lispyn macros
 
-**The complete Hy/Lisp macro reference — 49 macros, with usage examples.**
+**The complete Hy/Lisp macro reference — 51 macros, with usage examples.**
 
 Lispyn's API is **Hy macros**. They compose ordinary Python, pandas, PyTorch, Matplotlib and Jupyter; they do not replace those libraries. This file is the **single source of truth for supported macros**, grouped by research workflow. The implementations live in [`src/lispyn/macros.hy`](../src/lispyn/macros.hy).
 
@@ -31,6 +31,7 @@ The examples below show the public **Hy syntax**, not direct Python implementati
 | [Visualization & classification](#visualization--classification) | `curve`, `defcurve`, `compare-curves`, `learning-rate-curve`, `confusion-matrix`, `defconfusion`, `classification-report` |
 | [Dataset splits & cross-validation](#dataset-splits--cross-validation) | `train-val-test`, `cross-validation-folds`, `tabular-train-val-test`, `tabular-cross-validation-folds`, `repeated-cross-validation-folds`, `repeated-tabular-folds`, `cross-validate`, `cross-validate-table`, `save-cross-validation` |
 | [Time-series experiments](#time-series-experiments) | `temporal-train-val-test`, `temporal-folds`, `temporal-table-split`, `temporal-table-folds`, `cross-validate-temporal`, `cross-validate-temporal-table` |
+| [Input assertions for NumPy, pandas and PyTorch](#input-assertions-for-numpy-pandas-and-pytorch) | `assert-finite`, `assert-shape` |
 | [Lightweight diagnostics](#lightweight-diagnostics) | `assert-close`, `with-timing` |
 | [Reports, evidence & narratives](#reports-evidence--narratives) | `report-run`, `experiment-check`, `checklist-report`, `narrate`, `metric-table`, `experiment-leaderboard`, `compare-runs`, `plot-runs` |
 
@@ -97,6 +98,34 @@ Literal pip requirement strings only; no arbitrary shell commands or package URL
 ```
 
 Every child must be `(setv name value)`. Variables also work during direct Hy execution. Inspect with `lispyn parameters study.hy`; override with `lispyn build study.hy --set epochs=20` or `--params config.json`; create notebook grids with `lispyn sweep`.
+
+## Input assertions for NumPy, pandas and PyTorch
+
+Use these guards to **fail before training on bad input data**. They are lightweight and return the original object unchanged, so you can insert them into existing Hy experiments. Both use a descriptive optional `:name` and never print or store input values. NumPy is included with Matplotlib; pandas (`lispyn[data]`) and PyTorch (platform-specific installation) are optional.
+
+### `assert-finite`
+**Purpose:** Reject any NaN or infinity in numeric NumPy arrays/sequences or dense PyTorch tensors; return the original input unchanged if all values are finite.
+
+```hy
+(require lispyn.macros [assert-finite])
+(import numpy :as np)
+(setv features (np.array [1.0 2.0 3.0]))
+(assert-finite features :name "training features")
+```
+
+Reports only the number of nonfinite elements on failure; for example, a sensor array containing a NaN fails before training rather than propagating an invalid loss. Rejects empty inputs, strings/object arrays and invalid names. PyTorch tensors keep their identity and gradient tracking. Does not mutate inputs or perform automatic cleaning.
+
+### `assert-shape`
+**Purpose:** Verify NumPy array, pandas DataFrame or PyTorch tensor dimensions, with `None` as a wildcard for unknown batch size; return the original object unchanged.
+
+```hy
+(require lispyn.macros [assert-shape])
+(import numpy :as np)
+(setv features (np.zeros [32 4]))
+(assert-shape features [None 4] :name "training features")
+```
+
+Arguments: `values expected` and optional `:name`. Expected shape is a list or tuple of 1–8 nonnegative integers or `None`. Raises `AssertionError` on a mismatch, `TypeError` on non-shaped objects, and `ValueError` for invalid expected shapes. No reshaping or mutation occurs. See the [runnable direct/Notebook example](../examples/validate_inputs.hy).
 
 ## Lightweight diagnostics
 

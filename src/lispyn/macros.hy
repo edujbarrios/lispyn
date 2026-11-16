@@ -327,3 +327,17 @@
   `(do
     (import lispyn.data_profiles)
     (lispyn.data_profiles.profile_table ~frame ~@options)))
+
+; Non-mutating pre-training checks for numeric arrays and shaped inputs.
+
+(defmacro assert-finite [values #* options]
+  "Reject NaN and infinity in NumPy numeric arrays and PyTorch tensors."
+  `(do
+    (import lispyn.validation)
+    (lispyn.validation.assert_finite ~values ~@options)))
+
+(defmacro assert-shape [values expected #* options]
+  "Check NumPy, pandas or PyTorch dimensions before an experiment."
+  `(do
+    (import lispyn.validation)
+    (lispyn.validation.assert_shape ~values ~expected ~@options)))
