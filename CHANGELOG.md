@@ -8,6 +8,8 @@
 - Reduce the README to a concise, researcher-facing overview while retaining a real Hy code excerpt, **recorded** notebook outputs and the actual training chart. Keep full reference material in `supported_macros/README.md`.
 - Add regression coverage for reproducible ZIPs, successful and rejected capsules, tampering, unsafe paths, CLI output, CFF metadata and README result provenance.
 
+The integrity manifest is designed to catch accidental changes, not to certify author identity. Capsules contain notebook output, so review each cell before sharing outside your research group.
+
 
 ## 0.28.0a2 — 2026-11-16 — One-command notebook and plotting installation
 
