@@ -1,0 +1,15 @@
+# Install from a local clone: pip install -r requirements.txt
+#
+# Full research environment: the Lispyn package + PyTorch + tabular tools.
+# This file is NOT a lockfile. Pin versions for archival/reproducible studies.
+#
+# For CUDA/ROCm, install torch using https://pytorch.org/get-started/locally/
+# before using this file (pip will retain compatible installed packages).
+-e .
+torch>=2.2
+numpy>=1.24
+pandas>=2
+# Included automatically by `pip install lispyn`; listed for clarity.
+matplotlib>=3.8
+nbclient>=0.9,<1
+ipykernel>=6
