@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.30.0a1 — 2026-11-16 — Compare experiments without leaving Hy
+
+- New Hy `compare-runs` macro: compare 2–20 explicitly selected saved PyTorch run directories, report best/final epoch scores and direction-aware improvements against a named baseline directly as rich Jupyter Markdown (or terminal output).
+- New Hy `plot-runs` macro: draw named recorded metric curves as Matplotlib figures using Lispyn themes and figure exports, with no retraining and no ad hoc Python.
+- Both macros work with `history.json` records, reject invalid/ambiguous paths and invalid completion manifests; the existing Python comparison/plotting backends remain available.
+- Add a runnable **synthetic** Hy example, gallery notebook and tests covering baseline gains, metric direction, validation, exports, real Hy execution and live Jupyter Markdown/image output.
+- Expand `supported_macros/README.md` to **45/45 documented macros**, preserving the concise README, publication-ready notebooks and native PyTorch interoperability.
+
+
 ## 0.29.0a1 — 2026-11-16 — Cite, package and verify experiments
 
 - Add root `CITATION.cff` (Citation File Format 1.2.0) so GitHub can offer **Cite this repository** for the original software author and version.

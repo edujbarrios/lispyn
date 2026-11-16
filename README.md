@@ -59,7 +59,7 @@ Lispyn builds and executes standard Python notebook cells. For compilation witho
 
 ## More than training
 
-Use **43 documented Hy macros** for reusable experiment parameters, PyTorch training, evaluation splits, cross-validation, reports, evidence checks and visualizations. [Explore every macro and its syntax](supported_macros/README.md).
+Use **45 documented Hy macros** for experiment parameters, PyTorch training, evaluation splits, cross-validation, comparisons, reports and figures. [Explore every macro and its syntax](supported_macros/README.md).
 
 Need an additional library inside the notebook? Lispyn can create a dedicated dependency cell:
 
