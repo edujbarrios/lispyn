@@ -298,3 +298,18 @@
   `(do
     (import lispyn.research_comparison [plot-run-comparison])
     (plot-run-comparison ~runs ~@options)))
+
+; Small experiment diagnostics without a required PyTorch installation.
+
+(defmacro assert-close [actual expected #* options]
+  "Assert that two finite numeric scalars match within explicit tolerances."
+  `(do
+    (import lispyn.utilities [assert-close])
+    (assert-close ~actual ~expected ~@options)))
+
+(defmacro with-timing [label #* body]
+  "Time a Hy body and print elapsed seconds, including on errors."
+  `(do
+    (import lispyn.utilities [timing])
+    (with [(timing ~label)]
+      ~@body)))
