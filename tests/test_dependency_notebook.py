@@ -33,10 +33,16 @@ def test_requirements_in_executed_jupyter_notebook(tmp_path):
     assert "sqrt: 7.0" in outputs
 
 
-def test_readme_contains_the_complete_resnet_source():
+def test_readme_links_runnable_quickstart_instead_of_embedding_large_resnet_recipe():
     root = Path(__file__).resolve().parents[1]
-    source = (root / "examples" / "resnet_finetune_300.hy").read_text().strip()
-    readme = (root / "README.md").read_text()
-    assert "\x60\x60\x60clojure\n" + source + "\n\x60\x60\x60" in readme
-    assert readme.count("\x60\x60\x60clojure") == 1
-    assert "example_generated_notebooks/resnet_finetune_300.ipynb" in readme
+    readme = (root / "README.md").read_text(encoding="utf-8")
+    example = root / "examples" / "quickstart.hy"
+    catalog = root / "supported_macros" / "README.md"
+
+    assert example.is_file() and "(train-until " in example.read_text()
+    assert catalog.is_file()
+    assert "examples/quickstart.hy" in readme
+    assert "supported_macros/README.md" in readme
+    assert "lispyn execute study.hy" in readme
+    # Full multi-hundred-line ResNet recipes belong in examples/, not the landing page.
+    assert (root / "examples" / "resnet_finetune_300.hy").is_file()
