@@ -41,7 +41,7 @@ lispyn = "lispyn.cli:main"
 Homepage = "https://github.com/edujbarrios/lispyn"
 Repository = "https://github.com/edujbarrios/lispyn"
 Issues = "https://github.com/edujbarrios/lispyn/issues"
-Documentation = "https://github.com/edujbarrios/lispyn/blob/main/docs/guide.md"
+Documentation = "https://github.com/edujbarrios/lispyn/blob/main/supported_macros/README.md"
 
 [tool.setuptools.packages.find]
 where = ["src"]
