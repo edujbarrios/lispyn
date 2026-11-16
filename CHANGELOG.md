@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.28.0a1 — 2026-11-16 — A new way to write and compare experiments
+
+- Present Lispyn as **a new way to write and run machine-learning experiments**, with a concise researcher-first README and PyPI description.
+- Add `experiment-leaderboard` Hy macro: automatically discover saved run histories and render ranked, shareable Markdown tables in Jupyter or terminal Hy.
+- Add `lispyn leaderboard DIR [--metric loss] [--rank-by best|final] [--mode min|max] [--top N] [--strict] [--json] [-o report.md|csv|json]` for offline experiment ranking.
+- Default to completed native runs; explicitly mark history-only artifacts. Skip missing/incomplete/nonfinite results with diagnostics or use strict mode. Read only aggregate histories and optional manifest completion status, never datasets or model checkpoints.
+- Add a Hy example, notebook gallery entry, full macro catalog entry and end-to-end tests for ranking, deterministic ties, output formats, failures and Jupyter Markdown.
+- Keep existing PyTorch native training, notebook generation and source provenance APIs compatible.
+
+
 ## 0.27.0a1 — 2026-11-16 — Dynamic Hy experiment stories and notebook audit
 
 - Add `narrate` Hy macro to interpolate finite, explicit runtime scalar values into Jupyter Markdown with restricted named placeholders and numeric formatting, and optionally save the result to a Markdown file.
