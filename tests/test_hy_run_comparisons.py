@@ -93,7 +93,7 @@ def test_hy_comparison_rejects_ambiguous_incomplete_and_corrupt_runs(tmp_path):
     b = _run(tmp_path / "set2", "baseline", {"val_loss": [0.6]})
     with pytest.raises(ValueError, match="distinct"):
         show_run_comparison([a, b])
-    with pytest.raises(ValueError, match="different"):
+    with pytest.raises(ValueError, match="distinct"):
         plot_run_comparison([a, a])
     c = _run(tmp_path, "failed", {"val_loss": [0.2]}, status="failed")
     with pytest.raises(ValueError, match="not completed"):
