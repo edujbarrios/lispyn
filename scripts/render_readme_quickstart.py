@@ -141,7 +141,7 @@ def rewrite(readme_path, section, *, check=False):
                + section.rstrip() + "\n" + END
                + old.split(END, 1)[1])
     if check and old != updated:
-        raise ValueError("README notebook output snapshot does not match the executed notebook")
+        raise ValueError("README snapshot is stale: output does not match the executed notebook")
     if not check:
         readme_path.write_text(updated, encoding="utf-8")
 
