@@ -28,7 +28,7 @@ def test_every_hy_macro_is_documented_once():
         f"Macros missing from catalog: {sorted(set(defined) - set(entries))}; "
         f"undocumented catalog entries: {sorted(set(entries) - set(defined))}"
     )
-    assert len(defined) >= 54, "The supported API must not silently shrink"
+    assert len(defined) >= 56, "The supported API must not silently shrink"
     for name in defined:
         section = re.search(
             rf"(?ms)^### `{re.escape(name)}`\s*\n(.+?)(?=^### |^## |\Z)",

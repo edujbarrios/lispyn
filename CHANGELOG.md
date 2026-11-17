@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.36.0a1 — 2026-11-17 — Binary validation threshold diagnostics
+
+- Add `threshold-report`: evaluate positive-class probabilities on an explicitly supplied binary validation set, report per-threshold TP/FP/FN/TN, precision, recall, specificity, F1, balanced accuracy and accuracy.
+- Select the best **candidate** cutoff by F1 or balanced accuracy with deterministic tie-breaking. Validate binary labels, finite probabilities, vector dimensions and bounded unique thresholds; handle empty predictions without division by zero.
+- Add `plot-threshold-metrics`: themed Matplotlib curves for precision, recall, F1 and balanced accuracy, with the selected threshold marked and optional PNG/SVG export.
+- Support text/JSON aggregate exports without prediction-level observations, pure Python and NumPy/pandas inputs, and a runnable Hy-to-Jupyter synthetic example. Include the example in the gallery, document all 56 macros and add edge-case/end-to-end regression tests.
+- Only choose thresholds using held-out validation data; this is grid-based diagnostics, not model calibration, statistical confidence, or a guarantee of test-set performance.
+
+
 ## 0.35.0a1 — 2026-11-17 — Balanced classification weights
 
 - Add `class-weights`, a Hy macro and Python helper that compute balanced inverse-frequency weights from observed labels, using the formula `n_samples / (n_classes * class_count)`.

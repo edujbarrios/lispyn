@@ -24,6 +24,7 @@ EXAMPLE_SOURCES = (
     "parameter_variants.hy",
     "synthetic_curves.hy",
     "confusion_matrix.hy",
+    "binary_thresholds.hy",
     "early_stopping.hy",
     "advanced_training.hy",
     "cross_validation.hy",
