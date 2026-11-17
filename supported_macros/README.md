@@ -1,6 +1,6 @@
 # Supported Lispyn macros
 
-**The complete Hy/Lisp macro reference — 54 macros, with usage examples.**
+**The complete Hy/Lisp macro reference — 56 macros, with usage examples.**
 
 Lispyn's API is **Hy macros**. They compose ordinary Python, pandas, PyTorch, Matplotlib and Jupyter; they do not replace those libraries. This file is the **single source of truth for supported macros**, grouped by AI notebook task (including research and production prototyping). The implementations live in [`src/lispyn/macros.hy`](../src/lispyn/macros.hy).
 
@@ -28,7 +28,7 @@ The examples below show the public **Hy syntax**, not direct Python implementati
 | [NumPy and pandas data profiling](#numpy-and-pandas-data-profiling) | `array-profile`, `table-profile` |
 | [PyTorch training & inference](#pytorch-training--inference) | `with-seed`, `train-for`, `train-until`, `train-accumulating`, `with-eval`, `head-tune`, `full-tune` |
 | [Runtime dependencies](#runtime-dependencies) | `ensure-package`, `use-package` |
-| [AI dataset class balance](#ai-dataset-class-balance) | `label-balance`, `plot-label-balance` |
+| [AI dataset class balance](#ai-dataset-class-balance) | `label-balance`, `plot-label-balance`, `class-weights` |\n| [Binary probability thresholds](#binary-probability-thresholds) | `threshold-report`, `plot-threshold-metrics` |
 | [Visualization & classification](#visualization--classification) | `curve`, `defcurve`, `compare-curves`, `learning-rate-curve`, `confusion-matrix`, `defconfusion`, `classification-report` |
 | [Dataset splits & cross-validation](#dataset-splits--cross-validation) | `train-val-test`, `cross-validation-folds`, `tabular-train-val-test`, `tabular-cross-validation-folds`, `repeated-cross-validation-folds`, `repeated-tabular-folds`, `cross-validate`, `cross-validate-table`, `save-cross-validation` |
 | [Time-series experiments](#time-series-experiments) | `temporal-train-val-test`, `temporal-folds`, `temporal-table-split`, `temporal-table-folds`, `cross-validate-temporal`, `cross-validate-temporal-table` |
@@ -336,6 +336,37 @@ Returns JSON-compatible `class_order`, `counts`, `weights`, `total`, and `num_cl
 ```
 
 Returns a Matplotlib `Figure` (for further customization or notebook display). Supports `:title`, `:theme` (`paper`, `clean`, `dark`, `docusaurus-dark`), `:max-classes`, `:figsize`, `:dpi` and `:save` (`.png` or `.svg`). Default Lispyn installations include Matplotlib. [Run the end-to-end Hy demonstration](../examples/label_balance.hy).
+
+## Binary probability thresholds
+
+Evaluate the trade-offs of a **binary classifier's positive-class probabilities** using held-out **validation** labels. These macros require neither scikit-learn nor PyTorch. They do not run inference or train a model. Do **not** optimize on the held-out test set: select your threshold on validation data and evaluate once on untouched test data.
+
+### `threshold-report`
+**Purpose:** Display aggregate precision, recall, specificity, F1, balanced accuracy and confusion counts at candidate cutoffs; optionally save a Markdown/JSON report.
+
+```hy
+(require lispyn.macros [threshold-report])
+(setv actual [0 0 1 1 1 0 1 0])
+(setv scores [0.1 0.35 0.4 0.8 0.7 0.9 0.55 0.2])
+(setv result (threshold-report actual scores
+  :thresholds [0.3 0.5 0.75] :optimize "f1"
+  :save "reports/thresholds.json"))
+(print (get result "best_threshold"))
+```
+
+Predicted positive means `score >= threshold`; `actual` contains integer 0/1 or Boolean labels and `scores` contains finite probabilities in [0,1] (positive-class probabilities, **not raw logits**). Lengths must match, be nonempty 1-D sequences and include both classes. Optional `:thresholds` accepts 1–101 distinct candidate cutoffs in [0,1] (default: 0.05 through 0.95 in steps of 0.05), sorted in the report. `:optimize` is `"f1"` (default) or `"balanced_accuracy"`. If metrics tie, choose the cutoff nearest 0.5, then the smaller cutoff. Metrics with zero prediction denominators are 0, and the search considers only the supplied grid. Returns JSON-compatible `best_threshold`, `best_metrics`, `rows`, class counts and objective. `:save` supports `.md`/`.json`; exports contain aggregate counts and metrics only, not individual labels/scores. This is **descriptive validation analysis**, not calibrated confidence or a guarantee of test performance.
+
+### `plot-threshold-metrics`
+**Purpose:** Plot the precision, recall, F1 and balanced accuracy trade-offs across candidate thresholds and mark the validation-selected cutoff.
+
+```hy
+(require lispyn.macros [plot-threshold-metrics])
+(plot-threshold-metrics [0 1 0 1] [0.1 0.8 0.4 0.9]
+  :thresholds [0.25 0.5 0.75] :theme "paper"
+  :save "figures/thresholds.png")
+```
+
+Returns a Matplotlib `Figure`; supports the same `:thresholds` and `:optimize` arguments as `threshold-report`, `:title`, standard themes (`paper`, `clean`, `dark`, `docusaurus-dark`), `:figsize`, `:dpi` and `:save` (`.png`/`.svg`). Default installation includes Matplotlib. [Run the synthetic Hy/Jupyter demo](../examples/binary_thresholds.hy).
 
 ## Visualization & classification
 
