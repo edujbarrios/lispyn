@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.35.0a1 — 2026-11-17 — Balanced classification weights
+
+- Add `class-weights`, a Hy macro and Python helper that compute balanced inverse-frequency weights from observed labels, using the formula `n_samples / (n_classes * class_count)`.
+- Support optional explicit class ordering to align weights with encoded target indices for PyTorch classification losses. Validate missing, duplicate, unknown and type-mismatched labels rather than silently applying incorrect weights.
+- Preserve privacy-minimal aggregate-only outputs and compatibility with plain sequences, NumPy arrays, pandas Series and optional PyTorch tensors.
+- Extend the runnable label-balance example, macro catalog (now 54 entries), root README, and regression tests for class ordering and direct Hy/Jupyter workflows.
+
+
+
 ## 0.34.0a1 — 2026-11-16 — Realización de notebooks de IA and class balance
 
 - Reposition Lispyn as a general AI notebook authoring and execution tool, not exclusively a research experiment framework; update README, package metadata, CLI description and citations.
