@@ -38,7 +38,7 @@ Lispyn provides macros for **PyTorch, NumPy, pandas and Matplotlib** while keepi
 
 **Prepare a balanced classification loss.** Use `class-weights` with an explicit class order matching your model's encoded target indices; it returns inverse-frequency weights that can be passed to PyTorch. See the [label balance example](examples/label_balance.hy) and [macro reference](supported_macros/README.md).
 
-**One source, three modes.** The same [hello.hy](examples/hello.hy) can run in a terminal, become an unexecuted notebook, or produce a notebook with saved outputs. See the three commands below.
+**Evaluate binary probability thresholds.** Use `threshold-report` to compare validation precision, recall, F1 and balanced accuracy, and `plot-threshold-metrics` to visualize the trade-offs. See the [synthetic Hy example](examples/binary_thresholds.hy). Choose cutoffs on validation data, not the held-out test set.\n\n**One source, three modes.** The same [hello.hy](examples/hello.hy) can run in a terminal, become an unexecuted notebook, or produce a notebook with saved outputs. See the three commands below.
 
 **Inspectable AI notebook outputs.** The [quickstart](examples/quickstart.hy) renders a report from actual PyTorch training results, which can be reviewed in the [executed notebook](example_generated_notebooks/quickstart_executed.ipynb):
 
@@ -89,7 +89,7 @@ Check for `2 + 3 + 5 = 10` and `Lispyn checks passed!`. Building compiles Hy int
 
 ## All macros and examples
 
-**[Full reference: 54 macros, arguments, dependencies and Hy examples](supported_macros/README.md)** — grouped by PyTorch, Matplotlib, pandas, NumPy, notebook authoring, classification and AI experiment reporting.
+**[Full reference: 56 macros, arguments, dependencies and Hy examples](supported_macros/README.md)** — grouped by PyTorch, Matplotlib, pandas, NumPy, notebook authoring, classification and AI experiment reporting.
 
 More runnable sources: [PyTorch quickstart](examples/quickstart.hy) (try `lispyn execute examples/quickstart.hy`), [data profiles](examples/data_profiles.hy) and [input assertions](examples/validate_inputs.hy) and [label balance](examples/label_balance.hy). A cloned repository also offers `pip install -r requirements.txt` for an optional full AI development environment.
 
