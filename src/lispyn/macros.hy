@@ -363,3 +363,17 @@
   `(do
     (import lispyn.label_balance)
     (lispyn.label_balance.balanced_class_weights ~labels ~@options)))
+
+; Tune binary probability cutoffs using validation data, not training or test labels.
+
+(defmacro threshold-report [actual scores #* options]
+  "Display aggregate precision, recall, F1 and balanced accuracy by cutoff."
+  `(do
+    (import lispyn.thresholds)
+    (lispyn.thresholds.threshold_report ~actual ~scores ~@options)))
+
+(defmacro plot-threshold-metrics [actual scores #* options]
+  "Plot binary threshold trade-offs and the best selected validation cutoff."
+  `(do
+    (import lispyn.thresholds)
+    (lispyn.thresholds.plot_threshold_metrics ~actual ~scores ~@options)))
