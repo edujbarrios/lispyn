@@ -1,6 +1,6 @@
 # Supported Lispyn macros
 
-**The complete Hy/Lisp macro reference — 54 macros, with usage examples.**
+**The complete Hy/Lisp macro reference — 56 macros, with usage examples.**
 
 Lispyn's API is **Hy macros**. They compose ordinary Python, pandas, PyTorch, Matplotlib and Jupyter; they do not replace those libraries. This file is the **single source of truth for supported macros**, grouped by AI notebook task (including research and production prototyping). The implementations live in [`src/lispyn/macros.hy`](../src/lispyn/macros.hy).
 
@@ -324,6 +324,30 @@ Returns `title`, `total`, `num_classes`, `majority_share`, `imbalance_ratio`, an
 ```
 
 Returns JSON-compatible `class_order`, `counts`, `weights`, `total`, and `num_classes`. Uses `n_samples / (n_classes * class_count)` (the balanced inverse-frequency formula). If `:class-order` is omitted, labels are in first-seen order. **For PyTorch `CrossEntropyLoss`, provide `:class-order` exactly matching your target encoding `0..C-1`**, then convert `result["weights"]` to a device/dtype-compatible torch tensor. Each observed class must appear exactly once in the explicit order; unknown/duplicate/missing classes are rejected. This also distinguishes numeric labels from strings with the same display text. `:max-classes` defaults to 30 (up to 50), and inputs must contain at least one example of every class. Weights do not replace a representative validation split or guarantee better accuracy. See [the runnable example](../examples/label_balance.hy).
+
+### `sample-weights`
+**Purpose:** Produce one balanced weight per training observation, in the same order as the labels, for weighted sampling.
+
+```hy
+(require lispyn.macros [sample-weights])
+(setv labels ["cat" "cat" "dog" "bird"])
+(setv weights (sample-weights labels))
+; Use weights with torch.utils.data.WeightedRandomSampler
+```
+
+Returns a Python list of finite positive floats with exactly one entry per input label. Each occurrence gets `n_samples / (n_classes * class_count)`, matching the balanced `class-weights` formula but **ordered per observation rather than by class**. For PyTorch `WeightedRandomSampler(weights, num_samples, replacement=True)`, ensure label order matches dataset sample order. `:max-classes` defaults to 30 (maximum 50); invalid labels are rejected. Does not import PyTorch, train a model, save data or display individual weights. Only use labels from the **training** split to avoid data leakage; sampling may change effective class proportions.
+
+### `compare-label-splits`
+**Purpose:** Check train/evaluation class coverage and quantify differences in class proportions before training or evaluation.
+
+```hy
+(require lispyn.macros [compare-label-splits])
+(setv shift (compare-label-splits ["cat" "cat" "dog"] ["cat" "bird"]
+  :title "Training versus validation" :save "reports/label_shift.json"))
+(print (get shift "unseen_in_train"))  ; ["bird"]
+```
+
+Returns aggregate `train_total`, `eval_total`, `num_classes`, `unseen_in_train`, `missing_in_eval`, `total_variation_distance`, `js_divergence` (Jensen–Shannon divergence measured in **bits**, both 0–1), and per-class counts and proportions. A zero distance means matching observed proportions, while a larger value means different proportions; these are **descriptive, not significance tests or proof of covariate drift**. Missing classes are treated as zero in that split; unknown or ambiguous label representations are rejected across both splits. Order is first-seen training classes then evaluation-only classes. `:save` supports Markdown or JSON, showing class names and aggregates but **never individual records**. `:max-classes` is 1–50 (default 30) across the class union. Use independent validation/evaluation labels; do not tune using held-out test data. See [the runnable sample-and-shift example](../examples/label_shift.hy).
 
 ### `plot-label-balance`
 **Purpose:** Generate a labeled Matplotlib bar chart of observed class counts without writing a plotting loop.
