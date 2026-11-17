@@ -313,6 +313,18 @@ These macros help **inspect classification datasets before training**, whether y
 
 Returns `title`, `total`, `num_classes`, `majority_share`, `imbalance_ratio`, and `classes` entries (`label`, `count`, `share`). First-seen order is preserved. `:save` supports `.json` and `.md`. `:max-classes` defaults to 30, maximum 50. Rejects empty, non-1D or ambiguous labels and NaNs/infinities rather than silently removing observations. This is descriptive, **not** a statistical balance test or a substitute for proper train/test splitting.
 
+### `class-weights`
+**Purpose:** Produce balanced inverse-frequency class weights for imbalanced classification losses, without an optional PyTorch dependency.
+
+```hy
+(require lispyn.macros [class-weights])
+(setv labels ["cat" "cat" "cat" "dog" "dog" "bird"])
+(setv result (class-weights labels :class-order ["bird" "cat" "dog"]))
+(print (get result "weights"))  ; [2.0, 0.666..., 1.0]
+```
+
+Returns JSON-compatible `class_order`, `counts`, `weights`, `total`, and `num_classes`. Uses `n_samples / (n_classes * class_count)` (the balanced inverse-frequency formula). If `:class-order` is omitted, labels are in first-seen order. **For PyTorch `CrossEntropyLoss`, provide `:class-order` exactly matching your target encoding `0..C-1`**, then convert `result["weights"]` to a device/dtype-compatible torch tensor. Each observed class must appear exactly once in the explicit order; unknown/duplicate/missing classes are rejected. This also distinguishes numeric labels from strings with the same display text. `:max-classes` defaults to 30 (up to 50), and inputs must contain at least one example of every class. Weights do not replace a representative validation split or guarantee better accuracy. See [the runnable example](../examples/label_balance.hy).
+
 ### `plot-label-balance`
 **Purpose:** Generate a labeled Matplotlib bar chart of observed class counts without writing a plotting loop.
 
