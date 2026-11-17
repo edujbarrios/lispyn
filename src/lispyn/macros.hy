@@ -363,3 +363,17 @@
   `(do
     (import lispyn.label_balance)
     (lispyn.label_balance.balanced_class_weights ~labels ~@options)))
+
+; Training-time sampling and cross-split label coverage diagnostics.
+
+(defmacro sample-weights [labels #* options]
+  "Compute balanced per-sample weights in original input order."
+  `(do
+    (import lispyn.label_balance)
+    (lispyn.label_balance.balanced_sample_weights ~labels ~@options)))
+
+(defmacro compare-label-splits [train-labels eval-labels #* options]
+  "Compare class coverage and distribution shift across train/eval labels."
+  `(do
+    (import lispyn.label_balance)
+    (lispyn.label_balance.compare_label_splits ~train-labels ~eval-labels ~@options)))
