@@ -67,6 +67,53 @@ def test_invalid_balance_data(labels, kwargs, exc, match):
         label_balance(labels, **kwargs)
 
 
+
+def test_class_weights_align_with_encoded_class_order_and_preserve_input():
+    from lispyn.label_balance import balanced_class_weights
+    labels = ["cat", "cat", "cat", "dog", "dog", "bird"]
+    original = labels.copy()
+    result = balanced_class_weights(labels, class_order=["bird", "cat", "dog"])
+    assert result["class_order"] == ["bird", "cat", "dog"]
+    assert result["counts"] == [1, 3, 2]
+    assert result["weights"] == pytest.approx([2.0, 2 / 3, 1.0])
+    assert result["total"] == 6 and result["num_classes"] == 3
+    assert labels == original
+    assert balanced_class_weights(labels)["class_order"] == ["cat", "dog", "bird"]
+
+
+@pytest.mark.parametrize("order", [
+    ["cat", "dog"],                     # missing observed class
+    ["cat", "dog", "bird", "fox"],       # unexpected class
+    ["cat", "cat", "bird"],             # duplicate and missing class
+    ["cat", "dog", "bird", "bird"],    # duplicate
+])
+def test_class_weights_reject_invalid_class_order(order):
+    from lispyn.label_balance import balanced_class_weights
+    with pytest.raises(ValueError, match="class_order"):
+        balanced_class_weights(["cat", "dog", "bird"], class_order=order)
+
+
+def test_class_weights_require_matching_label_types():
+    from lispyn.label_balance import balanced_class_weights
+    with pytest.raises(ValueError, match="class_order"):
+        balanced_class_weights([1, 1, 2], class_order=["1", 2])
+    with pytest.raises(ValueError, match="class_order"):
+        balanced_class_weights([True, False, False], class_order=[1, 0])
+    assert balanced_class_weights([1, 1, 2], class_order=[2, 1])["counts"] == [1, 2]
+    with pytest.raises(ValueError, match="distinct classes"):
+        balanced_class_weights(["a", "b", "c"], max_classes=2)
+
+
+def test_class_weights_numpy_and_pandas():
+    np = pytest.importorskip("numpy")
+    pd = pytest.importorskip("pandas")
+    from lispyn.label_balance import balanced_class_weights
+    for labels in (np.array([0, 1, 0, 2]), pd.Series([0, 1, 0, 2])):
+        result = balanced_class_weights(labels, class_order=[0, 1, 2])
+        assert result["counts"] == [2, 1, 1]
+        assert result["weights"] == pytest.approx([2 / 3, 4 / 3, 4 / 3])
+
+
 def test_plot_is_real_matplotlib_figure_and_saves_png_svg(tmp_path):
     mpl = pytest.importorskip("matplotlib")
     mpl.use("Agg")
@@ -101,6 +148,7 @@ def test_hy_demo_run_build_and_execute(tmp_path):
     code = "\n".join(c.source for c in notebook.cells if c.cell_type == "code")
     assert "lispyn.label_balance.label_balance" in code
     assert "lispyn.label_balance.plot_label_balance" in code
+    assert "lispyn.label_balance.balanced_class_weights" in code
 
     cli = [sys.executable, "-m", "lispyn.cli"]
     direct = subprocess.run(cli + ["run", str(EXAMPLE)], cwd=ROOT,

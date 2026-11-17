@@ -355,3 +355,11 @@
   `(do
     (import lispyn.label_balance)
     (lispyn.label_balance.plot_label_balance ~labels ~@options)))
+
+; Rebalance classification losses without importing PyTorch just to count labels.
+
+(defmacro class-weights [labels #* options]
+  "Return balanced inverse-frequency weights in explicit model class-index order."
+  `(do
+    (import lispyn.label_balance)
+    (lispyn.label_balance.balanced_class_weights ~labels ~@options)))

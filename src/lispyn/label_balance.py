@@ -22,7 +22,7 @@ def _validate_text(name, value):
     return value.strip()
 
 
-def _count_labels(labels, *, title, max_classes):
+def _count_labels(labels, *, title, max_classes, _keys=False):
     title = _validate_text("title", title)
     if isinstance(max_classes, bool) or not isinstance(max_classes, int) or not 1 <= max_classes <= 50:
         raise ValueError("max_classes must be an integer from 1 to 50")
@@ -63,12 +63,13 @@ def _count_labels(labels, *, title, max_classes):
         for row in counts.values()
     ]
     values = [row["count"] for row in classes]
-    return {
+    result = {
         "title": title, "total": total, "num_classes": len(classes),
         "majority_share": max(values) / total,
         "imbalance_ratio": max(values) / min(values),
         "classes": classes,
     }
+    return (result, tuple(counts)) if _keys else result
 
 
 def label_balance(labels, *, title="Label distribution", max_classes=30, save=None):
@@ -106,6 +107,42 @@ def label_balance(labels, *, title="Label distribution", max_classes=30, save=No
     from .narrative import _present
     _present(markdown, None)
     return report
+
+
+
+def balanced_class_weights(labels, *, class_order=None, max_classes=30):
+    """Return inverse-frequency class weights aligned with a documented order.
+
+    The balanced formula is n_samples / (n_classes * class_count).
+    Pass class_order in the exact order of the model's encoded target indices
+    (0 through n_classes - 1). Without it, classes retain first-seen order.
+    No PyTorch dependency, raw samples, or model modifications are required.
+    """
+    report, observed_keys = _count_labels(
+        labels, title="Training labels", max_classes=max_classes, _keys=True
+    )
+    rows = dict(zip(observed_keys, report["classes"]))
+    if class_order is None:
+        ordered_keys = observed_keys
+    else:
+        supplied, ordered_keys = _count_labels(
+            class_order, title="Class order", max_classes=max_classes, _keys=True
+        )
+        if (supplied["num_classes"] != report["num_classes"]
+                or any(row["count"] != 1 for row in supplied["classes"])
+                or set(ordered_keys) != set(observed_keys)):
+            raise ValueError("class_order must contain each observed class exactly once")
+
+    chosen = [rows[key] for key in ordered_keys]
+    total = report["total"]
+    num_classes = report["num_classes"]
+    return {
+        "class_order": [row["label"] for row in chosen],
+        "counts": [row["count"] for row in chosen],
+        "weights": [total / (num_classes * row["count"]) for row in chosen],
+        "total": total,
+        "num_classes": num_classes,
+    }
 
 
 def plot_label_balance(labels, *, title="Label distribution",
