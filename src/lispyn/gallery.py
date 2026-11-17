@@ -23,7 +23,7 @@ EXAMPLE_SOURCES = (
     "compare_saved_runs.hy",
     "parameter_variants.hy",
     "synthetic_curves.hy",
-    "confusion_matrix.hy",
+    "confusion_matrix.hy",\n    "binary_thresholds.hy",
     "early_stopping.hy",
     "advanced_training.hy",
     "cross_validation.hy",
