@@ -38,7 +38,9 @@ Lispyn provides macros for **PyTorch, NumPy, pandas and Matplotlib** while keepi
 
 **Prepare a balanced classification loss.** Use `class-weights` with an explicit class order matching your model's encoded target indices; it returns inverse-frequency weights that can be passed to PyTorch. See the [label balance example](examples/label_balance.hy) and [macro reference](supported_macros/README.md).
 
-**Evaluate binary probability thresholds.** Use `threshold-report` to compare validation precision, recall, F1 and balanced accuracy, and `plot-threshold-metrics` to visualize the trade-offs. See the [synthetic Hy example](examples/binary_thresholds.hy). Choose cutoffs on validation data, not the held-out test set.\n\n**One source, three modes.** The same [hello.hy](examples/hello.hy) can run in a terminal, become an unexecuted notebook, or produce a notebook with saved outputs. See the three commands below.
+**Evaluate binary probability thresholds.** Use `threshold-report` to compare validation precision, recall, F1 and balanced accuracy, and `plot-threshold-metrics` to visualize the trade-offs. See the [synthetic Hy example](examples/binary_thresholds.hy). Choose cutoffs on validation data, not the held-out test set.
+
+**One source, three modes.** The same [hello.hy](examples/hello.hy) can run in a terminal, become an unexecuted notebook, or produce a notebook with saved outputs. See the three commands below.
 
 **Inspectable AI notebook outputs.** The [quickstart](examples/quickstart.hy) renders a report from actual PyTorch training results, which can be reviewed in the [executed notebook](example_generated_notebooks/quickstart_executed.ipynb):
 
