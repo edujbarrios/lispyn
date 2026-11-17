@@ -28,7 +28,8 @@ The examples below show the public **Hy syntax**, not direct Python implementati
 | [NumPy and pandas data profiling](#numpy-and-pandas-data-profiling) | `array-profile`, `table-profile` |
 | [PyTorch training & inference](#pytorch-training--inference) | `with-seed`, `train-for`, `train-until`, `train-accumulating`, `with-eval`, `head-tune`, `full-tune` |
 | [Runtime dependencies](#runtime-dependencies) | `ensure-package`, `use-package` |
-| [AI dataset class balance](#ai-dataset-class-balance) | `label-balance`, `plot-label-balance`, `class-weights` |\n| [Binary probability thresholds](#binary-probability-thresholds) | `threshold-report`, `plot-threshold-metrics` |
+| [AI dataset class balance](#ai-dataset-class-balance) | `label-balance`, `plot-label-balance`, `class-weights` |
+| [Binary probability thresholds](#binary-probability-thresholds) | `threshold-report`, `plot-threshold-metrics` |
 | [Visualization & classification](#visualization--classification) | `curve`, `defcurve`, `compare-curves`, `learning-rate-curve`, `confusion-matrix`, `defconfusion`, `classification-report` |
 | [Dataset splits & cross-validation](#dataset-splits--cross-validation) | `train-val-test`, `cross-validation-folds`, `tabular-train-val-test`, `tabular-cross-validation-folds`, `repeated-cross-validation-folds`, `repeated-tabular-folds`, `cross-validate`, `cross-validate-table`, `save-cross-validation` |
 | [Time-series experiments](#time-series-experiments) | `temporal-train-val-test`, `temporal-folds`, `temporal-table-split`, `temporal-table-folds`, `cross-validate-temporal`, `cross-validate-temporal-table` |
