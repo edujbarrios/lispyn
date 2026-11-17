@@ -145,6 +145,133 @@ def balanced_class_weights(labels, *, class_order=None, max_classes=30):
     }
 
 
+
+def balanced_sample_weights(labels, *, max_classes=30):
+    """Return one weight per input observation, for weighted random sampling.
+
+    Each occurrence of a class gets n_samples / (n_classes * class_count).
+    The ordering matches the input exactly. Values are returned in memory
+    only; no labels, records or weights are written or displayed.
+    These weights can be given to PyTorch WeightedRandomSampler as a
+    one-dimensional sequence, independent of the class index encoding.
+    """
+    report, keys = _count_labels(
+        labels, title="Training labels", max_classes=max_classes, _keys=True
+    )
+    total, n_classes = report["total"], report["num_classes"]
+    lookup = {
+        key: total / (n_classes * row["count"])
+        for key, row in zip(keys, report["classes"])
+    }
+    result = []
+    for raw_value in labels:
+        value = raw_value.item() if hasattr(raw_value, "item") else raw_value
+        try:
+            result.append(lookup[(type(value), value)])
+        except KeyError as exc:
+            raise ValueError("labels changed during sample-weight calculation") from exc
+    if len(result) != total:
+        raise ValueError("labels changed during sample-weight calculation")
+    return result
+
+
+def compare_label_splits(train_labels, eval_labels, *,
+                         title="Classification label shift", max_classes=30,
+                         save=None):
+    """Compare train and evaluation label coverage and aggregate distributions.
+
+    Total variation distance and Jensen-Shannon divergence (bits, range 0-1)
+    use the union of classes, treating missing classes as zero observations.
+    This is descriptive, not a calibrated hypothesis test. Only class-level
+    summaries are returned, printed and optionally exported.
+    """
+    title = _validate_text("title", title)
+    train, train_keys = _count_labels(
+        train_labels, title="Train", max_classes=max_classes, _keys=True
+    )
+    evaluation, eval_keys = _count_labels(
+        eval_labels, title="Evaluation", max_classes=max_classes, _keys=True
+    )
+    train_rows = dict(zip(train_keys, train["classes"]))
+    eval_rows = dict(zip(eval_keys, evaluation["classes"]))
+    keys = list(train_keys) + [key for key in eval_keys if key not in train_rows]
+    if len(keys) > max_classes:
+        raise ValueError(f"combined splits have more than {max_classes} distinct classes")
+
+    shown = {}
+    for key in keys:
+        label = (train_rows.get(key) or eval_rows[key])["label"]
+        if label in shown and shown[label] != key:
+            raise ValueError("different class labels must not have identical display names")
+        shown[label] = key
+
+    classes = []
+    total_variation = 0.0
+    js_divergence = 0.0
+    for key in keys:
+        left = train_rows.get(key, {"count": 0})["count"]
+        right = eval_rows.get(key, {"count": 0})["count"]
+        p = left / train["total"]
+        q = right / evaluation["total"]
+        midpoint = (p + q) / 2
+        total_variation += abs(p - q) / 2
+        if p:
+            js_divergence += p * math.log2(p / midpoint) / 2
+        if q:
+            js_divergence += q * math.log2(q / midpoint) / 2
+        classes.append({
+            "label": (train_rows.get(key) or eval_rows[key])["label"],
+            "train_count": left, "eval_count": right,
+            "train_share": p, "eval_share": q,
+            "delta_share": q - p,
+        })
+
+    result = {
+        "title": title,
+        "train_total": train["total"], "eval_total": evaluation["total"],
+        "num_classes": len(keys),
+        "unseen_in_train": [row["label"] for row in classes if row["train_count"] == 0],
+        "missing_in_eval": [row["label"] for row in classes if row["eval_count"] == 0],
+        "total_variation_distance": min(1.0, max(0.0, total_variation)),
+        "js_divergence": min(1.0, max(0.0, js_divergence)),
+        "classes": classes,
+    }
+    markdown_rows = [
+        f"### {_cell(title)}", "",
+        "| Class | Train count | Eval count | Train share | Eval share | Change (pp) |",
+        "| --- | ---: | ---: | ---: | ---: | ---: |",
+    ]
+    markdown_rows.extend(
+        f"| {_cell(row['label'])} | {row['train_count']} | {row['eval_count']} | "
+        f"{row['train_share']:.1%} | {row['eval_share']:.1%} | "
+        f"{row['delta_share'] * 100:+.1f} |"
+        for row in classes
+    )
+    markdown_rows.extend([
+        "",
+        f"**Train samples:** {train['total']} · **Eval samples:** {evaluation['total']}",
+        f"**Total variation distance:** {result['total_variation_distance']:.4f}"
+        f" · **Jensen-Shannon divergence (bits):** {result['js_divergence']:.4f}",
+        f"**Classes unseen in training:** {len(result['unseen_in_train'])}"
+        f" · **Classes absent from evaluation:** {len(result['missing_in_eval'])}",
+    ])
+    markdown = "\n".join(markdown_rows)
+    if save is not None:
+        output = Path(save).expanduser()
+        if output.suffix.lower() not in (".md", ".json"):
+            raise ValueError("label split report must be .md or .json")
+        output.parent.mkdir(parents=True, exist_ok=True)
+        if output.suffix.lower() == ".json":
+            output.write_text(
+                json.dumps(result, indent=2, ensure_ascii=False, allow_nan=False) + "\n",
+                encoding="utf-8",
+            )
+        else:
+            output.write_text(markdown + "\n", encoding="utf-8")
+    from .narrative import _present
+    _present(markdown, None)
+    return result
+
 def plot_label_balance(labels, *, title="Label distribution",
                        max_classes=30, theme="paper", figsize=(8, 4.5),
                        dpi=150, save=None):
