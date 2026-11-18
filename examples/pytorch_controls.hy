@@ -20,6 +20,7 @@
 ; ## Forward, backward, clip, update
 ; Autocast wraps the forward pass only. Backward and clipping remain explicit.
 ; %% [code]
+(require lispyn.macros [with-autocast clip-gradients])
 (setv prediction (with-autocast "cpu" torch.bfloat16
                    (model (get batch "x"))))
 (setv loss ((torch.nn.MSELoss) prediction (get batch "target")))
@@ -33,6 +34,7 @@
 ; ## Freeze and evaluate, then restore for training
 ; Freezing controls parameter gradients, not batch-normalization/dropout modes.
 ; %% [code]
+(require lispyn.macros [freeze-module unfreeze-module parameter-count with-no-grad])
 (freeze-module model)
 (assert (= (get (parameter-count model) "trainable") 0))
 (setv output (with-no-grad (model (get batch "x"))))
@@ -44,6 +46,7 @@
 ; ## Save and restore native state dictionaries
 ; Load only checkpoint files you trust, even with weights-only loading.
 ; %% [code]
+(require lispyn.macros [save-model load-model])
 (save-model model "artifacts/controls.pt" :optimizer optimizer
   :history {"train_loss" [(float (.item loss))]})
 (setv history (load-model model "artifacts/controls.pt" :optimizer optimizer))
