@@ -377,3 +377,61 @@
   `(do
     (import lispyn.thresholds)
     (lispyn.thresholds.plot_threshold_metrics ~actual ~scores ~@options)))
+
+; Optional, native PyTorch controls for custom Hy training loops.
+
+(defmacro with-no-grad [#* body]
+  "Run a Hy body with autograd disabled, restoring the prior grad state."
+  `(do
+    (import torch)
+    (with [(torch.no_grad)]
+      ~@body)))
+
+(defmacro with-autocast [device-type dtype #* body]
+  "Autocast a forward-pass body using an explicit PyTorch device and dtype."
+  `(do
+    (import torch)
+    (with [(torch.autocast ~device-type :dtype ~dtype)]
+      ~@body)))
+
+(defmacro clip-gradients [model max-norm #* options]
+  "Clip already computed model gradients; return their original global norm."
+  `(do
+    (import lispyn.torch_utils)
+    (lispyn.torch_utils.clip_gradients ~model ~max-norm ~@options)))
+
+(defmacro freeze-module [module]
+  "Disable gradients for a PyTorch module without changing its training mode."
+  `(do
+    (import lispyn.torch_utils)
+    (lispyn.torch_utils.set-module-trainable ~module False)))
+
+(defmacro unfreeze-module [module]
+  "Re-enable gradients for a PyTorch module without changing its training mode."
+  `(do
+    (import lispyn.torch_utils)
+    (lispyn.torch_utils.set-module-trainable ~module True)))
+
+(defmacro parameter-count [module]
+  "Return total, trainable and frozen parameter element counts."
+  `(do
+    (import lispyn.torch_utils)
+    (lispyn.torch_utils.parameter-counts ~module)))
+
+(defmacro move-to-device [batch device #* options]
+  "Move tensors in nested batch collections to a PyTorch device."
+  `(do
+    (import lispyn.torch_utils)
+    (lispyn.torch_utils.move-to-device ~batch ~device ~@options)))
+
+(defmacro save-model [model path #* options]
+  "Save native PyTorch model/optimizer state dictionaries and optional history."
+  `(do
+    (import lispyn.training)
+    (lispyn.training.save-checkpoint ~model ~path ~@options)))
+
+(defmacro load-model [model path #* options]
+  "Restore trusted state dictionaries with torch.load(weights_only=True)."
+  `(do
+    (import lispyn.training)
+    (lispyn.training.load-checkpoint ~model ~path ~@options)))

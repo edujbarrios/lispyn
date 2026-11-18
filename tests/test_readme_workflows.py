@@ -10,9 +10,9 @@ def test_readme_links_to_real_example_and_complete_catalog():
     catalog = (ROOT / "supported_macros" / "README.md").read_text(encoding="utf-8")
     assert "examples/hello.hy" in readme
     assert "supported_macros/README.md" in readme
-    assert "56 macros" in readme and "56 macros" in catalog
+    assert "65 supported macros" in readme and "65 macros" in catalog
     assert '(print "Lispyn checks passed!")' in source
-    assert len(readme) < 5600
+    assert len(readme) < 7500
 
 
 def test_ai_notebook_examples_are_verbatim_source_fragments():
@@ -46,7 +46,7 @@ def test_ai_notebook_examples_are_verbatim_source_fragments():
 def test_readme_explains_three_distinct_artifacts():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "Why use Lispyn for AI notebooks?" in readme
-    assert "Realización de notebooks de IA" in readme
+    assert "Lisp-powered AI notebooks" in readme
     assert "Why use it for research?" not in readme
     assert "git clone https://github.com/edujbarrios/lispyn.git" in readme
     assert "lispyn run examples/hello.hy\n" in readme
