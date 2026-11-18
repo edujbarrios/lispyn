@@ -21,9 +21,9 @@
 ; Autocast wraps the forward pass only. Backward and clipping remain explicit.
 ; %% [code]
 (require lispyn.macros [with-autocast clip-gradients])
-(setv prediction (with-autocast "cpu" torch.bfloat16
-                   (model (get batch "x"))))
-(setv loss ((torch.nn.MSELoss) prediction (get batch "target")))
+(setv loss
+  (with-autocast "cpu" torch.bfloat16
+    ((torch.nn.MSELoss) (model (get batch "x")) (get batch "target"))))
 (.backward loss)
 (setv original-norm (clip-gradients model 1.0))
 (.step optimizer)
