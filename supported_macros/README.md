@@ -1,6 +1,6 @@
 # Supported Lispyn macros
 
-**The complete Hy/Lisp macro reference — 56 macros, with usage examples.**
+**The complete Hy/Lisp macro reference — 65 macros, with usage examples.**
 
 Lispyn's API is **Hy macros**. They compose ordinary Python, pandas, PyTorch, Matplotlib and Jupyter; they do not replace those libraries. This file is the **single source of truth for supported macros**, grouped by AI notebook task (including research and production prototyping). The implementations live in [`src/lispyn/macros.hy`](../src/lispyn/macros.hy).
 
@@ -27,6 +27,7 @@ The examples below show the public **Hy syntax**, not direct Python implementati
 | [Notebook structure & parameters](#notebook-structure--parameters) | `md`, `markdown`, `raw-cell`, `cell-tags`, `pip-install`, `experiment-params` |
 | [NumPy and pandas data profiling](#numpy-and-pandas-data-profiling) | `array-profile`, `table-profile` |
 | [PyTorch training & inference](#pytorch-training--inference) | `with-seed`, `train-for`, `train-until`, `train-accumulating`, `with-eval`, `head-tune`, `full-tune` |
+| [PyTorch controls & checkpoints](#pytorch-controls--checkpoints) | `with-no-grad`, `with-autocast`, `clip-gradients`, `freeze-module`, `unfreeze-module`, `parameter-count`, `move-to-device`, `save-model`, `load-model` |
 | [Runtime dependencies](#runtime-dependencies) | `ensure-package`, `use-package` |
 | [AI dataset class balance](#ai-dataset-class-balance) | `label-balance`, `plot-label-balance`, `class-weights` |
 | [Binary probability thresholds](#binary-probability-thresholds) | `threshold-report`, `plot-threshold-metrics` |
@@ -273,6 +274,108 @@ Arguments: `model data head` plus normal `train` options. The head name must mat
 ```
 
 Arguments: `model data` plus normal `train` options. Often follows `head-tune` in transfer learning.
+
+## PyTorch controls & checkpoints
+
+These optional PyTorch macros help when you need **your own training loop** rather than
+`train-until` / `train-accumulating`. They call native PyTorch APIs, require a
+separately installed torch build, and work in both direct Hy and compiled Jupyter.
+[Run the CPU-only example](../examples/pytorch_controls.hy) to see them together.
+
+### `with-no-grad`
+**Purpose:** Disable autograd for a Hy body and restore the previous grad-enabled state, including on exceptions. Unlike `with-eval`, this does not switch a model into evaluation mode.
+
+~~~hy
+(require lispyn.macros [with-no-grad])
+(setv scores (with-no-grad (model features)))
+~~~
+
+Accepts one or more Hy forms; returns the last expression. Use `with-eval` when you also need `model.eval()` and inference-mode semantics.
+
+### `with-autocast`
+**Purpose:** Run forward computations inside native PyTorch autocast with an **explicit** device type and floating-point dtype.
+
+~~~hy
+(require lispyn.macros [with-autocast])
+(setv logits (with-autocast "cpu" torch.bfloat16 (model features)))
+~~~
+
+Arguments: `device-type dtype` and a Hy body. Return value is the body's final expression. For CUDA, use `"cuda"` and a supported dtype on a compatible device. Keep backward outside the autocast block; when training with CUDA float16, follow PyTorch's `torch.amp.GradScaler` guidance to avoid underflow. Autocast is not the same as `no_grad`.
+
+### `clip-gradients`
+**Purpose:** Clip an existing model's global gradient norm **in place**, rejecting NaN or infinite norms.
+
+~~~hy
+(require lispyn.macros [clip-gradients])
+(.backward loss)
+(setv before-clip (clip-gradients model 1.0 :norm-type 2.0))
+(.step optimizer)
+~~~
+
+Arguments: `model max-norm`, optional `:norm-type` (positive float or infinity). Returns the **pre-clipping global norm** as a float. Fails if there are no gradients or the limit is invalid. When using `GradScaler`, unscale the optimizer's gradients first. This is a manual-loop helper; `train-accumulating` also accepts `:gradient-clip`.
+
+### `freeze-module`
+**Purpose:** Turn off `requires_grad` for every parameter of a torch module, returning the same module.
+
+~~~hy
+(require lispyn.macros [freeze-module])
+(freeze-module model.encoder)
+~~~
+
+Does **not** change train/eval state. BatchNorm running statistics can still update in training mode; call `.eval()` separately if needed. Recreate/configure optimizers after changing trainable parameters.
+
+### `unfreeze-module`
+**Purpose:** Turn `requires_grad` back on for every parameter of a module, returning that module.
+
+~~~hy
+(require lispyn.macros [unfreeze-module])
+(unfreeze-module model.encoder)
+~~~
+
+This does not change the module's train/eval state; create an optimizer that includes the desired parameters.
+
+### `parameter-count`
+**Purpose:** Inspect native parameter element counts, including frozen and trainable subsets.
+
+~~~hy
+(require lispyn.macros [parameter-count])
+(setv counts (parameter-count model))
+(print (get counts "trainable"))
+~~~
+
+Returns `{"total": int, "trainable": int, "frozen": int}`, counting shared parameters once through `model.parameters()`. Does not calculate activation memory or FLOPs.
+
+### `move-to-device`
+**Purpose:** Move PyTorch tensors inside nested dictionaries, lists, tuples or namedtuples to the specified torch device, leaving non-tensor values untouched.
+
+~~~hy
+(require lispyn.macros [move-to-device])
+(setv batch (move-to-device {"x" features "labels" targets} "cpu"))
+~~~
+
+Arguments: `batch device`, optional `:non-blocking True` (default `False`). Returns a new collection structure, preserving ordinary list/tuple/namedtuple shapes; mappings become dictionaries. A CPU-only install cannot move to CUDA. Nonblocking transfer requires appropriate hardware and memory conditions.
+
+### `save-model`
+**Purpose:** Save native PyTorch state dictionaries for a model and optionally optimizer and metric history, not the model's Python class.
+
+~~~hy
+(require lispyn.macros [save-model])
+(save-model model "runs/baseline.pt" :optimizer optimizer
+  :history {"train_loss" [0.5 0.3]})
+~~~
+
+Returns the destination `Path` and creates missing parent directories. Keyword options: `:optimizer`, `:history`. For higher-level training use `:save-best` and `:save-last` options instead.
+
+### `load-model`
+**Purpose:** Restore a **trusted** state-dict checkpoint with `weights_only=True` and optionally load optimizer state.
+
+~~~hy
+(require lispyn.macros [load-model])
+(setv history (load-model model "runs/baseline.pt" :optimizer optimizer
+  :map-location "cpu"))
+~~~
+
+Returns recorded history, or `None`; restores the provided model **in place**. Options: `:optimizer`, `:map-location` (defaults to CPU). Only load files you trust; `weights_only=True` reduces but does not eliminate untrusted-file risks. Ensure model architecture and optimizer are compatible.
 
 ## Runtime dependencies
 

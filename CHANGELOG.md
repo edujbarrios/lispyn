@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.37.0a1 — 2026-11-18 — Native PyTorch controls and clearer project positioning
+
+- Add nine composable Hy macros for native PyTorch: gradient contexts, autocast, finite gradient clipping, freezing/unfreezing modules, parameter counts, nested batch device transfers and state-dict checkpoints.
+- Keep torch optional and explicitly controlled by the user; add an offline CPU example, compilation tests, and conditional CPU runtime tests.
+- Rewrite the landing README entirely in English to explain why Lispyn exists, who benefits, its three output modes, native Python compatibility, limitations and compile-time trust boundary.
+- Expand the macro catalog to 65 documented entries, update CI and release metadata, and preserve the existing training and reporting interfaces.
+
+
 ## 0.36.0a1 — 2026-11-17 — Binary validation threshold diagnostics
 
 - Add `threshold-report`: evaluate positive-class probabilities on an explicitly supplied binary validation set, report per-threshold TP/FP/FN/TN, precision, recall, specificity, F1, balanced accuracy and accuracy.

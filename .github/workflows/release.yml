@@ -144,3 +144,15 @@ jobs:
           )"
           git tag -a "v$version" -m "Lispyn $version"
           git push origin "v$version"
+      - name: Publish a GitHub prerelease after PyPI succeeds
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          version="$(python - <<'PY'
+          import pathlib, tomllib
+          print(tomllib.loads(pathlib.Path("pyproject.toml").read_text())["project"]["version"])
+          PY
+          )"
+          gh release create "v$version" --verify-tag --prerelease \
+            --title "Lispyn v$version" --generate-notes
