@@ -25,7 +25,7 @@
     (setv ~model-symbol ~model)
     (setv ~states-symbol
       (list (map (fn [~child-symbol]
-                   (tuple [~child-symbol ~child-symbol.training]))
+                   (tuple [~child-symbol (getattr ~child-symbol "training")]))
                  (.modules ~model-symbol))))
     (try
       (.eval ~model-symbol)
@@ -33,7 +33,7 @@
         ~@body)
       (finally
         (for [[~child-symbol ~flag-symbol] ~states-symbol]
-          (setv ~child-symbol.training ~flag-symbol))))))
+          (setattr ~child-symbol "training" ~flag-symbol))))))
 
 (defmacro curve [history #* options]
   "Generate a styled Matplotlib training curve from recorded metrics."
@@ -478,7 +478,7 @@
     (setv ~model-symbol ~module)
     (setv ~states-symbol
       (list (map (fn [~param-symbol]
-                   (tuple [~param-symbol ~param-symbol.requires_grad]))
+                   (tuple [~param-symbol (getattr ~param-symbol "requires_grad")]))
                  (.parameters ~model-symbol))))
     (try
       (for [[~param-symbol ~flag-symbol] ~states-symbol]
@@ -523,7 +523,7 @@
     (setv ~model-symbol ~model)
     (setv ~states-symbol
       (list (map (fn [~child-symbol]
-                   (tuple [~child-symbol ~child-symbol.training]))
+                   (tuple [~child-symbol (getattr ~child-symbol "training")]))
                  (.modules ~model-symbol))))
     (try
       (.train ~model-symbol)
@@ -531,7 +531,7 @@
         ~@body)
       (finally
         (for [[~child-symbol ~flag-symbol] ~states-symbol]
-          (setv ~child-symbol.training ~flag-symbol))))))
+          (setattr ~child-symbol "training" ~flag-symbol))))))
 
 (defmacro with-grad [#* body]
   "Re-enable autograd only inside BODY and restore the outer grad state."
