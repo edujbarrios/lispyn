@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.39.0a1 — 2026-11-20 — Macro-first experiment authoring
+
+- Reposition Lispyn as a Hy **macro development and composition toolkit** for
+  inspectable native Python/PyTorch AI experiments, not an alternative Python
+  training framework. Rewrite the English landing README, add a dedicated
+  `MACRO_AUTHORING.md` guide and a custom-macro runnable example.
+- Add six genuinely source-transforming macros with hygienic generated names:
+  `with-training`, `with-grad`, `with-rng-fork`, `optimizer-step`,
+  `deftrain-step`, and `collect-epochs`.
+- Refactor `with-eval`, `with-parameter-freeze` and `with-determinism` to
+  compile into native Python control flow without those Lispyn runtime helper
+  functions. Save and restore per-child train/eval flags, per-parameter
+  requires_grad flags and deterministic algorithm policies, including errors.
+- Keep the native PyTorch and Python numerical helper API intact for backward
+  compatibility. The six new macros require no new runtime helper module.
+- Document all **78 supported macros**, register a CPU-only macro-first
+  experiment in the notebook gallery, and test compile-time expansions,
+  single-evaluation guarantees, hygiene and exceptional state restoration.
+
+
 ## 0.38.0a1 — 2026-11-20 — PyTorch diagnostics and safe batched inference
 
 - Add seven opt-in Hy macros: `gradient-report`, `assert-gradients`, `model-footprint`, `predict-batches`, `with-parameter-freeze`, `with-determinism`, and `with-anomaly-detection`.

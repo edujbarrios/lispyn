@@ -28,7 +28,7 @@ def test_every_hy_macro_is_documented_once():
         f"Macros missing from catalog: {sorted(set(defined) - set(entries))}; "
         f"undocumented catalog entries: {sorted(set(entries) - set(defined))}"
     )
-    assert len(defined) >= 72, "The supported API must not silently shrink"
+    assert len(defined) >= 78, "The supported API must not silently shrink"
     for name in defined:
         section = re.search(
             rf"(?ms)^### `{re.escape(name)}`\s*\n(.+?)(?=^### |^## |\Z)",
@@ -50,6 +50,7 @@ def test_root_readme_is_ai_notebook_first_and_links_to_macro_registry():
     assert "Lisp-powered AI notebooks" in readme
     assert "Why use it for research?" not in readme
     assert len(readme) < 7500
+    assert "MACRO_AUTHORING.md" in readme
     assert all(name in readme for name in ("PyTorch", "Matplotlib", "pandas", "NumPy"))
     project = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     assert "blob/main/supported_macros/README.md" in project

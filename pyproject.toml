@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lispyn"
-version = "0.38.0a1"
-description = "Create and execute AI notebooks in Hy with Python, PyTorch and Jupyter."
+version = "0.39.0a1"
+description = "Build reusable Hy macros for native Python AI experiments and Jupyter notebooks."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"

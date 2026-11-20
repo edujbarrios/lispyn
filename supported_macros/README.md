@@ -1,6 +1,6 @@
 # Supported Lispyn macros
 
-**The complete Hy/Lisp macro reference — 72 macros, with usage examples.**
+**The complete Hy/Lisp macro reference — 78 macros, with usage examples.**
 
 Lispyn's API is **Hy macros**. They compose ordinary Python, pandas, PyTorch, Matplotlib and Jupyter; they do not replace those libraries. This file is the **single source of truth for supported macros**, grouped by AI notebook task (including research and production prototyping). The implementations live in [`src/lispyn/macros.hy`](../src/lispyn/macros.hy).
 
@@ -28,6 +28,7 @@ The examples below show the public **Hy syntax**, not direct Python implementati
 | [NumPy and pandas data profiling](#numpy-and-pandas-data-profiling) | `array-profile`, `table-profile` |
 | [PyTorch training & inference](#pytorch-training--inference) | `with-seed`, `train-for`, `train-until`, `train-accumulating`, `with-eval`, `head-tune`, `full-tune` |
 | [PyTorch controls & checkpoints](#pytorch-controls--checkpoints) | `with-no-grad`, `with-autocast`, `clip-gradients`, `freeze-module`, `unfreeze-module`, `parameter-count`, `move-to-device`, `save-model`, `load-model` |
+| [Macro-first PyTorch composition](#macro-first-pytorch-composition) | `with-training`, `with-grad`, `with-rng-fork`, `optimizer-step`, `deftrain-step`, `collect-epochs` |
 | [PyTorch diagnostics & inference](#pytorch-diagnostics--inference) | `gradient-report`, `assert-gradients`, `model-footprint`, `predict-batches`, `with-parameter-freeze`, `with-determinism`, `with-anomaly-detection` |
 | [Runtime dependencies](#runtime-dependencies) | `ensure-package`, `use-package` |
 | [AI dataset class balance](#ai-dataset-class-balance) | `label-balance`, `plot-label-balance`, `class-weights` |
@@ -243,14 +244,14 @@ Arguments: `model data patience` and optional `train` workflow kwargs (`:device`
 Arguments: `model data steps`. Forwards other options to `lispyn.workflow.train`, including `:scheduler`, `:validation`, `:lr`, `:batch-size`. Useful for memory-constrained experiments.
 
 ### `with-eval`
-**Purpose:** Temporarily use PyTorch evaluation and inference mode; restore the model's previous training state even on error.
+**Purpose:** Temporarily use PyTorch evaluation and inference mode; restore **all child-module train/eval flags** even on error.
 
 ```hy
 (require lispyn.macros [with-eval])
 (setv logits (with-eval model (model features)))
 ```
 
-Arguments: `model` plus Hy body. Wraps `torch.inference_mode()`, calls `model.eval()` and restores training mode.
+Arguments: `model` plus Hy body. Expands to `torch.inference_mode()` and `model.eval()` with hygienic temporaries and `try/finally`. Each child module recovers its own prior training mode, including deliberately frozen/evaluated layers.
 
 ### `head-tune`
 **Purpose:** Freeze all but a named model head (e.g. ResNet `fc`) and train that head.
@@ -378,6 +379,110 @@ Returns the destination `Path` and creates missing parent directories. Keyword o
 
 Returns recorded history, or `None`; restores the provided model **in place**. Options: `:optimizer`, `:map-location` (defaults to CPU). Only load files you trust; `weights_only=True` reduces but does not eliminate untrusted-file risks. Ensure model architecture and optimizer are compatible.
 
+## Macro-first PyTorch composition
+
+The six forms in this section are **real Hy macros**: they generate
+ordinary Python `def`, `for`, `try/finally` and native PyTorch calls at
+compile time. They require PyTorch at **runtime**, but introduce no new
+Lispyn Python backend. See [how to write your own macros](../MACRO_AUTHORING.md)
+and the [CPU-only, executable example](../examples/macro_first_training.hy).
+
+### `with-training`
+**Purpose:** Enable `model.train()` and autograd temporarily for BODY,
+restoring each child module's original training flag even after exceptions.
+
+```hy
+(require lispyn.macros [with-training])
+(with-training model
+  (setv train-loss ((torch.nn.MSELoss) (model features) labels)))
+```
+
+Evaluates the model expression once. Does not implicitly call
+`backward()`, mutate optimizer configuration or restore changed weights.
+If a module intentionally has mixed train/eval child states, all flags
+are preserved. Entering this scope overrides an enclosing `no_grad()`
+only until BODY finishes.
+
+### `with-grad`
+**Purpose:** Temporarily enable native PyTorch autograd inside a
+`torch.no_grad()`-style scope, restoring the previous grad state.
+
+```hy
+(require lispyn.macros [with-grad])
+(with-grad
+  (setv tracked (model features)))
+```
+
+Equivalent to a scoped native `torch.enable_grad()`; it does **not**
+override PyTorch's stronger `inference_mode()` semantics or make
+inference tensors automatically differentiable.
+
+### `with-rng-fork`
+**Purpose:** Temporarily fork and restore the **CPU** PyTorch random number
+generator without leaking seeded draws into subsequent experiments.
+
+```hy
+(require lispyn.macros [with-rng-fork])
+(setv sampled (with-rng-fork
+  (torch.manual_seed 42)
+  (torch.randn [3])))
+```
+
+Expands to `torch.random.fork_rng(devices=[])`. It does **not** isolate
+Python's `random`, NumPy's generators or CUDA device RNG states; for
+a broader initial seed use `with-seed` and platform-appropriate workers.
+
+### `optimizer-step`
+**Purpose:** Expand one explicit native PyTorch optimizer update: zero
+gradients, compute scalar loss, backward, then optimizer step.
+
+```hy
+(require lispyn.macros [optimizer-step])
+(setv detached-loss (optimizer-step optimizer
+  (criterion (model features) labels)))
+```
+
+The optimizer expression and loss expression are each evaluated **once**.
+Returns the detached loss tensor, so convert with `.item()` when you
+need a Python scalar. Expects a scalar differentiable loss. Does not
+add gradient clipping, AMP, gradient accumulation or loss scaling;
+configure those separately for your experiment.
+
+### `deftrain-step`
+**Purpose:** Generate an ordinary Python function for supervised
+PyTorch training rather than routing through a Lispyn training engine.
+
+```hy
+(require lispyn.macros [deftrain-step])
+(deftrain-step train-one model optimizer criterion)
+(setv loss-as-float (train-one features labels))
+```
+
+The generated `train-one(inputs, labels)` function evaluates the supplied
+model, optimizer and loss callable once per call, clears gradients, runs
+forward/loss/backward/step, and returns a Python float. The model remains
+in its preexisting train/eval mode; use `with-training` when needed.
+This intentionally covers only the simple `criterion(model(inputs), labels)`
+pattern. For custom batch mappings, accumulation or mixed precision,
+use native PyTorch or the separately documented advanced Lispyn macros.
+
+### `collect-epochs`
+**Purpose:** Expand a Python loop that collects BODY's final result into a
+fresh list for each iteration; useful for experiment history tracking.
+
+```hy
+(require lispyn.macros [collect-epochs])
+(setv losses (collect-epochs epoch 5
+  (print "Epoch" epoch)
+  (train-one features labels)))
+```
+
+The user-provided `epoch` variable starts at zero and is bound once per
+iteration; `count` is used as `range(count)`. The generated result list
+uses a hygienic `hy.gensym` temporary that cannot overwrite the caller's
+variables. Negative counts produce an empty list as in Python's `range`;
+the macro does not validate training schedules or stop on its own.
+
 ## PyTorch diagnostics & inference
 
 All seven macros in this section are optional PyTorch helpers. They complement,
@@ -456,8 +561,9 @@ helper does not collect labels, calculate metrics, persist data or make
 model quality claims. For huge datasets, use a streaming native PyTorch loop.
 
 ### `with-parameter-freeze`
-**Purpose:** Temporarily disable gradient flags for every parameter in a
-module and restore each flag individually, including after an exception.
+**Purpose:** Expand a `try/finally` scope that temporarily disables gradient
+flags for every parameter in a module and restores each flag individually,
+including after an exception, without delegating to a Python context helper.
 
 ~~~hy
 (require lispyn.macros [with-parameter-freeze])
@@ -470,8 +576,8 @@ running statistics and dropout behavior can still change. Use `freeze-module`
 instead for a persistent change, and configure optimizers explicitly.
 
 ### `with-determinism`
-**Purpose:** Temporarily enable strict deterministic PyTorch algorithm
-selection and restore the previous policy when the Hy body exits.
+**Purpose:** Generate native PyTorch deterministic-algorithm scope code with
+`try/finally` restoring the previous policy when the Hy body exits.
 
 ~~~hy
 (require lispyn.macros [with-determinism])

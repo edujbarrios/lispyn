@@ -15,19 +15,25 @@
      (fit ~model ~loader ~optimizer :loss-fn ~criterion :epochs ~epochs)))
 
 (defmacro with-eval [model #* body]
-  "Temporarily enable evaluation/inference mode and restore training state."
+  "Evaluate with inference_mode and restore each child's train/eval flag."
   (setv model-symbol (hy.gensym "lispyn_model"))
-  (setv previous-mode (hy.gensym "lispyn_training"))
+  (setv states-symbol (hy.gensym "lispyn_states"))
+  (setv child-symbol (hy.gensym "lispyn_child"))
+  (setv flag-symbol (hy.gensym "lispyn_flag"))
   `(do
     (import torch)
     (setv ~model-symbol ~model)
-    (setv ~previous-mode (getattr ~model-symbol "training"))
-    (.eval ~model-symbol)
+    (setv ~states-symbol
+      (list (map (fn [~child-symbol]
+                   (tuple [~child-symbol (getattr ~child-symbol "training")]))
+                 (.modules ~model-symbol))))
     (try
+      (.eval ~model-symbol)
       (with [(torch.inference_mode)]
         ~@body)
       (finally
-        (.train ~model-symbol ~previous-mode)))))
+        (for [[~child-symbol ~flag-symbol] ~states-symbol]
+          (setattr ~child-symbol "training" ~flag-symbol))))))
 
 (defmacro curve [history #* options]
   "Generate a styled Matplotlib training curve from recorded metrics."
@@ -463,18 +469,39 @@
     (lispyn.torch_diagnostics.predict-batches ~model ~batches ~@options)))
 
 (defmacro with-parameter-freeze [module #* body]
-  "Temporarily freeze a module and restore individual parameter flags."
+  "Expand a scoped parameter freeze with hygienic names and try/finally."
+  (setv model-symbol (hy.gensym "lispyn_module"))
+  (setv states-symbol (hy.gensym "lispyn_flags"))
+  (setv param-symbol (hy.gensym "lispyn_param"))
+  (setv flag-symbol (hy.gensym "lispyn_flag"))
   `(do
-    (import lispyn.torch_diagnostics)
-    (with [(lispyn.torch_diagnostics.temporarily-freeze ~module)]
-      ~@body)))
+    (setv ~model-symbol ~module)
+    (setv ~states-symbol
+      (list (map (fn [~param-symbol]
+                   (tuple [~param-symbol (getattr ~param-symbol "requires_grad")]))
+                 (.parameters ~model-symbol))))
+    (try
+      (for [[~param-symbol ~flag-symbol] ~states-symbol]
+        (.requires_grad_ ~param-symbol False))
+      ~@body
+      (finally
+        (for [[~param-symbol ~flag-symbol] ~states-symbol]
+          (.requires_grad_ ~param-symbol ~flag-symbol))))))
 
 (defmacro with-determinism [#* body]
-  "Enable deterministic PyTorch algorithms within BODY and restore policy."
+  "Expand a deterministic PyTorch scope; restore both policy flags."
+  (setv enabled-symbol (hy.gensym "lispyn_deterministic"))
+  (setv warn-symbol (hy.gensym "lispyn_warn_only"))
   `(do
-    (import lispyn.torch_diagnostics)
-    (with [(lispyn.torch_diagnostics.deterministic-algorithms)]
-      ~@body)))
+    (import torch)
+    (setv ~enabled-symbol (torch.are_deterministic_algorithms_enabled))
+    (setv ~warn-symbol (torch.is_deterministic_algorithms_warn_only_enabled))
+    (try
+      (torch.use_deterministic_algorithms True)
+      ~@body
+      (finally
+        (torch.use_deterministic_algorithms
+          ~enabled-symbol :warn-only ~warn-symbol)))))
 
 (defmacro with-anomaly-detection [#* body]
   "Trace the backward operation producing NaNs; slower debugging only."
@@ -482,3 +509,80 @@
     (import torch)
     (with [(torch.autograd.detect_anomaly)]
       ~@body)))
+
+; Macro-first experiment composition: native PyTorch code, no runtime backend.
+
+(defmacro with-training [model #* body]
+  "Temporarily enter train mode with autograd; restore every module mode."
+  (setv model-symbol (hy.gensym "lispyn_model"))
+  (setv states-symbol (hy.gensym "lispyn_states"))
+  (setv child-symbol (hy.gensym "lispyn_child"))
+  (setv flag-symbol (hy.gensym "lispyn_flag"))
+  `(do
+    (import torch)
+    (setv ~model-symbol ~model)
+    (setv ~states-symbol
+      (list (map (fn [~child-symbol]
+                   (tuple [~child-symbol (getattr ~child-symbol "training")]))
+                 (.modules ~model-symbol))))
+    (try
+      (.train ~model-symbol)
+      (with [(torch.enable_grad)]
+        ~@body)
+      (finally
+        (for [[~child-symbol ~flag-symbol] ~states-symbol]
+          (setattr ~child-symbol "training" ~flag-symbol))))))
+
+(defmacro with-grad [#* body]
+  "Re-enable autograd only inside BODY and restore the outer grad state."
+  `(do
+    (import torch)
+    (with [(torch.enable_grad)]
+      ~@body)))
+
+(defmacro with-rng-fork [#* body]
+  "Fork the CPU PyTorch RNG state within BODY, restoring it afterwards."
+  `(do
+    (import torch)
+    (with [(torch.random.fork_rng :devices [])]
+      ~@body)))
+
+(defmacro optimizer-step [optimizer loss]
+  "Zero gradients, backward once, step once; return a detached scalar loss."
+  (setv optimizer-symbol (hy.gensym "lispyn_optimizer"))
+  (setv loss-symbol (hy.gensym "lispyn_loss"))
+  `(do
+    (setv ~optimizer-symbol ~optimizer)
+    (.zero_grad ~optimizer-symbol)
+    (setv ~loss-symbol ~loss)
+    (.backward ~loss-symbol)
+    (.step ~optimizer-symbol)
+    (.detach ~loss-symbol)))
+
+(defmacro deftrain-step [name model optimizer criterion]
+  "Generate a native Python training-step function taking inputs and labels."
+  (setv inputs-symbol (hy.gensym "lispyn_inputs"))
+  (setv labels-symbol (hy.gensym "lispyn_labels"))
+  (setv model-symbol (hy.gensym "lispyn_model"))
+  (setv optimizer-symbol (hy.gensym "lispyn_optimizer"))
+  (setv criterion-symbol (hy.gensym "lispyn_criterion"))
+  (setv loss-symbol (hy.gensym "lispyn_loss"))
+  `(defn ~name [~inputs-symbol ~labels-symbol]
+    (setv ~model-symbol ~model)
+    (setv ~optimizer-symbol ~optimizer)
+    (setv ~criterion-symbol ~criterion)
+    (.zero_grad ~optimizer-symbol)
+    (setv ~loss-symbol
+      (~criterion-symbol (~model-symbol ~inputs-symbol) ~labels-symbol))
+    (.backward ~loss-symbol)
+    (.step ~optimizer-symbol)
+    (float (.item (.detach ~loss-symbol)))))
+
+(defmacro collect-epochs [epoch count #* body]
+  "Run BODY for range(COUNT), collecting its last expression for each epoch."
+  (setv results-symbol (hy.gensym "lispyn_results"))
+  `(do
+    (setv ~results-symbol [])
+    (for [~epoch (range ~count)]
+      (.append ~results-symbol (do ~@body)))
+    ~results-symbol))
