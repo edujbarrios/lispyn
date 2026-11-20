@@ -104,7 +104,7 @@ lispyn build examples/hello.hy -o hello.ipynb
 lispyn execute examples/hello.hy -o hello-executed.ipynb
 ```
 
-The hello example prints `2 + 3 + 5 = 10` and `Lispyn checks passed!`. For offline CPU training, run `lispyn execute examples/macro_first_training.hy` after installing torch. To inspect macro expansion directly, use `hy2py examples/macro_first_training.hy`.
+The hello example prints `2 + 3 + 5 = 10` and `Lispyn checks passed!`. For the full real experiment, try `lispyn execute examples/quickstart.hy` after installing torch. For macro-first CPU training, run `lispyn execute examples/macro_first_training.hy`. To inspect macro expansion directly, use `hy2py examples/macro_first_training.hy`.
 
 ## Design principles and limits
 
