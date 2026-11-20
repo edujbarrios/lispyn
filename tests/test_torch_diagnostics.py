@@ -156,6 +156,15 @@ def test_batched_prediction_cpu_modes_inputs_and_errors():
         predict_batches(model, [x], max_batches=True)
     assert not model.training
 
+    # Inference must also preserve intentionally mixed child-module modes.
+    mixed = torch.nn.Sequential(torch.nn.Dropout(), torch.nn.Linear(2, 2))
+    mixed.train()
+    mixed[0].eval()
+    predict_batches(mixed, [x[:2]])
+    assert mixed.training
+    assert not mixed[0].training
+    assert mixed[1].training
+
 
 def test_example_executes_in_direct_hy_on_cpu(tmp_path):
     pytest.importorskip("torch")
