@@ -33,21 +33,21 @@
                        with-parameter-freeze with-determinism])
 (.eval (get model 0))
 (assert model.training)
-(assert (not (get model 0).training))
+(assert (not (getattr (get model 0) "training")))
 (with-training model
   (assert model.training)
-  (assert (get model 0).training)
+  (assert (getattr (get model 0) "training"))
   (assert (torch.is-grad-enabled)))
 (assert model.training)
-(assert (not (get model 0).training))
+(assert (not (getattr (get model 0) "training")))
 (with-eval model
   (assert (not model.training))
   (assert (not (torch.is-grad-enabled))))
 (assert model.training)
-(assert (not (get model 0).training))
+(assert (not (getattr (get model 0) "training")))
 (with-parameter-freeze model
-  (assert (not (next (iter (.parameters model))).requires_grad)))
-(assert (next (iter (.parameters model))).requires_grad)
+  (assert (not (getattr (next (iter (.parameters model))) "requires_grad"))))
+(assert (getattr (next (iter (.parameters model))) "requires_grad"))
 (with [(torch.no_grad)]
   (assert (not (torch.is-grad-enabled)))
   (with-grad
