@@ -435,3 +435,50 @@
   `(do
     (import lispyn.training)
     (lispyn.training.load-checkpoint ~model ~path ~@options)))
+
+; Additional opt-in PyTorch diagnostics and safe, scoped execution.
+
+(defmacro gradient-report [model]
+  "Summarize dense gradients without changing or exporting them."
+  `(do
+    (import lispyn.torch_diagnostics)
+    (lispyn.torch_diagnostics.gradient-report ~model)))
+
+(defmacro assert-gradients [model #* options]
+  "Reject nonfinite gradients or unexpected absence of backward gradients."
+  `(do
+    (import lispyn.torch_diagnostics)
+    (lispyn.torch_diagnostics.assert-gradients ~model ~@options)))
+
+(defmacro model-footprint [model]
+  "Estimate nominal parameter/buffer storage, excluding activation memory."
+  `(do
+    (import lispyn.torch_diagnostics)
+    (lispyn.torch_diagnostics.model-footprint ~model)))
+
+(defmacro predict-batches [model batches #* options]
+  "Collect CPU logits from a loader in inference mode, restoring train/eval."
+  `(do
+    (import lispyn.torch_diagnostics)
+    (lispyn.torch_diagnostics.predict-batches ~model ~batches ~@options)))
+
+(defmacro with-parameter-freeze [module #* body]
+  "Temporarily freeze a module and restore individual parameter flags."
+  `(do
+    (import lispyn.torch_diagnostics)
+    (with [(lispyn.torch_diagnostics.temporarily-freeze ~module)]
+      ~@body)))
+
+(defmacro with-determinism [#* body]
+  "Enable deterministic PyTorch algorithms within BODY and restore policy."
+  `(do
+    (import lispyn.torch_diagnostics)
+    (with [(lispyn.torch_diagnostics.deterministic-algorithms)]
+      ~@body)))
+
+(defmacro with-anomaly-detection [#* body]
+  "Trace the backward operation producing NaNs; slower debugging only."
+  `(do
+    (import torch)
+    (with [(torch.autograd.detect_anomaly)]
+      ~@body)))

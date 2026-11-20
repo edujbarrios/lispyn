@@ -27,6 +27,7 @@ EXAMPLE_SOURCES = (
     "binary_thresholds.hy",
     "early_stopping.hy",
     "advanced_training.hy",
+    "torch_diagnostics.hy",
     "cross_validation.hy",
     "repeated_cross_validation.hy",
     "temporal_cross_validation.hy",
