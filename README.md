@@ -8,7 +8,7 @@ Lispyn is a small **experiment authoring and notebook workflow layer**, not a re
 
 ## Why use Lispyn for AI notebooks?
 
-**One source, three useful artifacts.** Develop a \`.hy\` experiment once. Execute it as a script (\`run\`), compile a reviewable but unexecuted notebook (\`build\`), or produce a notebook with saved outputs (\`execute\`). Unlike a notebook-only workflow, you can version-control readable source while sharing standard \`.ipynb\` files.
+**One source, three useful artifacts.** Develop a `.hy` experiment once. Execute it as a script (`run`), compile a reviewable but unexecuted notebook (`build`), or produce a notebook with saved outputs (`execute`). Unlike a notebook-only workflow, you can version-control readable source while sharing standard `.ipynb` files.
 
 **Less repeated experiment wiring, without a new tensor API.** The [real PyTorch quickstart](examples/quickstart.hy) splits a dataset into train, validation and held-out test subsets:
 
@@ -40,7 +40,7 @@ Check class imbalance using the [runnable example](examples/label_balance.hy):
 (setv report (label-balance labels :title "Training label distribution"))
 ~~~
 
-For classification, \`class-weights\` derives inverse-frequency loss weights, and \`threshold-report\` compares binary probability cutoffs **on validation data**, not the held-out test set.
+For classification, `class-weights` derives inverse-frequency loss weights, and `threshold-report` compares binary probability cutoffs **on validation data**, not the held-out test set.
 
 **Readable, evidence-linked notebooks.** Generate metric tables, plots, comparisons and Markdown from recorded runs rather than manually pasting numbers. The [quickstart](examples/quickstart.hy) reports PyTorch results directly:
 
@@ -52,7 +52,18 @@ For classification, \`class-weights\` derives inverse-frequency loss weights, an
 
 See its [executed notebook](example_generated_notebooks/quickstart_executed.ipynb), or use parameterized experiments, sweeps, notebook auditing and export to Markdown.
 
-**Native PyTorch controls when you write your own loop.** The [CPU-only example](examples/pytorch_controls.hy) demonstrates \`with-no-grad\`, \`with-autocast\`, \`clip-gradients\`, \`freeze-module\`, \`unfreeze-module\`, \`parameter-count\`, \`move-to-device\`, \`save-model\` and \`load-model\`. These are focused helpers, not a hidden training engine.
+**Native PyTorch controls when you write your own loop.** The [CPU-only example](examples/pytorch_controls.hy) demonstrates `with-no-grad`, `with-autocast`, `clip-gradients`, `freeze-module`, `unfreeze-module`, `parameter-count`, `move-to-device`, `save-model` and `load-model`. These are focused helpers, not a hidden training engine.
+
+**Model diagnostics and batched inference.** The [diagnostics example](examples/torch_diagnostics.hy) checks for missing, NaN or infinite gradients before optimizer updates; estimates parameter and buffer storage; temporarily freezes parameters and enables deterministic algorithms; and performs loader-based inference while restoring the model's train/eval state.
+
+~~~hy
+(require lispyn.macros [gradient-report assert-gradients])
+(setv gradients (gradient-report model))
+(assert (get gradients "all_finite"))
+(assert-gradients model)
+~~~
+
+Use `model-footprint` for an **estimate of parameter and buffer storage**, not GPU peak memory. Use `predict-batches` to collect predictions from a bounded number of batches; it keeps predictions in memory, so avoid unbounded runs on large datasets. See [all seven new diagnostics macros](supported_macros/README.md#pytorch-diagnostics--inference).
 
 ## Install
 
@@ -60,7 +71,7 @@ See its [executed notebook](example_generated_notebooks/quickstart_executed.ipyn
 pip install lispyn
 ~~~
 
-The base package includes Hy, notebook compilation/execution and Matplotlib. NumPy is available through Matplotlib; add pandas with \`pip install "lispyn[data]"\`. **PyTorch is installed separately**: select the appropriate CPU/GPU build from [PyTorch's installer](https://pytorch.org/get-started/locally/). A cloned repository provides a broader optional development setup:
+The base package includes Hy, notebook compilation/execution and Matplotlib. NumPy is available through Matplotlib; add pandas with `pip install "lispyn[data]"`. **PyTorch is installed separately**: select the appropriate CPU/GPU build from [PyTorch's installer](https://pytorch.org/get-started/locally/). A cloned repository provides a broader optional development setup:
 
 ~~~bash
 pip install -r requirements.txt
@@ -83,19 +94,19 @@ cd lispyn
 lispyn run examples/hello.hy
 ~~~
 
-**2. Build an ordinary Jupyter notebook.** Nothing is executed; \`hello.ipynb\` contains compiled Python and Markdown cells.
+**2. Build an ordinary Jupyter notebook.** Nothing is executed; `hello.ipynb` contains compiled Python and Markdown cells.
 
 ~~~bash
 lispyn build examples/hello.hy -o hello.ipynb
 ~~~
 
-**3. Build and execute a notebook.** Jupyter runs the cells; \`hello-executed.ipynb\` saves the executed cells and their outputs.
+**3. Build and execute a notebook.** Jupyter runs the cells; `hello-executed.ipynb` saves the executed cells and their outputs.
 
 ~~~bash
 lispyn execute examples/hello.hy -o hello-executed.ipynb
 ~~~
 
-The hello example prints \`2 + 3 + 5 = 10\` and \`Lispyn checks passed!\`. For real but tiny offline PyTorch training, try \`lispyn execute examples/quickstart.hy\` after installing torch.
+The hello example prints `2 + 3 + 5 = 10` and `Lispyn checks passed!`. For real but tiny offline PyTorch training, try `lispyn execute examples/quickstart.hy` after installing torch.
 
 ## When should you use it?
 
@@ -105,6 +116,6 @@ Choose Lispyn when you like Lisp/Hy macros, want **plain Python notebook outputs
 
 ## Documentation
 
-[**Complete reference: 65 supported macros**](supported_macros/README.md) — arguments, dependencies and runnable Hy examples for PyTorch, NumPy, pandas, Matplotlib, Jupyter authoring and experiment analysis. Also see [generated notebook examples](example_generated_notebooks/README.md), [changelog](CHANGELOG.md) and [citation](CITATION.cff).
+[**Complete reference: 72 supported macros**](supported_macros/README.md) — arguments, dependencies and runnable Hy examples for PyTorch, NumPy, pandas, Matplotlib, Jupyter authoring and experiment analysis. Also see [generated notebook examples](example_generated_notebooks/README.md), [changelog](CHANGELOG.md) and [citation](CITATION.cff).
 
 *Created by Eduardo J. Barrios · Apache-2.0 licensed · experimental alpha software.*

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.38.0a1 — 2026-11-20 — PyTorch diagnostics and safe batched inference
+
+- Add seven opt-in Hy macros: `gradient-report`, `assert-gradients`, `model-footprint`, `predict-batches`, `with-parameter-freeze`, `with-determinism`, and `with-anomaly-detection`.
+- Capture aggregate gradient health (no tensor values), detect missing/nonfinite gradients, and estimate parameter/buffer storage without implying GPU peak memory.
+- Collect explicit batched logits on CPU with validated inputs, optional batch bounds, and restoration of the model's original train/eval state. Move model weights only to the explicitly selected device.
+- Add exception-safe temporary parameter freezing, deterministic-algorithm policy restoration, and optional backward anomaly tracing.
+- Document 72 macros and add a runnable CPU Hy/Jupyter example plus conditional PyTorch regression tests. Fix README inline-code formatting and clarify diagnostic trade-offs.
+- Preserve the optional PyTorch dependency, existing training semantics and source-first notebook workflow.
+
+
 ## 0.37.0a1 — 2026-11-18 — Native PyTorch controls and clearer project positioning
 
 - Add nine composable Hy macros for native PyTorch: gradient contexts, autocast, finite gradient clipping, freezing/unfreezing modules, parameter counts, nested batch device transfers and state-dict checkpoints.

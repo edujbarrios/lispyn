@@ -1,6 +1,6 @@
 # Supported Lispyn macros
 
-**The complete Hy/Lisp macro reference — 65 macros, with usage examples.**
+**The complete Hy/Lisp macro reference — 72 macros, with usage examples.**
 
 Lispyn's API is **Hy macros**. They compose ordinary Python, pandas, PyTorch, Matplotlib and Jupyter; they do not replace those libraries. This file is the **single source of truth for supported macros**, grouped by AI notebook task (including research and production prototyping). The implementations live in [`src/lispyn/macros.hy`](../src/lispyn/macros.hy).
 
@@ -28,6 +28,7 @@ The examples below show the public **Hy syntax**, not direct Python implementati
 | [NumPy and pandas data profiling](#numpy-and-pandas-data-profiling) | `array-profile`, `table-profile` |
 | [PyTorch training & inference](#pytorch-training--inference) | `with-seed`, `train-for`, `train-until`, `train-accumulating`, `with-eval`, `head-tune`, `full-tune` |
 | [PyTorch controls & checkpoints](#pytorch-controls--checkpoints) | `with-no-grad`, `with-autocast`, `clip-gradients`, `freeze-module`, `unfreeze-module`, `parameter-count`, `move-to-device`, `save-model`, `load-model` |
+| [PyTorch diagnostics & inference](#pytorch-diagnostics--inference) | `gradient-report`, `assert-gradients`, `model-footprint`, `predict-batches`, `with-parameter-freeze`, `with-determinism`, `with-anomaly-detection` |
 | [Runtime dependencies](#runtime-dependencies) | `ensure-package`, `use-package` |
 | [AI dataset class balance](#ai-dataset-class-balance) | `label-balance`, `plot-label-balance`, `class-weights` |
 | [Binary probability thresholds](#binary-probability-thresholds) | `threshold-report`, `plot-threshold-metrics` |
@@ -376,6 +377,130 @@ Returns the destination `Path` and creates missing parent directories. Keyword o
 ~~~
 
 Returns recorded history, or `None`; restores the provided model **in place**. Options: `:optimizer`, `:map-location` (defaults to CPU). Only load files you trust; `weights_only=True` reduces but does not eliminate untrusted-file risks. Ensure model architecture and optimizer are compatible.
+
+## PyTorch diagnostics & inference
+
+All seven macros in this section are optional PyTorch helpers. They complement,
+rather than replace, native forward/backward loops and Lispyn's established
+training workflow. See the [self-contained CPU example](../examples/torch_diagnostics.hy).
+For generated notebooks, repeat `require` in **each code cell** using a macro.
+
+### `gradient-report`
+**Purpose:** Summarize dense gradients after `backward()` without modifying them or exposing tensor contents.
+
+~~~hy
+(require lispyn.macros [gradient-report])
+(setv info (gradient-report model))
+(print (get info "global_l2_norm"))
+~~~
+
+Returns a JSON-compatible mapping: `parameters`, `parameters_with_grad`,
+`gradient_elements`, `nonfinite_elements`, `all_finite`,
+`global_l2_norm` and `max_absolute`. Norm and maximum are `None` if
+gradients are absent or not finite. Sparse gradients are rejected explicitly.
+It synchronizes tensor statistics to the CPU; avoid calling it per microbatch
+unless needed for debugging.
+
+### `assert-gradients`
+**Purpose:** Reject missing or nonfinite dense gradients before calling `optimizer.step()`.
+
+~~~hy
+(require lispyn.macros [assert-gradients])
+(.backward loss)
+(setv checked (assert-gradients model))
+~~~
+
+Returns the same aggregate summary as `gradient-report` if checks pass.
+By default requires at least one parameter gradient; set `:require-any False`
+to accept frozen models with no gradients. It does not clip or clear gradients,
+and it does not replace checking for unstable parameter updates.
+
+### `model-footprint`
+**Purpose:** Estimate nominal storage used by unique PyTorch model parameter and buffer elements.
+
+~~~hy
+(require lispyn.macros [model-footprint])
+(setv memory (model-footprint model))
+(print (get memory "total_mib"))
+~~~
+
+Returns `parameter_elements`, `buffer_elements`, `parameter_bytes`,
+`buffer_bytes`, `total_bytes` and `total_mib`. Includes both trainable
+and frozen parameters. This **does not** estimate activation, gradient,
+optimizer, allocator or peak GPU memory, nor guarantee physical allocation
+for meta tensors or shared underlying storage.
+
+### `predict-batches`
+**Purpose:** Gather a bounded sequence of model logits into a CPU tensor while
+using native `torch.inference_mode()` and restoring the original train/eval state.
+
+~~~hy
+(require lispyn.macros [predict-batches])
+(setv logits (predict-batches model validation-loader
+  :device "cpu" :max-batches 5))
+~~~
+
+Takes `model batches` and options `:device` (default `"cpu"`),
+`:max-batches` (optional positive integer), and `:input-key` (required
+when batches are dictionaries). Accepts a Tensor batch, a one/two-element
+tuple/list where the first item is the input (e.g. `(inputs, labels)`), or
+a mapping with a named input field. The input can be a nested mapping or
+tuple to support `model(**inputs)` / `model(*inputs)`. Accepts model output
+as a Tensor, an object with `.logits`, or a mapping with `"logits"`.
+All outputs must be batched, tensor-valued and concatenation-compatible.
+
+**Important:** Predictions are kept in CPU memory; `max-batches` limits
+work, not tensor size. Model weights are moved to the specified device and
+**stay there**, while its train/eval mode is restored even on error. This
+helper does not collect labels, calculate metrics, persist data or make
+model quality claims. For huge datasets, use a streaming native PyTorch loop.
+
+### `with-parameter-freeze`
+**Purpose:** Temporarily disable gradient flags for every parameter in a
+module and restore each flag individually, including after an exception.
+
+~~~hy
+(require lispyn.macros [with-parameter-freeze])
+(with-parameter-freeze model.encoder
+  (setv frozen-output (model.encoder features)))
+~~~
+
+Returns the last body expression. Does not change train/eval mode; BatchNorm
+running statistics and dropout behavior can still change. Use `freeze-module`
+instead for a persistent change, and configure optimizers explicitly.
+
+### `with-determinism`
+**Purpose:** Temporarily enable strict deterministic PyTorch algorithm
+selection and restore the previous policy when the Hy body exits.
+
+~~~hy
+(require lispyn.macros [with-determinism])
+(with-determinism
+  (setv output (model features)))
+~~~
+
+Returns the last body expression. This does **not** seed RNGs, configure
+DataLoader workers, control third-party operations, or set required CUDA
+environment variables. Unsupported nondeterministic operations may raise
+errors; see PyTorch's platform guidance. For warn-only behavior use the Python
+`lispyn.torch_diagnostics.deterministic_algorithms(warn_only=True)`
+context manager.
+
+### `with-anomaly-detection`
+**Purpose:** Enable PyTorch backward anomaly tracing around a short Hy body
+to locate operations responsible for NaN gradients.
+
+~~~hy
+(require lispyn.macros [with-anomaly-detection])
+(with-anomaly-detection
+  (setv loss ((torch.nn.MSELoss) (model features) target))
+  (.backward loss))
+~~~
+
+Returns the last body expression. Keep both forward and backward within the
+context when you want useful forward traces. This adds overhead and may emit
+debugging details, so use it during **local, trusted debugging only**, not
+production training or on private data you cannot safely log.
 
 ## Runtime dependencies
 
