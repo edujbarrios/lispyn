@@ -22,7 +22,7 @@ def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="lispyn", description="Create AI notebooks from Hy using native Python and PyTorch."
     )
-    p.add_argument("--version", action="version", version="lispyn 0.38.0a1")
+    p.add_argument("--version", action="version", version="lispyn 0.39.0a1")
     sub = p.add_subparsers(dest="command", required=True)
     health = sub.add_parser("doctor", help="Inspect installation and optional tools without modifying anything")
     health.add_argument("--json", action="store_true", help="Print machine-readable environment summary")

@@ -19,7 +19,7 @@ def test_hy_diagnostics_compile_to_unexecuted_python_notebook():
     assert sum(c.cell_type == "markdown" for c in notebook.cells) >= 3
     for name in (
         "gradient_report", "assert_gradients", "model_footprint",
-        "predict_batches", "temporarily_freeze", "deterministic_algorithms",
+        "predict_batches", "requires_grad_", "deterministic_algorithms",
         "detect_anomaly",
     ):
         assert name in code, name
