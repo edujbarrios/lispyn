@@ -140,7 +140,8 @@ def predict_batches(model, batches, *, device="cpu", max_batches=None,
     if input_key is not None and (not isinstance(input_key, str) or not input_key):
         raise ValueError("input_key must be a nonempty string or None")
     target = torch.device(device)
-    previous_training = model.training
+    # Preserve mixed train/eval flags (e.g., frozen BatchNorm layers).
+    previous_modes = [(module, module.training) for module in model.modules()]
     results = []
     try:
         model.to(target)
@@ -180,4 +181,5 @@ def predict_batches(model, batches, *, device="cpu", max_batches=None,
             raise ValueError("Inference loader is empty")
         return torch.cat(results, dim=0)
     finally:
-        model.train(previous_training)
+        for module, was_training in previous_modes:
+            module.training = was_training
