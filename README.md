@@ -60,6 +60,10 @@
 
 `defplot` generates a reusable Python function that returns a Matplotlib figure. `with-figure` builds a one-off chart with access to the actual `fig` and `ax` objects. For recorded training metrics, `curve` and `defcurve` provide prepared themes, comparison plots and PNG/SVG exports.
 
+![Verified PyTorch training and validation curves produced from a Lispyn notebook](example_generated_notebooks/assets/quickstart_training_curves.png)
+
+*Real output from the [executed PyTorch quickstart](example_generated_notebooks/quickstart_executed.ipynb), not a mockup.*
+
 **Try the complete example:** `lispyn run examples/showcase.hy`, or use `build` and `execute` to create a shareable notebook. The example trains on four synthetic CPU samples, prints losses, and saves two real PNG figures. It does not claim meaningful predictive performance.
 
 ## What else can Lispyn do?
