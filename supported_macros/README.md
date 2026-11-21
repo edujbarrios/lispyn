@@ -1,6 +1,6 @@
 # Supported Lispyn macros
 
-**The complete Hy/Lisp macro reference — 80 macros, with usage examples.**
+**The complete Hy/Lisp macro reference — 84 macros, with usage examples.**
 
 Lispyn's API is **Hy macros**. They compose ordinary Python, pandas, PyTorch, Matplotlib and Jupyter; they do not replace those libraries. This file is the **single source of truth for supported macros**, grouped by AI notebook task (including research and production prototyping). The implementations live in [`src/lispyn/macros.hy`](../src/lispyn/macros.hy).
 
@@ -28,6 +28,8 @@ The examples below show the public **Hy syntax**, not direct Python implementati
 | [NumPy and pandas data profiling](#numpy-and-pandas-data-profiling) | `array-profile`, `table-profile` |
 | [PyTorch training & inference](#pytorch-training--inference) | `with-seed`, `train-for`, `train-until`, `train-accumulating`, `with-eval`, `head-tune`, `full-tune` |
 | [PyTorch controls & checkpoints](#pytorch-controls--checkpoints) | `with-no-grad`, `with-autocast`, `clip-gradients`, `freeze-module`, `unfreeze-module`, `parameter-count`, `move-to-device`, `save-model`, `load-model` |
+| [Model and optimizer factories](#model-and-optimizer-factories) | `defmodel`, `defoptimizer` |
+| [Custom Matplotlib plot generation](#custom-matplotlib-plot-generation) | `with-figure`, `defplot` |
 | [Macro-first PyTorch composition](#macro-first-pytorch-composition) | `with-training`, `with-grad`, `with-rng-fork`, `optimizer-step`, `deftrain-step`, `collect-epochs` |
 | [PyTorch diagnostics & inference](#pytorch-diagnostics--inference) | `gradient-report`, `assert-gradients`, `model-footprint`, `predict-batches`, `with-parameter-freeze`, `with-determinism`, `with-anomaly-detection` |
 | [Runtime dependencies](#runtime-dependencies) | `ensure-package`, `use-package` |
@@ -426,6 +428,96 @@ Returns the destination `Path` and creates missing parent directories. Keyword o
 ~~~
 
 Returns recorded history, or `None`; restores the provided model **in place**. Options: `:optimizer`, `:map-location` (defaults to CPU). Only load files you trust; `weights_only=True` reduces but does not eliminate untrusted-file risks. Ensure model architecture and optimizer are compatible.
+
+## Model and optimizer factories
+
+These macros generate ordinary Python functions rather than routing model or
+optimizer construction through a Lispyn runtime. Install PyTorch independently
+using the CPU or accelerator build appropriate for your machine.
+
+### `defmodel`
+**Purpose:** Generate a parameterized factory for a fresh native
+`torch.nn.Sequential` network, with layers written directly in Hy.
+
+```hy
+(require lispyn.macros [defmodel])
+(import torch)
+(defmodel make-mlp [features hidden]
+  (torch.nn.Linear features hidden)
+  (torch.nn.ReLU)
+  (torch.nn.Linear hidden 1))
+(setv model (make-mlp 2 8))
+```
+
+The generated `make-mlp` is a plain Python function; each invocation
+instantiates new layers and weights. Its arguments are ordinary Hy function
+parameters, and layers are evaluated in the order supplied when called.
+A valid parameter list and at least one layer are required. Supports
+sequential architectures only; use standard Python `torch.nn.Module`
+for branching graphs, weight sharing, or custom forward passes.
+
+### `defoptimizer`
+**Purpose:** Generate an optimizer factory that consistently binds a model's
+parameters and learning rate, while leaving the optimizer class explicit.
+
+```hy
+(require lispyn.macros [defoptimizer])
+(import torch)
+(defoptimizer make-adam [model rate] torch.optim.Adam :weight-decay 0.01)
+(setv optimizer (make-adam model 0.001))
+```
+
+The signature must be two symbols `[model learning-rate]`, and the named
+constructor must accept `model.parameters()`, `:lr` and any additional
+keyword options (such as `:weight-decay`). Both the model and rate are
+evaluated once by the generated function. This does not choose a device,
+optimizer, loss, or learning rate automatically, or imply higher accuracy.
+
+## Custom Matplotlib plot generation
+
+These source-generating macros make arbitrary Matplotlib figures from data
+while remaining inspectable as standard Python. They complement the
+specialized `curve` and `defcurve` macros for training histories.
+Matplotlib is included with the default Lispyn installation.
+
+### `with-figure`
+**Purpose:** Create a native Matplotlib figure and axes with explicit
+user-provided names, evaluate plotting forms, and return the figure.
+
+```hy
+(require lispyn.macros [with-figure])
+(setv figure (with-figure [fig ax]
+  (.plot ax [0 1 2] [0.8 0.4 0.2] :label "Loss")
+  (.set_title ax "Validation loss")
+  (.legend ax)))
+(.savefig figure "validation-loss.png")
+```
+
+Expands to `pyplot.subplots()`, the user body and `figure.tight_layout()`.
+The figure remains open on success so you can display, save, or modify it.
+If the body raises, the generated `except BaseException` closes that
+figure and re-raises. Close successful figures yourself with
+`matplotlib.pyplot.close(figure)`. Requires exactly `[figure axes]`
+symbols and one or more expressions.
+
+### `defplot`
+**Purpose:** Generate a reusable Python plotting function that creates a
+fresh figure for each call, returning it for optional export.
+
+```hy
+(require lispyn.macros [defplot])
+(defplot show-loss [losses] [fig ax]
+  (.plot ax (range (len losses)) losses :marker "o")
+  (.set_title ax "Training loss"))
+(setv figure (show-loss [0.8 0.4 0.2]))
+(.savefig figure "loss.png")
+```
+
+Use `(defplot name [parameters] [figure axes] body...)`. All plotting
+operations are native Matplotlib. Just as in `with-figure`, figures
+remain open on success and are closed automatically on plotting errors.
+The function creates a new figure on each call; close it after use.
+See [the runnable PyTorch and plotting showcase](../examples/showcase.hy).
 
 ## Macro-first PyTorch composition
 

@@ -524,6 +524,75 @@
     (with [(torch.autograd.detect_anomaly)]
       ~@body)))
 
+; Native, inspectable PyTorch factories and Matplotlib plot builders.
+
+(defmacro defmodel [name parameters #* layers]
+  "Define a callable that creates a fresh native torch.nn.Sequential model."
+  (if (or (not (isinstance parameters hy.models.List))
+          (= (len layers) 0))
+    (raise (ValueError "defmodel expects [parameters] and at least one layer"))
+    None)
+  `(defn ~name ~parameters
+    (import torch)
+    (torch.nn.Sequential ~@layers)))
+
+(defmacro defoptimizer [name parameters constructor #* options]
+  "Define a native optimizer factory receiving [model learning-rate]."
+  (if (or (not (isinstance parameters hy.models.List))
+          (!= (len parameters) 2)
+          (not (all (map (fn [item] (isinstance item hy.models.Symbol)) parameters))))
+    (raise (ValueError "defoptimizer expects [model learning-rate] symbols"))
+    None)
+  (setv model-symbol (get parameters 0))
+  (setv lr-symbol (get parameters 1))
+  `(defn ~name ~parameters
+    (~constructor (.parameters ~model-symbol) :lr ~lr-symbol ~@options)))
+
+(defmacro with-figure [bindings #* body]
+  "Create a scoped Matplotlib (figure, axes), returning the figure."
+  (if (or (not (isinstance bindings hy.models.List))
+          (!= (len bindings) 2)
+          (not (all (map (fn [item] (isinstance item hy.models.Symbol)) bindings)))
+          (= (len body) 0))
+    (raise (ValueError "with-figure expects [figure axes] and a nonempty body"))
+    None)
+  (setv figure-symbol (get bindings 0))
+  (setv axes-symbol (get bindings 1))
+  (setv pyplot-symbol (hy.gensym "lispyn_pyplot"))
+  `(do
+    (import matplotlib.pyplot :as ~pyplot-symbol)
+    (setv [~figure-symbol ~axes-symbol] (.subplots ~pyplot-symbol))
+    (try
+      ~@body
+      (.tight_layout ~figure-symbol)
+      ~figure-symbol
+      (except [BaseException]
+        (.close ~pyplot-symbol ~figure-symbol)
+        (raise)))))
+
+(defmacro defplot [name parameters bindings #* body]
+  "Define a reusable Matplotlib plot function, closing figures on failure."
+  (if (or (not (isinstance parameters hy.models.List))
+          (not (isinstance bindings hy.models.List))
+          (!= (len bindings) 2)
+          (not (all (map (fn [item] (isinstance item hy.models.Symbol)) bindings)))
+          (= (len body) 0))
+    (raise (ValueError "defplot expects [parameters] [figure axes] and body"))
+    None)
+  (setv figure-symbol (get bindings 0))
+  (setv axes-symbol (get bindings 1))
+  (setv pyplot-symbol (hy.gensym "lispyn_pyplot"))
+  `(defn ~name ~parameters
+    (import matplotlib.pyplot :as ~pyplot-symbol)
+    (setv [~figure-symbol ~axes-symbol] (.subplots ~pyplot-symbol))
+    (try
+      ~@body
+      (.tight_layout ~figure-symbol)
+      ~figure-symbol
+      (except [BaseException]
+        (.close ~pyplot-symbol ~figure-symbol)
+        (raise)))))
+
 ; Macro-first experiment composition: native PyTorch code, no runtime backend.
 
 (defmacro with-training [model #* body]
