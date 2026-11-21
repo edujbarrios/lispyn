@@ -79,7 +79,9 @@ def assert_probabilities(values, *, name="probabilities", atol=1e-6):
         if invalid:
             raise AssertionError(f"{label} contains {invalid} invalid probability value(s)")
         if ndim == 2:
-            bad_rows = int(((values.to(torch.float64).sum(dim=1) - 1).abs() > atol).sum().item())
+            sum_dtype = (torch.float32 if values.dtype in (torch.float16, torch.bfloat16)
+                         else values.dtype)
+            bad_rows = int(((values.sum(dim=1, dtype=sum_dtype) - 1).abs() > atol).sum().item())
             if bad_rows:
                 raise AssertionError(f"{label} has {bad_rows} row(s) that do not sum to 1")
     else:
