@@ -98,6 +98,8 @@ pip install -r requirements.txt
 
 ## One Hy source → three workflows
 
+To reproduce the full native PyTorch walkthrough, run `lispyn execute examples/quickstart.hy` after installing torch.
+
 The tiny [hello example](examples/hello.hy) requires no PyTorch:
 
 ```bash
