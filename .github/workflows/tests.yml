@@ -155,7 +155,7 @@ jobs:
         run: |
           python -m pip install 'torch==2.10.0+cpu' --index-url https://download.pytorch.org/whl/cpu
           python -m pip install -e '.[plots]'
-          pytest -q tests/test_advanced_training.py tests/test_comparison.py tests/test_classification_report.py tests/test_notebook_metadata.py tests/test_early_stopping.py tests/test_tracking.py tests/test_workflow.py tests/test_reproducibility.py tests/test_split_dataset.py tests/test_macros.py tests/test_pytorch_controls.py tests/test_torch_diagnostics.py tests/test_macro_first.py tests/test_scaffold.py tests/test_plots.py tests/test_curve_designs.py tests/test_dark_plotting.py tests/test_classification.py tests/test_markdown_macros.py tests/test_training_macros.py tests/test_pip_cells.py
+          pytest -q tests/test_advanced_training.py tests/test_comparison.py tests/test_classification_report.py tests/test_notebook_metadata.py tests/test_early_stopping.py tests/test_tracking.py tests/test_workflow.py tests/test_reproducibility.py tests/test_split_dataset.py tests/test_macros.py tests/test_pytorch_controls.py tests/test_torch_diagnostics.py tests/test_macro_first.py tests/test_evaluation_guards.py tests/test_scaffold.py tests/test_plots.py tests/test_curve_designs.py tests/test_dark_plotting.py tests/test_classification.py tests/test_markdown_macros.py tests/test_training_macros.py tests/test_pip_cells.py
           lispyn execute examples/synthetic_curves.hy --timeout 120
           lispyn execute examples/confusion_matrix.hy --timeout 120
           lispyn execute examples/notebook_metadata.hy --timeout 60
