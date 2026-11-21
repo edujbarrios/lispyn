@@ -561,13 +561,13 @@
   (setv pyplot-symbol (hy.gensym "lispyn_pyplot"))
   `(do
     (import matplotlib.pyplot :as ~pyplot-symbol)
-    (setv [~figure-symbol ~axes-symbol] (~pyplot-symbol.subplots))
+    (setv [~figure-symbol ~axes-symbol] (.subplots ~pyplot-symbol))
     (try
       ~@body
       (.tight_layout ~figure-symbol)
       ~figure-symbol
       (except [BaseException]
-        (~pyplot-symbol.close ~figure-symbol)
+        (.close ~pyplot-symbol ~figure-symbol)
         (raise)))))
 
 (defmacro defplot [name parameters bindings #* body]
@@ -584,13 +584,13 @@
   (setv pyplot-symbol (hy.gensym "lispyn_pyplot"))
   `(defn ~name ~parameters
     (import matplotlib.pyplot :as ~pyplot-symbol)
-    (setv [~figure-symbol ~axes-symbol] (~pyplot-symbol.subplots))
+    (setv [~figure-symbol ~axes-symbol] (.subplots ~pyplot-symbol))
     (try
       ~@body
       (.tight_layout ~figure-symbol)
       ~figure-symbol
       (except [BaseException]
-        (~pyplot-symbol.close ~figure-symbol)
+        (.close ~pyplot-symbol ~figure-symbol)
         (raise)))))
 
 ; Macro-first experiment composition: native PyTorch code, no runtime backend.
