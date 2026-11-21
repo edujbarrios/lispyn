@@ -31,6 +31,12 @@
 (setv model (make-mlp 2 8))
 (defoptimizer make-adam [model rate] torch.optim.Adam :weight-decay 0.01)
 (setv optimizer (make-adam model 0.05))
+(setv criterion (torch.nn.MSELoss))
+(setv samples (torch.tensor [[0.0 0.0] [0.0 1.0] [1.0 0.0] [1.0 1.0]]))
+(setv targets (torch.tensor [[0.0] [1.0] [1.0] [2.0]]))
+(deftrain-step train-one model optimizer criterion)
+(setv losses (collect-epochs epoch 4
+  (train-one samples targets)))
 ```
 
 `defmodel` creates a new `torch.nn.Sequential` model each call; `defoptimizer` creates a standard `torch.optim.Adam`. Compose them with `deftrain-step`, `collect-epochs`, `with-training` and `with-eval`. For custom architectures, use ordinary `torch.nn.Module`.
@@ -99,6 +105,8 @@ lispyn execute examples/hello.hy -o hello-executed.ipynb
 - **`run`:** run Hy directly, without creating a notebook.
 - **`build`:** compile unexecuted, inspectable Python and Markdown cells; **Nothing is executed** at runtime.
 - **`execute`:** run Jupyter and save the executed cells and real outputs.
+
+Each notebook code cell compiles independently; repeat `require` in any new cell using macros.
 
 Explore expansion with `hy2py examples/showcase.hy`. Use `lispyn new study.hy` to scaffold a notebook or `lispyn gallery` for a set of compiled examples.
 
