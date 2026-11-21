@@ -83,6 +83,7 @@ def test_optional_torch_tensor_guards_preserve_gradients():
     values = torch.tensor([[0.25, 0.75]], requires_grad=True)
     assert assert_probabilities(values) is values
     assert values.requires_grad
+    assert assert_probabilities(torch.tensor([[0.5, 0.5]], dtype=torch.float16)) is not None
     assert assert_disjoint(torch.tensor([1, 2]), torch.tensor([3, 4]))
     with pytest.raises(AssertionError, match="1 invalid probability"):
         assert_probabilities(torch.tensor([-0.1, 0.9]))
