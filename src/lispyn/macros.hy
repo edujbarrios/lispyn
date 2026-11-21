@@ -348,6 +348,20 @@
     (import lispyn.validation)
     (lispyn.validation.assert_shape ~values ~expected ~@options)))
 
+; Evaluation integrity: prevent partition leakage and reject malformed scores.
+
+(defmacro assert-disjoint [left right #* options]
+  "Reject overlapping sample IDs before using evaluation metrics."
+  `(do
+    (import lispyn.evaluation_guards)
+    (lispyn.evaluation_guards.assert_disjoint ~left ~right ~@options)))
+
+(defmacro assert-probabilities [values #* options]
+  "Validate finite, bounded binary or normalized multiclass probabilities."
+  `(do
+    (import lispyn.evaluation_guards)
+    (lispyn.evaluation_guards.assert_probabilities ~values ~@options)))
+
 ; Quickly inspect AI classification dataset balance before training.
 
 (defmacro label-balance [labels #* options]

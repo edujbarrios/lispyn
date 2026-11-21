@@ -8,7 +8,7 @@ The core product is a **language of Hy macros**, not a replacement for PyTorch, 
 
 ## Why use Lispyn for AI notebooks?
 
-**Macros are the main abstraction.** Hy macros transform source code at compilation, rather than just exposing another training API. Compose native Python operations, build reusable training functions, and create your own macros. Version 0.39 introduces `deftrain-step`, `optimizer-step`, `collect-epochs`, `with-training`, `with-grad` and `with-rng-fork` — six self-contained macros that expand into Python without a new Lispyn runtime backend.
+**Macros are the main abstraction.** Hy macros transform source code at compilation, rather than just exposing another training API. Compose native Python operations, build reusable training functions, and create your own macros. Version 0.39 introduced `deftrain-step`, `optimizer-step`, `collect-epochs`, `with-training`, `with-grad` and `with-rng-fork` — six self-contained macros that expand into Python without a new Lispyn runtime backend.
 
 ```hy
 (require lispyn.macros [deftrain-step collect-epochs])
@@ -28,6 +28,8 @@ See the [runnable CPU macro-first example](examples/macro_first_training.hy) and
   (train-val-test dataset :validation-fraction 0.25
     :test-fraction 0.25 :seed seed))
 ```
+
+**Evaluation integrity.** New `assert-disjoint` detects overlapping sample IDs between dataset partitions; `assert-probabilities` rejects invalid binary scores or multiclass probabilities. See [evaluation guards](examples/evaluation_guards.hy).
 
 The [input validation example](examples/validate_inputs.hy) rejects bad shapes and nonfinite numbers:
 
@@ -116,6 +118,6 @@ Choose Lispyn when **Lisp/Hy macros are worth the cognitive overhead**, you want
 
 ## Documentation
 
-[**Reference: 78 supported macros**](supported_macros/README.md) · [**Writing and extending macros**](MACRO_AUTHORING.md) · [CPU macro-first walkthrough](examples/macro_first_training.hy) · [Notebook gallery](example_generated_notebooks/README.md) · [Changelog](CHANGELOG.md) · [Citation](CITATION.cff)
+[**Reference: 80 supported macros**](supported_macros/README.md) · [**Writing and extending macros**](MACRO_AUTHORING.md) · [CPU macro-first walkthrough](examples/macro_first_training.hy) · [Notebook gallery](example_generated_notebooks/README.md) · [Changelog](CHANGELOG.md) · [Citation](CITATION.cff)
 
 *Created by Eduardo J. Barrios · Apache-2.0 licensed · experimental alpha software.*
