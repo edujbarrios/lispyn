@@ -1,69 +1,73 @@
 # Lispyn — Lisp-powered AI notebooks
 
-**Lispyn is a macro-first toolkit for authoring AI experiments in Hy (Lisp for Python).** Define and compose reusable **compile-time macros**, then run your experiments directly or compile them into ordinary Python Jupyter notebooks.
-
-The core product is a **language of Hy macros**, not a replacement for PyTorch, NumPy, pandas, Matplotlib or Python. Macro expansion makes experiment structure explicit and inspectable; small Python helpers handle numerical operations where appropriate. Your models, data, optimizers and evaluation logic remain native Python.
+**Write AI experiments as Hy macros. Run them directly, compile them to readable Python, or execute them as Jupyter notebooks.** Lispyn helps you define native PyTorch models, train and evaluate them, create Matplotlib figures, validate datasets and publish reproducible results. **No new tensor framework or opaque training runtime.**
 
 [![PyPI version](https://img.shields.io/pypi/v/lispyn?label=PyPI%20version)](https://pypi.org/project/lispyn/) [![CI on main](https://github.com/edujbarrios/lispyn/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/edujbarrios/lispyn/actions/workflows/tests.yml?query=branch%3Amain) [![Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
 ## Why use Lispyn for AI notebooks?
 
-**Macros are the main abstraction.** Hy macros transform source code at compilation, rather than just exposing another training API. Compose native Python operations, build reusable training functions, and create your own macros. Version 0.39 introduced `deftrain-step`, `optimizer-step`, `collect-epochs`, `with-training`, `with-grad` and `with-rng-fork` — six self-contained macros that expand into Python without a new Lispyn runtime backend.
+**Look at what you can write.** This is real Hy syntax from the [runnable CPU showcase](examples/showcase.hy), not pseudocode. The macros generate native Python functions and Matplotlib calls.
+
+### 1. Declare a dependency cell in your notebook
 
 ```hy
-(require lispyn.macros [deftrain-step collect-epochs])
-(deftrain-step train-one model optimizer criterion)
-(setv history (collect-epochs epoch 4
-  (train-one features labels)))
+(require lispyn.macros [pip-install])
+(pip-install "matplotlib>=3.8")
 ```
 
-See the [runnable CPU macro-first example](examples/macro_first_training.hy) and the [guide to developing your own macros](MACRO_AUTHORING.md), including hygienic names, composition, independent notebook cells and compile-time security.
+`pip-install` produces an isolated Jupyter dependency cell. **Nothing is executed during `lispyn build`**; the packages are checked/installed only when you run the Hy script or execute the notebook. Matplotlib is already in the default Lispyn package. Install the appropriate PyTorch CPU/GPU build **separately**—don't assume `pip-install "torch"` selects the right accelerator.
 
-**One source, three artifacts.** Write a `.hy` experiment once. Run it as a script (`run`), compile an unexecuted notebook (`build`), or execute it and save real outputs (`execute`). The resulting notebook contains ordinary Python, not an opaque Lispyn engine.
-
-**Data splitting and explicit checks.** The [real PyTorch quickstart](examples/quickstart.hy) splits data into training, validation and held-out test sets:
+### 2. Create a real PyTorch model, optimizer and training loop
 
 ```hy
-(setv [training validation held-out]
-  (train-val-test dataset :validation-fraction 0.25
-    :test-fraction 0.25 :seed seed))
+(require lispyn.macros [defmodel defoptimizer deftrain-step collect-epochs])
+(import torch)
+(torch.manual_seed 42)
+
+(defmodel make-mlp [features hidden]
+  (torch.nn.Linear features hidden)
+  (torch.nn.ReLU)
+  (torch.nn.Linear hidden 1))
+(setv model (make-mlp 2 8))
+(defoptimizer make-adam [model rate] torch.optim.Adam :weight-decay 0.01)
+(setv optimizer (make-adam model 0.05))
 ```
 
-**Evaluation integrity.** New `assert-disjoint` detects overlapping sample IDs between dataset partitions; `assert-probabilities` rejects invalid binary scores or multiclass probabilities. See [evaluation guards](examples/evaluation_guards.hy).
+`defmodel` creates a new `torch.nn.Sequential` model each call; `defoptimizer` creates a standard `torch.optim.Adam`. Compose them with `deftrain-step`, `collect-epochs`, `with-training` and `with-eval`. For custom architectures, use ordinary `torch.nn.Module`.
 
-The [input validation example](examples/validate_inputs.hy) rejects bad shapes and nonfinite numbers:
+### 3. Make an original plot with a reusable macro
 
 ```hy
-(require lispyn.macros [assert-finite assert-shape])
-(import numpy :as np)
-(import pandas :as pd)
+(require lispyn.macros [defplot with-figure])
+(import matplotlib.pyplot :as plt)
 
-(setv features (np.array [[1.0 2.0] [3.0 4.0]]))
-(assert-shape features [2 2] :name "features")
-(assert-finite features :name "features")
+(defplot loss-chart [losses] [fig ax]
+  (.plot ax (range (len losses)) losses :label "Training loss" :marker "o")
+  (.set_title ax "Training progress")
+  (.set_xlabel ax "Epoch")
+  (.set_ylabel ax "MSE")
+  (.legend ax))
+(setv figure (loss-chart losses))
+(.savefig figure "showcase-loss.png")
+(plt.close figure)
 ```
 
-Check classification class balance with the [runnable example](examples/label_balance.hy):
+`defplot` generates a reusable Python function that returns a Matplotlib figure. `with-figure` builds a one-off chart with access to the actual `fig` and `ax` objects. For recorded training metrics, `curve` and `defcurve` provide prepared themes, comparison plots and PNG/SVG exports.
 
-```hy
-(require lispyn.macros [label-balance plot-label-balance])
-(setv labels ["cat" "cat" "cat" "dog" "dog" "bird"])
-(setv report (label-balance labels :title "Training label distribution"))
-```
+**Try the complete example:** `lispyn run examples/showcase.hy`, or use `build` and `execute` to create a shareable notebook. The example trains on four synthetic CPU samples, prints losses, and saves two real PNG figures. It does not claim meaningful predictive performance.
 
-For classification, `class-weights` computes inverse-frequency loss weights, and `threshold-report` compares validation probability cutoffs without peeking at held-out test labels.
+## What else can Lispyn do?
 
-**Native PyTorch, not a parallel framework.** Use macros such as `with-eval`, `with-training`, `with-autocast`, `clip-gradients`, `with-parameter-freeze`, `gradient-report` and `predict-batches` to generate inspectable operations or invoke explicit low-level checks. Training, autograd, optimizers, and saved checkpoints remain standard PyTorch. The [PyTorch controls](examples/pytorch_controls.hy) and [diagnostics example](examples/torch_diagnostics.hy) run on the CPU.
+| Your goal | Hy macros and examples |
+| --- | --- |
+| **Notebook composition** | `md`, `pip-install`, `experiment-params` — [notebook cells](examples/markdown_cells.hy) |
+| **PyTorch control** | `with-seed`, `with-autocast`, `clip-gradients`, `save-model`, `load-model` — [CPU controls](examples/pytorch_controls.hy) |
+| **Data quality and safe evaluation** | `assert-shape`, `assert-finite`, `assert-disjoint`, `assert-probabilities` — [evaluation guards](examples/evaluation_guards.hy) |
+| **Validation and research** | `train-val-test`, `cross-validate`, `train-until`, `class-weights` — [real quickstart](examples/quickstart.hy) |
+| **Plots and reports** | `curve`, `defcurve`, `confusion-matrix`, `report-run`, `metric-table` — [curve designs](examples/curve_designs.hy) |
+| **Inspect and extend the language** | `deftrain-step`, `collect-epochs`, `defmodel`, `defplot` — [macro authoring](MACRO_AUTHORING.md) |
 
-**Evidence-driven notebooks.** The [quickstart](examples/quickstart.hy) reports real PyTorch metrics:
-
-```hy
-(require lispyn.macros [report-run narrate metric-table])
-(import lispyn.training [evaluate-metrics])
-(report-run run :title "PyTorch baseline · recorded metrics")
-```
-
-Generate plots, comparisons, parameterized notebooks, and reports from run data. See the [executed quickstart notebook](example_generated_notebooks/quickstart_executed.ipynb).
+All **84 supported macros** have [Hy examples in the reference](supported_macros/README.md). The [executed quickstart notebook](example_generated_notebooks/quickstart_executed.ipynb) shows real PyTorch results.
 
 ## Install
 
@@ -71,53 +75,39 @@ Generate plots, comparisons, parameterized notebooks, and reports from run data.
 pip install lispyn
 ```
 
-Python 3.10+ is required. The base package includes Hy, notebook compilation/execution, and Matplotlib. Install pandas with `pip install "lispyn[data]"`. **PyTorch is installed separately** using the appropriate CPU or GPU build from [PyTorch's installation guide](https://pytorch.org/get-started/locally/). A cloned repository also offers the broader research environment:
+Python 3.10+ is required. The base install includes Hy, notebook compilation/execution, NumPy via Matplotlib, and Matplotlib itself; pandas is optional (`pip install "lispyn[data]"`). **PyTorch is installed separately** using [PyTorch's official platform-specific instructions](https://pytorch.org/get-started/locally/).
 
-```bash
-pip install -r requirements.txt
-```
-
-Lispyn is experimental alpha software; macro interfaces may evolve.
-
-## Quickstart: run, build, execute
-
-Clone the repository to access examples (the hello example does not require PyTorch):
+For the checked-in examples, clone the repository:
 
 ```bash
 git clone https://github.com/edujbarrios/lispyn.git
 cd lispyn
+# Optional, larger research environment:
+pip install -r requirements.txt
 ```
 
-**1. Run a Hy experiment.** Nothing is written to a notebook:
+## One Hy source → three workflows
+
+The tiny [hello example](examples/hello.hy) requires no PyTorch:
 
 ```bash
 lispyn run examples/hello.hy
-```
-
-**2. Build a shareable notebook.** Nothing is executed; compilation creates ordinary Python and Markdown cells:
-
-```bash
 lispyn build examples/hello.hy -o hello.ipynb
-```
-
-**3. Execute and capture outputs.** Jupyter runs the compiled notebook and saves the executed cells:
-
-```bash
 lispyn execute examples/hello.hy -o hello-executed.ipynb
 ```
 
-The hello example prints `2 + 3 + 5 = 10` and `Lispyn checks passed!`. For the full real experiment, try `lispyn execute examples/quickstart.hy` after installing torch. For macro-first CPU training, run `lispyn execute examples/macro_first_training.hy`. To inspect macro expansion directly, use `hy2py examples/macro_first_training.hy`.
+- **`run`:** run Hy directly, without creating a notebook.
+- **`build`:** compile unexecuted, inspectable Python and Markdown cells; **Nothing is executed** at runtime.
+- **`execute`:** run Jupyter and save the executed cells and real outputs.
 
-## Design principles and limits
+Explore expansion with `hy2py examples/showcase.hy`. Use `lispyn new study.hy` to scaffold a notebook or `lispyn gallery` for a set of compiled examples.
 
-Choose Lispyn when **Lisp/Hy macros are worth the cognitive overhead**, you want versioned experiments as source files, or you need reviewable standard-Python Jupyter artifacts. Use plain Python when interactive notebook editing is your main workflow or you do not need source transformations.
+## Where Lispyn fits
 
-**Macro-first means:** focus on hygienic syntax transformations, scoped state management, and composable experiment code. It does **not** mean every numerical algorithm belongs inside a macro. Python backends are appropriate for substantial calculations and validations; macros provide the public authoring interface.
+Lispyn is **alpha software**: macro interfaces may evolve. Choose it if source transformations, reusable experiment scaffolding and auditable Python notebooks are valuable to you; stick with plain Python when macros don't help. Generated Python still depends on your original libraries and data.
 
-**Security:** Compile and execute only trusted Hy code. Hy macros can execute arbitrary Python at **compile time**, so even `lispyn build` is not sandboxed. Load checkpoints only from trusted sources. Lispyn cannot guarantee bitwise determinism, better accuracy, or absence of data leakage.
+**Security and limits:** Hy macros execute Python at compile time. Compile only trusted `.hy` sources, including during `build`; it is not sandboxed. Notebook `pip-install` runs only when executed, and package installation requires trusted dependencies. No macro guarantees determinism, absence of leakage, or improved model accuracy.
 
-## Documentation
+[**Macro catalog**](supported_macros/README.md) · [**Macro-authoring guide**](MACRO_AUTHORING.md) · [**Notebook gallery**](example_generated_notebooks/README.md) · [**Changelog**](CHANGELOG.md) · [**Citation**](CITATION.cff)
 
-[**Reference: 80 supported macros**](supported_macros/README.md) · [**Writing and extending macros**](MACRO_AUTHORING.md) · [CPU macro-first walkthrough](examples/macro_first_training.hy) · [Notebook gallery](example_generated_notebooks/README.md) · [Changelog](CHANGELOG.md) · [Citation](CITATION.cff)
-
-*Created by Eduardo J. Barrios · Apache-2.0 licensed · experimental alpha software.*
+*Created by Eduardo J. Barrios · Apache-2.0 licensed.*

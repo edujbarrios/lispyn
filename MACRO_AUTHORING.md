@@ -16,6 +16,12 @@ Prefer macros that transform **structure**, not just rename a function:
 - Preserve a tiny runtime dependency surface. Native Python helpers remain
   appropriate for numerical algorithms and validation, not for simple syntax.
 
+Version 0.41 adds factory macros `defmodel`, `defoptimizer`,
+`with-figure` and `defplot`. They compile to native Python constructors,
+functions and Matplotlib code; figures are closed on plotting errors.
+See [the CPU showcase](examples/showcase.hy) for all four alongside
+`pip-install`, `deftrain-step` and `collect-epochs`.
+
 The v0.39.0a1 forms `deftrain-step`, `optimizer-step`,
 `collect-epochs`, `with-training`, `with-grad` and
 `with-rng-fork` expand directly to ordinary Python constructs. Three existing

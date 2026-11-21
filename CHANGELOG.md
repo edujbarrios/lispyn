@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.41.0a1 — 2026-11-21 — First-glance PyTorch and plotting macros
+
+- Add four compile-time, source-generating Hy macros: `defmodel` creates
+  parameterized `torch.nn.Sequential` factories; `defoptimizer` creates
+  native optimizer factories; `with-figure` makes a one-off Matplotlib
+  figure; and `defplot` generates a reusable plotting function.
+- Preserve explicit PyTorch and Matplotlib APIs, use hygienic internal plot
+  imports, and close new figures when plotting code fails.
+- Rewrite the landing README around a runnable CPU end-to-end example:
+  the `pip-install` notebook cell, native PyTorch model setup, training-step
+  macros, and custom figure creation. Include a compact feature matrix,
+  artifact commands and honest runtime/security requirements.
+- Document all **84 supported macros**, add `examples/showcase.hy` to the
+  notebook gallery, and test generated code, plotting error cleanup,
+  independent notebook cell compilation and full CPU notebook execution.
+
+
 ## 0.40.0a1 — 2026-11-21 — Evaluation-integrity macros
 
 - Add `assert-disjoint` for detecting overlapping sample IDs between train,
