@@ -10,7 +10,7 @@ def test_readme_links_to_real_example_and_complete_catalog():
     catalog = (ROOT / "supported_macros" / "README.md").read_text(encoding="utf-8")
     assert "examples/hello.hy" in readme
     assert "supported_macros/README.md" in readme
-    assert "78 supported macros" in readme and "78 macros" in catalog
+    assert "80 supported macros" in readme and "80 macros" in catalog
     assert '(print "Lispyn checks passed!")' in source
     assert len(readme) < 7500
 

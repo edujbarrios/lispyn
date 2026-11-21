@@ -1,6 +1,6 @@
 # Supported Lispyn macros
 
-**The complete Hy/Lisp macro reference — 78 macros, with usage examples.**
+**The complete Hy/Lisp macro reference — 80 macros, with usage examples.**
 
 Lispyn's API is **Hy macros**. They compose ordinary Python, pandas, PyTorch, Matplotlib and Jupyter; they do not replace those libraries. This file is the **single source of truth for supported macros**, grouped by AI notebook task (including research and production prototyping). The implementations live in [`src/lispyn/macros.hy`](../src/lispyn/macros.hy).
 
@@ -37,6 +37,7 @@ The examples below show the public **Hy syntax**, not direct Python implementati
 | [Dataset splits & cross-validation](#dataset-splits--cross-validation) | `train-val-test`, `cross-validation-folds`, `tabular-train-val-test`, `tabular-cross-validation-folds`, `repeated-cross-validation-folds`, `repeated-tabular-folds`, `cross-validate`, `cross-validate-table`, `save-cross-validation` |
 | [Time-series experiments](#time-series-experiments) | `temporal-train-val-test`, `temporal-folds`, `temporal-table-split`, `temporal-table-folds`, `cross-validate-temporal`, `cross-validate-temporal-table` |
 | [Input assertions for NumPy, pandas and PyTorch](#input-assertions-for-numpy-pandas-and-pytorch) | `assert-finite`, `assert-shape` |
+| [Evaluation integrity guards](#evaluation-integrity-guards) | `assert-disjoint`, `assert-probabilities` |
 | [Lightweight diagnostics](#lightweight-diagnostics) | `assert-close`, `with-timing` |
 | [Reports, evidence & narratives](#reports-evidence--narratives) | `report-run`, `experiment-check`, `checklist-report`, `narrate`, `metric-table`, `experiment-leaderboard`, `compare-runs`, `plot-runs` |
 
@@ -131,6 +132,53 @@ Reports only the number of nonfinite elements on failure; for example, a sensor 
 ```
 
 Arguments: `values expected` and optional `:name`. Expected shape is a list or tuple of 1–8 nonnegative integers or `None`. Raises `AssertionError` on a mismatch, `TypeError` on non-shaped objects, and `ValueError` for invalid expected shapes. No reshaping or mutation occurs. See the [runnable direct/Notebook example](../examples/validate_inputs.hy).
+
+## Evaluation integrity guards
+
+These lightweight macros reject common mistakes that can make validation or test
+metrics misleading. They do not automatically improve a trained model's accuracy.
+Both are non-mutating, print no sample-level values, and work in direct Hy and
+compiled Python notebooks.
+
+### `assert-disjoint`
+**Purpose:** Fail if two partitions share any stable sample identifiers; avoid
+accidentally evaluating on training observations. Pass explicit IDs, not feature
+values or dataset objects. Check all three pairs for train/validation/test.
+
+```hy
+(require lispyn.macros [assert-disjoint])
+(assert-disjoint ["train-1" "train-2"] ["valid-1" "valid-2"])
+(assert-disjoint training-ids test-ids :right-name "test")
+```
+
+Arguments: `left right`; optional `:left-name` and `:right-name` change error
+labels. Inputs must be nonempty 1-D lists, tuples, NumPy arrays, pandas Series
+or PyTorch tensors of string/integer IDs (not booleans). Repeated IDs within
+one partition are permitted; overlaps are counted uniquely, and the failing
+assertion never reveals the IDs. Strings and integers are distinct IDs.
+Returns `True` if disjoint. This cannot detect duplicate examples that have
+different IDs.
+
+### `assert-probabilities`
+**Purpose:** Reject malformed binary scores or multiclass probabilities before
+computing evaluation metrics, rather than silently using logits, NaNs or
+unnormalized rows.
+
+```hy
+(require lispyn.macros [assert-probabilities])
+(assert-probabilities [0.05 0.85 0.40])
+(assert-probabilities [[0.2 0.8] [0.6 0.4]] :atol 0.000001)
+```
+
+A 1-D vector of floating-point scores must be nonempty and within [0, 1].
+A 2-D array must have at least two columns, contain only finite scores in
+[0, 1], and have each row sum to 1 within `:atol` (default `1e-6`).
+Use a larger tolerance for low-precision models if needed; the maximum
+allowed tolerance is `0.01`. Supports Python float sequences, NumPy/pandas
+arrays and dense floating-point PyTorch tensors, preserving input identity and
+autograd state. Returns the input unchanged. No automatic softmax, sigmoid,
+clipping or calibration is performed. See the
+[runnable Hy example](../examples/evaluation_guards.hy).
 
 ## Lightweight diagnostics
 

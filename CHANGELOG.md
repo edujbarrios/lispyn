@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.40.0a1 — 2026-11-21 — Evaluation-integrity macros
+
+- Add `assert-disjoint` for detecting overlapping sample IDs between train,
+  validation and test partitions without exposing sample identifiers.
+- Add `assert-probabilities` to validate finite, bounded binary prediction
+  scores and normalized multiclass probabilities with explicit tolerance.
+- Preserve arrays/tensors and autograd state without silently normalizing or
+  transforming predictions. Reject invalid shapes, dtypes and identifiers.
+- Document all **80 supported macros** and add an executable Hy/Jupyter example
+  with Python, NumPy, pandas and optional PyTorch regression tests.
+- These guards prevent misleading experimental inputs; they do not guarantee
+  improved model accuracy.
+
+
 ## 0.39.0a1 — 2026-11-20 — Macro-first experiment authoring
 
 - Reposition Lispyn as a Hy **macro development and composition toolkit** for

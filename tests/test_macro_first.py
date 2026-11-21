@@ -121,7 +121,7 @@ def test_macros_restore_state_on_exceptions_and_evaluate_once(tmp_path):
 
 def test_no_new_backend_module_is_needed_for_new_macros():
     macro_source = (ROOT / "src/lispyn/macros.hy").read_text(encoding="utf-8")
-    assert len(re.findall(r"(?m)^\(defmacro ", macro_source)) >= 78
+    assert len(re.findall(r"(?m)^\(defmacro ", macro_source)) >= 80
     for macro in (
         "with-training", "with-grad", "with-rng-fork", "optimizer-step",
         "deftrain-step", "collect-epochs",

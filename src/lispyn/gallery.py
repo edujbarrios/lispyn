@@ -29,6 +29,7 @@ EXAMPLE_SOURCES = (
     "advanced_training.hy",
     "torch_diagnostics.hy",
     "macro_first_training.hy",
+    "evaluation_guards.hy",
     "cross_validation.hy",
     "repeated_cross_validation.hy",
     "temporal_cross_validation.hy",
