@@ -12,9 +12,9 @@ def test_readme_links_to_examples_and_complete_catalog():
     assert "examples/showcase.hy" in readme
     assert "examples/quickstart.hy" in readme
     assert "supported_macros/README.md" in readme
-    assert "84 supported macros" in readme and "84 macros" in catalog
+    assert "89 supported macros" in readme and "89 macros" in catalog
     assert '(print "Lispyn checks passed!")' in example
-    assert len(readme) < 7500
+    assert len(readme) < 8500
 
 
 def test_readme_snippets_are_verbatim_showcase_source():
@@ -61,3 +61,13 @@ def test_readme_explains_artifacts_installation_and_limits():
     assert "PyTorch is installed separately" in readme
     assert "MACRO_AUTHORING.md" in readme
     assert all(name in readme for name in ("PyTorch", "Matplotlib", "pandas", "NumPy"))
+
+
+def test_human_and_agent_positioning_is_explicit():
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert "For humans and AI agents" in readme
+    assert "AI coding agents" in readme
+    assert "AGENTS.md" in readme
+    for macro in ("defeval-step", "defpredict-step", "collect-batches",
+                  "with-torch-seed", "with-clean-gradients"):
+        assert macro in readme
