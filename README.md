@@ -1,6 +1,6 @@
 # Lispyn — Lisp-powered AI notebooks
 
-**Write AI experiments as Hy macros. Run them directly, compile them to readable Python, or execute them as Jupyter notebooks.** Lispyn helps you define native PyTorch models, train and evaluate them, create Matplotlib figures, validate datasets and publish reproducible results. **No new tensor framework or opaque training runtime.**
+**For humans and AI agents. Write AI experiments as Hy macros. Run them directly, compile them to readable Python, or execute them as Jupyter notebooks.** Lispyn helps you define native PyTorch models, train and evaluate them, create Matplotlib figures, validate datasets and publish reproducible results. **No new tensor framework or opaque training runtime.**
 
 [![PyPI version](https://img.shields.io/pypi/v/lispyn?label=PyPI%20version)](https://pypi.org/project/lispyn/) [![CI on main](https://github.com/edujbarrios/lispyn/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/edujbarrios/lispyn/actions/workflows/tests.yml?query=branch%3Amain) [![Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
@@ -75,9 +75,30 @@
 | **Data quality and safe evaluation** | `assert-shape`, `assert-finite`, `assert-disjoint`, `assert-probabilities` — [evaluation guards](examples/evaluation_guards.hy) |
 | **Validation and research** | `train-val-test`, `cross-validate`, `train-until`, `class-weights` — [real quickstart](examples/quickstart.hy) |
 | **Plots and reports** | `curve`, `defcurve`, `confusion-matrix`, `report-run`, `metric-table` — [curve designs](examples/curve_designs.hy) |
-| **Inspect and extend the language** | `deftrain-step`, `collect-epochs`, `defmodel`, `defplot` — [macro authoring](MACRO_AUTHORING.md) |
+| **Inspect and extend the language** | `deftrain-step`, `defeval-step`, `defpredict-step`, `collect-batches`, `defmodel`, `defplot` — [macro authoring](MACRO_AUTHORING.md) |
 
-All **84 supported macros** have [Hy examples in the reference](supported_macros/README.md). The [executed quickstart notebook](example_generated_notebooks/quickstart_executed.ipynb) shows real PyTorch results.
+All **89 supported macros** have [Hy examples in the reference](supported_macros/README.md). The [executed quickstart notebook](example_generated_notebooks/quickstart_executed.ipynb) shows real PyTorch results.
+
+
+## For humans and AI agents
+
+**Human researchers and developers** can author, inspect and debug experiments
+as normal Python/PyTorch code with Hy macros for reusable structure.
+**AI coding agents** can generate the same small, reviewable `.hy` programs
+instead of inventing opaque training machinery. Humans and agents use the
+same documented API, notebooks and tests.
+
+Start from `examples/hello.hy`, `examples/showcase.hy`, or
+the [new macro-composition example](examples/macro_composition.hy). Import
+the exact macros used with `require` in each independent notebook code
+cell; check expansions with `hy2py`, compile with `lispyn build` and run
+`pytest`. The new `defeval-step`, `defpredict-step`, `collect-batches`,
+`with-torch-seed` and `with-clean-gradients` forms cover common native
+PyTorch patterns. See [agent working guidance](AGENTS.md).
+
+Treat generated AI code as **untrusted until reviewed**: Hy macro expansion
+can execute Python at compile time. Never run unknown sources or install
+dependencies without reviewing them.
 
 ## Install
 
