@@ -1,6 +1,6 @@
 # Supported Lispyn macros
 
-**The complete Hy/Lisp macro reference — 84 macros, with usage examples.**
+**The complete Hy/Lisp macro reference — 89 macros, with usage examples.**
 
 Lispyn's API is **Hy macros**. They compose ordinary Python, pandas, PyTorch, Matplotlib and Jupyter; they do not replace those libraries. This file is the **single source of truth for supported macros**, grouped by AI notebook task (including research and production prototyping). The implementations live in [`src/lispyn/macros.hy`](../src/lispyn/macros.hy).
 
@@ -30,7 +30,7 @@ The examples below show the public **Hy syntax**, not direct Python implementati
 | [PyTorch controls & checkpoints](#pytorch-controls--checkpoints) | `with-no-grad`, `with-autocast`, `clip-gradients`, `freeze-module`, `unfreeze-module`, `parameter-count`, `move-to-device`, `save-model`, `load-model` |
 | [Model and optimizer factories](#model-and-optimizer-factories) | `defmodel`, `defoptimizer` |
 | [Custom Matplotlib plot generation](#custom-matplotlib-plot-generation) | `with-figure`, `defplot` |
-| [Macro-first PyTorch composition](#macro-first-pytorch-composition) | `with-training`, `with-grad`, `with-rng-fork`, `optimizer-step`, `deftrain-step`, `collect-epochs` |
+| [Macro-first PyTorch composition](#macro-first-pytorch-composition) | `with-training`, `with-grad`, `with-rng-fork`, `optimizer-step`, `deftrain-step`, `collect-epochs`, `defeval-step`, `defpredict-step`, `collect-batches`, `with-torch-seed`, `with-clean-gradients` |
 | [PyTorch diagnostics & inference](#pytorch-diagnostics--inference) | `gradient-report`, `assert-gradients`, `model-footprint`, `predict-batches`, `with-parameter-freeze`, `with-determinism`, `with-anomaly-detection` |
 | [Runtime dependencies](#runtime-dependencies) | `ensure-package`, `use-package` |
 | [AI dataset class balance](#ai-dataset-class-balance) | `label-balance`, `plot-label-balance`, `class-weights` |
@@ -521,7 +521,7 @@ See [the runnable PyTorch and plotting showcase](../examples/showcase.hy).
 
 ## Macro-first PyTorch composition
 
-The six forms in this section are **real Hy macros**: they generate
+The eleven forms in this section are **real Hy macros**: they generate
 ordinary Python `def`, `for`, `try/finally` and native PyTorch calls at
 compile time. They require PyTorch at **runtime**, but introduce no new
 Lispyn Python backend. See [how to write your own macros](../MACRO_AUTHORING.md)
@@ -622,6 +622,84 @@ iteration; `count` is used as `range(count)`. The generated result list
 uses a hygienic `hy.gensym` temporary that cannot overwrite the caller's
 variables. Negative counts produce an empty list as in Python's `range`;
 the macro does not validate training schedules or stop on its own.
+
+
+### `defeval-step`
+**Purpose:** Generate a reusable native PyTorch scalar-loss evaluation function
+that preserves the model's original training/eval flags, including child modules.
+
+```hy
+(require lispyn.macros [defeval-step])
+(defeval-step evaluate model criterion)
+(setv validation-loss (evaluate features labels))
+```
+
+The generated `evaluate(inputs, labels)` evaluates the model and criterion
+expressions once per call, enters `torch.inference_mode()`, temporarily
+sets `model.eval()` and returns a Python `float` from the scalar
+`criterion(model(inputs), labels).item()`. Original per-module modes are
+restored even after an exception. The criterion must produce a single-element
+tensor. This macro does not perform a backward pass or optimizer update.
+
+### `defpredict-step`
+**Purpose:** Generate a one-argument native PyTorch inference function that
+restores all model training flags after each call.
+
+```hy
+(require lispyn.macros [defpredict-step])
+(defpredict-step predict model)
+(setv predictions (predict features))
+```
+
+The generated `predict(inputs)` runs under `torch.inference_mode()`
+and returns the model's native output, not automatically converted to CPU
+or thresholded. The model expression is evaluated once per call. All module
+modes are restored on success or failure.
+
+### `collect-batches`
+**Purpose:** Expand a native Python loop over a loader or other iterable,
+collecting each batch body's final expression into a fresh list.
+
+```hy
+(require lispyn.macros [collect-batches])
+(setv batch-losses (collect-batches batch validation-loader
+  (evaluate (get batch 0) (get batch 1))))
+```
+
+The loader expression is evaluated once. `batch` must be a symbol and
+the body must be nonempty. A hygienic `hy.gensym` temporary stores results.
+All values are kept in memory; for large datasets prefer streaming iteration.
+The macro does not move batches or average metrics.
+
+### `with-torch-seed`
+**Purpose:** Make reproducible CPU-only PyTorch draws inside a limited scope,
+restoring the outside CPU generator state on success or failure.
+
+```hy
+(require lispyn.macros [with-torch-seed])
+(setv sample (with-torch-seed 42 (torch.randn [4])))
+```
+
+Expands to `torch.random.fork_rng(devices=[])`, followed by
+`torch.default_generator.manual_seed(seed)`. It does **not** seed or restore
+CUDA, NumPy, Python `random`, workers or external libraries, nor does it
+guarantee global determinism. The seed expression is evaluated once.
+
+### `with-clean-gradients`
+**Purpose:** Wrap a custom PyTorch optimizer block with gradient clearing
+before execution and in a `try/finally` cleanup.
+
+```hy
+(require lispyn.macros [with-clean-gradients])
+(with-clean-gradients optimizer
+  (.backward (criterion (model features) labels))
+  (.step optimizer))
+```
+
+The optimizer expression is evaluated once; exceptions propagate after
+cleanup. The macro does **not** call `step()` for you or manage gradient
+accumulation. The body's last expression is returned on success. Use this
+scope when a failed custom step must not leave stale gradients behind.
 
 ## PyTorch diagnostics & inference
 
