@@ -12,7 +12,7 @@ def test_readme_links_to_examples_and_complete_catalog():
     assert "examples/showcase.hy" in readme
     assert "examples/quickstart.hy" in readme
     assert "supported_macros/README.md" in readme
-    assert "84 supported macros" in readme and "84 macros" in catalog
+    assert "89 supported macros" in readme and "84 macros" in catalog
     assert '(print "Lispyn checks passed!")' in example
     assert len(readme) < 7500
 
