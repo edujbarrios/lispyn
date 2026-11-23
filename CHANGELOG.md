@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.42.0a1 — 2026-11-23 — Human- and agent-friendly evaluation macros
+
+- Add five compile-time Hy macros: `defeval-step` and `defpredict-step`
+  generate native PyTorch inference functions with exception-safe restoration
+  of each model module's training flags; `collect-batches` generates hygienic
+  result collection; `with-torch-seed` scopes CPU random state; and
+  `with-clean-gradients` clears gradients with `try/finally`.
+- Preserve single-evaluation guarantees and inspectable native Python, with
+  no new training runtime. Document the CPU RNG, scalar loss, and memory limits.
+- Position the README explicitly for human researchers, developers and AI
+  coding agents, add `AGENTS.md`, a runnable CPU integration example, and
+  regression tests. Document all **89 supported macros** in the catalog.
+
 ## 0.41.0a1 — 2026-11-21 — First-glance PyTorch and plotting macros
 
 - Add four compile-time, source-generating Hy macros: `defmodel` creates
