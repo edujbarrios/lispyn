@@ -48,8 +48,9 @@ def test_root_readme_is_ai_notebook_first_and_links_to_macro_registry():
     assert "pip install -r requirements.txt" in readme
     assert "lispyn execute examples/hello.hy" in readme
     assert "Lisp-powered AI notebooks" in readme
+    assert "For humans and AI agents" in readme
     assert "Why use it for research?" not in readme
-    assert len(readme) < 7500
+    assert len(readme) < 8500
     assert "MACRO_AUTHORING.md" in readme
     assert all(name in readme for name in ("PyTorch", "Matplotlib", "pandas", "NumPy"))
     project = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
