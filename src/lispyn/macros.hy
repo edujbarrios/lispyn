@@ -669,3 +669,97 @@
     (for [~epoch (range ~count)]
       (.append ~results-symbol (do ~@body)))
     ~results-symbol))
+
+; Native evaluation, prediction, batch collection and safe scoped execution.
+
+(defmacro defeval-step [name model criterion]
+  "Generate a scalar-loss evaluation function that restores all module modes."
+  (if (not (isinstance name hy.models.Symbol))
+    (raise (ValueError "defeval-step expects a function name symbol"))
+    None)
+  (setv inputs-symbol (hy.gensym "lispyn_inputs"))
+  (setv labels-symbol (hy.gensym "lispyn_labels"))
+  (setv model-symbol (hy.gensym "lispyn_model"))
+  (setv criterion-symbol (hy.gensym "lispyn_criterion"))
+  (setv states-symbol (hy.gensym "lispyn_states"))
+  (setv module-symbol (hy.gensym "lispyn_module"))
+  (setv flag-symbol (hy.gensym "lispyn_flag"))
+  `(defn ~name [~inputs-symbol ~labels-symbol]
+    (import torch)
+    (setv ~model-symbol ~model)
+    (setv ~criterion-symbol ~criterion)
+    (setv ~states-symbol
+      (list (map (fn [~module-symbol]
+                   (tuple [~module-symbol (getattr ~module-symbol "training")]))
+                 (.modules ~model-symbol))))
+    (try
+      (.eval ~model-symbol)
+      (with [(torch.inference_mode)]
+        (float (.item (~criterion-symbol
+          (~model-symbol ~inputs-symbol) ~labels-symbol))))
+      (finally
+        (for [[~module-symbol ~flag-symbol] ~states-symbol]
+          (setattr ~module-symbol "training" ~flag-symbol))))))
+
+(defmacro defpredict-step [name model]
+  "Generate an inference function that restores every module training flag."
+  (if (not (isinstance name hy.models.Symbol))
+    (raise (ValueError "defpredict-step expects a function name symbol"))
+    None)
+  (setv inputs-symbol (hy.gensym "lispyn_inputs"))
+  (setv model-symbol (hy.gensym "lispyn_model"))
+  (setv states-symbol (hy.gensym "lispyn_states"))
+  (setv module-symbol (hy.gensym "lispyn_module"))
+  (setv flag-symbol (hy.gensym "lispyn_flag"))
+  `(defn ~name [~inputs-symbol]
+    (import torch)
+    (setv ~model-symbol ~model)
+    (setv ~states-symbol
+      (list (map (fn [~module-symbol]
+                   (tuple [~module-symbol (getattr ~module-symbol "training")]))
+                 (.modules ~model-symbol))))
+    (try
+      (.eval ~model-symbol)
+      (with [(torch.inference_mode)]
+        (~model-symbol ~inputs-symbol))
+      (finally
+        (for [[~module-symbol ~flag-symbol] ~states-symbol]
+          (setattr ~module-symbol "training" ~flag-symbol))))))
+
+(defmacro collect-batches [batch loader #* body]
+  "Iterate a loader once, collecting each batch body's final result."
+  (if (or (not (isinstance batch hy.models.Symbol))
+          (= (len body) 0))
+    (raise (ValueError "collect-batches expects a batch symbol and body"))
+    None)
+  (setv results-symbol (hy.gensym "lispyn_batch_results"))
+  `(do
+    (setv ~results-symbol [])
+    (for [~batch ~loader]
+      (.append ~results-symbol (do ~@body)))
+    ~results-symbol))
+
+(defmacro with-torch-seed [seed #* body]
+  "Seed the CPU PyTorch generator for a scope and restore its RNG state."
+  (if (= (len body) 0)
+    (raise (ValueError "with-torch-seed expects a body"))
+    None)
+  `(do
+    (import torch)
+    (with [(torch.random.fork_rng :devices [])]
+      (.manual_seed torch.default_generator ~seed)
+      ~@body)))
+
+(defmacro with-clean-gradients [optimizer #* body]
+  "Clear optimizer gradients before and after a body, even on exceptions."
+  (if (= (len body) 0)
+    (raise (ValueError "with-clean-gradients expects a body"))
+    None)
+  (setv optimizer-symbol (hy.gensym "lispyn_optimizer"))
+  `(do
+    (setv ~optimizer-symbol ~optimizer)
+    (.zero_grad ~optimizer-symbol)
+    (try
+      ~@body
+      (finally
+        (.zero_grad ~optimizer-symbol)))))
