@@ -1,0 +1,66 @@
+; CPU-only example of native evaluation, prediction and safe scoped macros.
+(require lispyn.macros [defmodel defeval-step defpredict-step
+  collect-batches with-torch-seed with-clean-gradients])
+(import torch)
+
+(torch.manual_seed 24)
+(defmodel make-model [features]
+  (torch.nn.Linear features 4)
+  (torch.nn.ReLU)
+  (torch.nn.Linear 4 1))
+(setv model (make-model 2))
+(setv criterion (torch.nn.MSELoss))
+(setv inputs (torch.ones [3 2]))
+(setv labels (torch.zeros [3 1]))
+(.eval (get model 0))
+(setv original-modes (list (map (fn [layer] layer.training) (.modules model))))
+
+(defeval-step evaluate model criterion)
+(defpredict-step predict model)
+(setv validation-loss (evaluate inputs labels))
+(setv predictions (predict inputs))
+(assert (isinstance validation-loss float))
+(assert (= (list predictions.shape) [3 1]))
+(assert (not predictions.requires_grad))
+(assert (= original-modes (list (map (fn [m] m.training) (.modules model)))))
+
+; Model/criterion expressions are evaluated once on every call.
+(setv calls [])
+(defn observe-model [] (.append calls "model") model)
+(defn observe-criterion [] (.append calls "criterion") criterion)
+(defeval-step evaluate-once (observe-model) (observe-criterion))
+(evaluate-once inputs labels)
+(assert (= calls ["model" "criterion"]))
+(setv calls [])
+(defpredict-step predict-once (observe-model))
+(predict-once inputs)
+(assert (= calls ["model"]))
+
+(setv loader-calls [])
+(defn make-batches [] (.append loader-calls "loaded") [[1 2] [3 4]])
+(setv sums (collect-batches batch (make-batches) (sum batch)))
+(assert (= sums [3 7]))
+(assert (= loader-calls ["loaded"]))
+
+(setv rng-before (torch.get_rng_state))
+(setv random-one (with-torch-seed 123 (torch.rand [3])))
+(setv random-two (with-torch-seed 123 (torch.rand [3])))
+(assert (torch.equal random-one random-two))
+(assert (torch.equal rng-before (torch.get_rng_state)))
+(try
+  (with-torch-seed 123 (raise (RuntimeError "test seed cleanup")))
+  (except [RuntimeError] None))
+(assert (torch.equal rng-before (torch.get_rng_state)))
+
+(setv optimizer (torch.optim.SGD (.parameters model) :lr 0.1))
+(setv optimizer-calls [])
+(defn observe-optimizer [] (.append optimizer-calls "optimizer") optimizer)
+(try
+  (with-clean-gradients (observe-optimizer)
+    (.backward (criterion (model inputs) labels))
+    (raise (RuntimeError "test gradient cleanup")))
+  (except [RuntimeError] None))
+(assert (= optimizer-calls ["optimizer"]))
+(assert (all (map (fn [p] (is p.grad None)) (.parameters model))))
+(assert (= (with-clean-gradients optimizer (+ 2 3)) 5))
+(print "macro-composition-passed")
